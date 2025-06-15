@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -55,7 +54,7 @@ serve(async (req) => {
       }
       // Read blob and convert to base64
       const arrayBuffer = await data.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      const base64 = arrayBufferToBase64(arrayBuffer)
       userPhotoBase64 = base64
       console.log('Fetched user photo from Supabase Storage and converted to base64 (length: ' + base64.length + ')')
     } else if (userPhoto) {
@@ -125,11 +124,25 @@ async function imageUrlToBase64(imageUrl: string): Promise<string> {
       throw new Error(`Failed to fetch image: ${response.status}`)
     }
     const arrayBuffer = await response.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const base64 = arrayBufferToBase64(arrayBuffer)
     return base64
   } catch (error) {
     throw new Error(`Image conversion failed: ${error.message}`)
   }
+}
+
+// New safe function for large ArrayBuffers!
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000; // 32KB per chunk is safe
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, i + chunkSize) as any
+    );
+  }
+  return btoa(binary);
 }
 
 function mapCategoryToClothesType(category: string): string {
