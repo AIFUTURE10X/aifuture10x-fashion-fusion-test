@@ -39,66 +39,99 @@ class PerfectCorpApiService {
     }
 
     try {
-      console.log('Sending try-on request to Perfect Corp API...');
+      console.log('Starting Perfect Corp API request...');
+      console.log('API Key (first 10 chars):', apiKey.substring(0, 10) + '...');
       
-      // Convert image URLs to base64 if needed
+      // Convert image URLs to base64 - get just the base64 data without data URL prefix
       const userPhotoBase64 = await this.imageUrlToBase64(request.userPhoto);
       const clothingImageBase64 = await this.imageUrlToBase64(request.clothingImage);
 
-      // Use the correct Perfect Corp API endpoint from documentation
+      console.log('Images converted to base64');
+      console.log('User photo base64 length:', userPhotoBase64.length);
+      console.log('Clothing image base64 length:', clothingImageBase64.length);
+
+      const requestBody = {
+        person_img: userPhotoBase64,
+        clothes_img: clothingImageBase64,
+        clothes_type: this.mapCategoryToClothesType(request.clothingCategory)
+      };
+
+      console.log('Request body prepared:', {
+        ...requestBody,
+        person_img: `[base64 data ${userPhotoBase64.length} chars]`,
+        clothes_img: `[base64 data ${clothingImageBase64.length} chars]`
+      });
+
       const response = await fetch(`${this.baseUrl}/ai-clothes/virtual-tryon`, {
         method: 'POST',
         headers: {
           'X-API-KEY': apiKey,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          person_img: userPhotoBase64,
-          clothes_img: clothingImageBase64,
-          clothes_type: this.mapCategoryToClothesType(request.clothingCategory)
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status);
+      console.log('Response received - Status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        let errorMessage = `API request failed: ${response.status}`;
+        let errorMessage = `API request failed with status ${response.status}`;
         
         try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-          console.log('Error response data:', errorData);
+          const errorText = await response.text();
+          console.log('Error response body:', errorText);
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
         } catch (e) {
-          console.log('Could not parse error response as JSON');
+          console.log('Could not read error response body');
         }
         
         if (response.status === 404) {
-          errorMessage = 'API endpoint not found. Please check if you have the correct Perfect Corp API access.';
+          errorMessage = 'API endpoint not found. Please verify your Perfect Corp API access and endpoint.';
         } else if (response.status === 401) {
           errorMessage = 'Invalid API key. Please check your Perfect Corp API key.';
         } else if (response.status === 403) {
-          errorMessage = 'Access forbidden. Please verify your API key has the required permissions.';
+          errorMessage = 'Access forbidden. Please verify your API key has virtual try-on permissions.';
+        } else if (response.status === 400) {
+          errorMessage = 'Bad request. Please check the image format and try again.';
         }
         
         throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      console.log('Perfect Corp API response received:', data);
+      const responseText = await response.text();
+      console.log('Raw response body:', responseText);
 
-      // Based on the API docs, the response should contain the result image
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error('Invalid JSON response from API');
+      }
+
+      console.log('Parsed response data:', data);
+
+      // Handle the response based on Perfect Corp's API format
       if (data && data.result_img) {
         return {
           success: true,
           resultImage: data.result_img,
           processingTime: data.processing_time
         };
+      } else if (data && data.error) {
+        throw new Error(data.error);
       } else {
-        throw new Error('Invalid response format from API');
+        console.log('Unexpected response format:', data);
+        throw new Error('Unexpected response format from API');
       }
 
     } catch (error) {
-      console.error('Perfect Corp API error:', error);
+      console.error('Perfect Corp API error details:', error);
       
       if (error instanceof TypeError && error.message.includes('fetch')) {
         return {
@@ -137,13 +170,16 @@ class PerfectCorpApiService {
       }
       
       const blob = await response.blob();
+      console.log('Image blob size:', blob.size, 'type:', blob.type);
       
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
-          // Return the full data URL as Perfect Corp expects it
-          resolve(result);
+          // Extract just the base64 data without the data URL prefix
+          const base64Data = result.split(',')[1];
+          console.log('Base64 conversion complete, length:', base64Data.length);
+          resolve(base64Data);
         };
         reader.onerror = () => reject(new Error('Failed to convert image to base64'));
         reader.readAsDataURL(blob);
