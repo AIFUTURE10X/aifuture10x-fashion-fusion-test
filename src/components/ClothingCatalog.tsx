@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
-import { Search, Filter, Star, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ClothingCard } from './ClothingCard';
+import { CategoryFilter } from './CategoryFilter';
+import { CatalogSearchBar } from './CatalogSearchBar';
 
 interface ClothingItem {
   id: string;
@@ -34,7 +36,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       image: "/lovable-uploads/ba7e7b5d-f949-46ce-9579-303ac63565fb.png",
       category: "dresses",
       rating: 4.7,
-      colors: ['#ffdde2', '#6c2728', '#2aa73b', '#191816'], // pink, burgundy, green, black
+      colors: ['#ffdde2', '#6c2728', '#2aa73b', '#191816'],
     },
     {
       id: '1',
@@ -108,7 +110,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
 
   const filteredItems = clothingItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      item.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -127,111 +129,27 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     <div className="space-y-6">
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search clothing items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" className="shrink-0">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
-        </div>
-
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 mt-4">
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory(category.id)}
-              className={selectedCategory === category.id ? 
-                "bg-gradient-to-r from-purple-600 to-pink-600 border-none" : 
-                ""
-              }
-            >
-              {category.label}
-            </Button>
-          ))}
-        </div>
+        <CatalogSearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+        <CategoryFilter
+          categories={categories}
+          selected={selectedCategory}
+          onChange={setSelectedCategory}
+        />
       </div>
 
       {/* Clothing Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
-          <div
+        {filteredItems.map(item => (
+          <ClothingCard
             key={item.id}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer"
-            onClick={() => onClothingSelect(item)}
-          >
-            <div className="relative aspect-[3/4] bg-gray-100">
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                onError={(e) => {
-                  // Fallback to a solid color background if image fails to load
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.style.backgroundColor = '#f3f4f6';
-                }}
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(item.id);
-                }}
-                className="absolute top-3 right-3 bg-white/80 hover:bg-white rounded-full p-2 transition-colors"
-              >
-                <Heart 
-                  className={`w-4 h-4 ${favorites.has(item.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} 
-                />
-              </button>
-              <div className="absolute bottom-3 left-3">
-                <Badge variant="secondary" className="bg-white/90 text-gray-900">
-                  Try On
-                </Badge>
-              </div>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">{item.brand}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900">${item.price}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm text-gray-600 ml-1">{item.rating}</span>
-                </div>
-                <div className="flex space-x-1">
-                  {item.colors.slice(0, 3).map((color, index) => (
-                    <div
-                      key={index}
-                      className="w-4 h-4 rounded-full border border-gray-300"
-                      style={{ backgroundColor: color === 'floral' ? '#f3f4f6' : color }}
-                    />
-                  ))}
-                  {item.colors.length > 3 && (
-                    <span className="text-xs text-gray-500 ml-1">+{item.colors.length - 3}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+            item={item}
+            isFavorite={favorites.has(item.id)}
+            onToggleFavorite={toggleFavorite}
+            onSelect={onClothingSelect}
+          />
         ))}
       </div>
 
