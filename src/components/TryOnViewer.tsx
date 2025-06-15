@@ -1,8 +1,11 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { ApiKeyInput } from '@/components/ApiKeyInput';
+import { perfectCorpApi, TryOnResponse } from '@/services/perfectCorpApi';
+import { useToast } from '@/hooks/use-toast';
 
 interface TryOnViewerProps {
   userPhoto: string;
@@ -20,18 +23,76 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   onBack
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [apiConfigured, setApiConfigured] = useState(false);
+  const [tryOnResultImage, setTryOnResultImage] = useState<string | null>(null);
+  const [processingTime, setProcessingTime] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState({
     size: [100],
     position: [50],
     brightness: [100]
   });
+  const { toast } = useToast();
 
-  // Simulate processing when retry is clicked
-  const handleRetry = () => {
+  useEffect(() => {
+    const hasApiKey = !!perfectCorpApi.getApiKey();
+    setApiConfigured(hasApiKey);
+    
+    // Auto-trigger try-on if API is configured
+    if (hasApiKey && !tryOnResultImage && !isProcessing) {
+      handleTryOn();
+    }
+  }, [selectedClothing, userPhoto]);
+
+  const handleTryOn = async () => {
+    if (!apiConfigured) {
+      return;
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
+    setError(null);
+    console.log('Starting virtual try-on process...');
+
+    try {
+      const response: TryOnResponse = await perfectCorpApi.tryOnClothing({
+        userPhoto,
+        clothingImage: selectedClothing.image,
+        clothingCategory: selectedClothing.category
+      });
+
+      if (response.success && response.resultImage) {
+        const resultImageUrl = `data:image/jpeg;base64,${response.resultImage}`;
+        setTryOnResultImage(resultImageUrl);
+        setProcessingTime(response.processingTime || null);
+        toast({
+          title: "Try-On Complete!",
+          description: "Your virtual try-on has been generated successfully."
+        });
+      } else {
+        setError(response.error || 'Try-on failed');
+        toast({
+          title: "Try-On Failed",
+          description: response.error || 'An error occurred during processing',
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      toast({
+        title: "Processing Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
       setIsProcessing(false);
-    }, 2000);
+    }
+  };
+
+  const handleRetry = () => {
+    setTryOnResultImage(null);
+    setError(null);
+    handleTryOn();
   };
 
   return (
@@ -50,11 +111,11 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRetry}>
+          <Button variant="outline" onClick={handleRetry} disabled={isProcessing || !apiConfigured}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Retry
           </Button>
-          {!isProcessing && (
+          {tryOnResultImage && !isProcessing && (
             <>
               <Button variant="outline" onClick={onShare}>
                 <Share2 className="w-4 h-4 mr-2" />
@@ -68,6 +129,13 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
           )}
         </div>
       </div>
+
+      {/* API Configuration */}
+      {!apiConfigured && (
+        <div className="mb-8">
+          <ApiKeyInput onApiKeySet={setApiConfigured} />
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Original Photo */}
@@ -103,87 +171,61 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                   <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-8 h-8 text-purple-600 animate-pulse" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">AI Magic in Progress</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">AI Processing</h4>
                   <p className="text-gray-600 text-sm">Creating your virtual try-on...</p>
                   <div className="w-32 h-2 bg-gray-200 rounded-full mx-auto mt-4">
-                    <div className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full animate-pulse"></div>
+                    <div className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full animate-pulse w-3/4"></div>
                   </div>
                 </div>
-              ) : (
+              ) : tryOnResultImage ? (
                 <div className="relative w-full h-full">
-                  {/* Base user photo */}
                   <img
-                    src={userPhoto}
-                    alt="User photo base"
+                    src={tryOnResultImage}
+                    alt="Try-on result"
                     className="w-full h-full object-cover"
+                    style={{
+                      filter: `brightness(${adjustments.brightness[0]}%)`,
+                      transform: `scale(${adjustments.size[0] / 100}) translateY(${(adjustments.position[0] - 50) * 2}px)`
+                    }}
                   />
-                  
-                  {/* Try-on effect overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-50/20 to-transparent pointer-events-none">
-                    {/* Clothing visualization based on category */}
-                    <div 
-                      className="absolute left-1/2 transform -translate-x-1/2"
-                      style={{
-                        top: selectedClothing.category === 'outerwear' ? '25%' : 
-                             selectedClothing.category === 'tops' ? '30%' : 
-                             selectedClothing.category === 'dresses' ? '25%' : '45%',
-                        transform: `translateX(-50%) scale(${adjustments.size[0] / 100}) translateY(${(adjustments.position[0] - 50) * 1.5}px)`,
-                      }}
-                    >
-                      {/* Simulated clothing overlay with proper styling based on item */}
-                      <div 
-                        className={`
-                          relative rounded-lg border-2 border-white/30 shadow-lg
-                          ${selectedClothing.category === 'outerwear' ? 'w-32 h-40 bg-gradient-to-b from-gray-800/60 to-gray-900/60' : ''}
-                          ${selectedClothing.category === 'tops' ? 'w-28 h-32 bg-gradient-to-b from-white/70 to-gray-100/70' : ''}
-                          ${selectedClothing.category === 'dresses' ? 'w-30 h-48 bg-gradient-to-b from-pink-200/60 to-pink-300/60' : ''}
-                          ${selectedClothing.category === 'bottoms' ? 'w-24 h-36 bg-gradient-to-b from-blue-200/60 to-blue-300/60' : ''}
-                        `}
-                        style={{
-                          filter: `brightness(${adjustments.brightness[0]}%)`,
-                          backdropFilter: 'blur(0.5px)',
-                        }}
-                      >
-                        {/* Clothing pattern/texture overlay */}
-                        <div 
-                          className="absolute inset-1 rounded opacity-80"
-                          style={{
-                            backgroundImage: `url(${selectedClothing.image})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                            mixBlendMode: 'overlay',
-                          }}
-                        />
-                        
-                        {/* Clothing details overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-1">
-                              <Zap className="w-3 h-3 text-purple-600" />
-                            </div>
-                            <span className="text-xs font-semibold text-gray-900 bg-white/90 px-2 py-1 rounded">
-                              {selectedClothing.name.split(' ')[0]}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Success indicator */}
                   <div className="absolute top-4 left-4">
                     <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
                       <Zap className="w-3 h-3 mr-1" />
-                      Try-On Applied
+                      AI Generated
+                      {processingTime && <span className="ml-1">({processingTime}s)</span>}
                     </div>
                   </div>
+                </div>
+              ) : error ? (
+                <div className="text-center p-6">
+                  <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                  <h4 className="font-semibold text-gray-900 mb-2">Try-On Failed</h4>
+                  <p className="text-gray-600 text-sm mb-4">{error}</p>
+                  <Button onClick={handleRetry} size="sm">
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                </div>
+              ) : !apiConfigured ? (
+                <div className="text-center p-6">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Zap className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-2">Setup Required</h4>
+                  <p className="text-gray-600 text-sm">Configure your API key to start virtual try-on</p>
+                </div>
+              ) : (
+                <div className="text-center p-6">
+                  <Button onClick={handleTryOn} className="bg-gradient-to-r from-purple-600 to-pink-600">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Start Try-On
+                  </Button>
                 </div>
               )}
             </div>
           </div>
 
-          {!isProcessing && (
+          {tryOnResultImage && !isProcessing && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center text-green-700 mb-2">
                 <Zap className="w-5 h-5 mr-2" />
@@ -213,7 +255,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                 min={50}
                 step={5}
                 className="w-full"
-                disabled={isProcessing}
+                disabled={isProcessing || !tryOnResultImage}
               />
             </div>
 
@@ -229,7 +271,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                 min={0}
                 step={5}
                 className="w-full"
-                disabled={isProcessing}
+                disabled={isProcessing || !tryOnResultImage}
               />
             </div>
 
@@ -245,7 +287,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                 min={50}
                 step={5}
                 className="w-full"
-                disabled={isProcessing}
+                disabled={isProcessing || !tryOnResultImage}
               />
             </div>
 
@@ -253,7 +295,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
               <Button 
                 variant="outline" 
                 className="w-full"
-                disabled={isProcessing}
+                disabled={isProcessing || !tryOnResultImage}
                 onClick={() => setAdjustments({
                   size: [100],
                   position: [50],
