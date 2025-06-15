@@ -12,36 +12,76 @@ interface PhotoUploadProps {
 
 export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null); // local preview
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+
+  // Helper to check if the uploaded photo is accessible over the public internet
+  async function isImagePubliclyAvailable(url: string): Promise<boolean> {
+    try {
+      // Use a HEAD request so we don't download the image content
+      const resp = await fetch(url, { method: "HEAD" });
+      return resp.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // Try multiple times to verify image accessibility, with delay between checks
+  async function waitForImageAvailability(url: string, retries = 3, delayMs = 1500): Promise<boolean> {
+    for (let i = 0; i < retries; i++) {
+      if (await isImagePubliclyAvailable(url)) {
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return false;
+  }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
+    setPreparing(false);
     const file = acceptedFiles[0];
     if (file) {
       setIsProcessing(true);
       try {
-        // Optional: create a local preview for user feedback before upload
         const previewUrl = URL.createObjectURL(file);
         setFilePreview(previewUrl);
 
         // Upload image to Supabase Storage
         const publicUrl = await uploadPhotoToSupabase(file);
         setUploadedPhoto(publicUrl);
+
+        // Begin preparing step
+        setPreparing(true);
+
+        // Wait for URL to be accessible (up to approx 4.5 seconds)
+        const available = await waitForImageAvailability(publicUrl, 3, 1500);
+
+        setPreparing(false);
+
+        if (available) {
+          onPhotoUpload(publicUrl);
+        } else {
+          setError(
+            "Your photo is uploading, but the public link is not accessible yet. Please try again in a few seconds."
+          );
+          setUploadedPhoto(null);
+          setFilePreview(null);
+        }
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Upload failed. Please try again."
+          err instanceof Error ? err.message : "Upload failed. Please try again."
         );
         setFilePreview(null);
         setUploadedPhoto(null);
+        setPreparing(false);
       } finally {
         setIsProcessing(false);
       }
     }
-  }, []);
+  }, [onPhotoUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -64,13 +104,39 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     setError(null);
   };
 
+  // If the photo is uploaded and accessible, UI will instantly transition via onPhotoUpload
+
+  // Show feedback while we're checking for image availability
+  if (preparing) {
+    return (
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="aspect-[3/4] relative flex items-center justify-center">
+            <div className="flex flex-col items-center py-12 w-full">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4">
+                <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Preparing your photo…
+              </h3>
+              <p className="text-gray-600 text-sm mb-2">
+                Making sure your uploaded photo is available on the web.
+              </p>
+              <p className="text-xs text-gray-400">Hang tight, this may take a few seconds…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (uploadedPhoto) {
     return (
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="aspect-[3/4] relative">
             <img
-              src={filePreview || uploadedPhoto} // show fast preview if possible
+              src={filePreview || uploadedPhoto}
               alt="Uploaded photo"
               className="w-full h-full object-cover"
             />
