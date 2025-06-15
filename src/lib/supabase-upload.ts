@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Uploads a file to the "user-photos" bucket in Supabase and returns the public URL.
+ * Uploads a file to the "fashionfusion" bucket in Supabase and returns the public URL.
  * The returned URL is always public (bucket is public).
  * Throws error on failure.
  */
@@ -14,14 +14,14 @@ export async function uploadPhotoToSupabase(file: File): Promise<string> {
 
   // Upload file
   const { error } = await supabase.storage
-    .from("user-photos")
+    .from("fashionfusion")
     .upload(filePath, file, { upsert: true });
 
   if (error) throw new Error(error.message);
 
   // Get public URL
   const { data } = supabase.storage
-    .from("user-photos")
+    .from("fashionfusion")
     .getPublicUrl(filePath);
 
   if (!data || !data.publicUrl) {
