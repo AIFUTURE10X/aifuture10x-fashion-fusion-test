@@ -16,6 +16,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
+  const [isReady, setIsReady] = useState(false); // <-- tracks image validated and ready for confirmation
 
   // Helper to check if the uploaded photo is accessible over the public internet
   async function isImagePubliclyAvailable(url: string): Promise<boolean> {
@@ -42,6 +43,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
     setPreparing(false);
+    setIsReady(false);
     const file = acceptedFiles[0];
     if (file) {
       setIsProcessing(true);
@@ -62,7 +64,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
         setPreparing(false);
 
         if (available) {
-          onPhotoUpload(publicUrl);
+          setIsReady(true); // Don't call onPhotoUpload yet, wait for user click
         } else {
           setError(
             "Your photo is uploading, but the public link is not accessible yet. Please try again in a few seconds."
@@ -77,6 +79,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
         setFilePreview(null);
         setUploadedPhoto(null);
         setPreparing(false);
+        setIsReady(false);
       } finally {
         setIsProcessing(false);
       }
@@ -102,9 +105,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     setUploadedPhoto(null);
     setFilePreview(null);
     setError(null);
+    setIsReady(false);
   };
-
-  // If the photo is uploaded and accessible, UI will instantly transition via onPhotoUpload
 
   // Show feedback while we're checking for image availability
   if (preparing) {
@@ -130,7 +132,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     );
   }
 
-  if (uploadedPhoto) {
+  // Show preview + confirmation button if we're ready
+  if (uploadedPhoto && isReady) {
     return (
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
@@ -162,6 +165,33 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             >
               Continue to Catalog
             </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show preview if still uploading/validating or image is uploaded but not validated yet
+  if (uploadedPhoto && !isReady) {
+    // In practice, this normally only flashes for a moment, but could show if user tries to use slow link
+    return (
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="aspect-[3/4] relative">
+            <img
+              src={filePreview || uploadedPhoto}
+              alt="Uploaded photo"
+              className="w-full h-full object-cover"
+            />
+            <button
+              onClick={handleRemove}
+              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-6 flex items-center text-gray-600 justify-center">
+            Validating your photo link…
           </div>
         </div>
       </div>
@@ -228,4 +258,3 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     </div>
   );
 };
-
