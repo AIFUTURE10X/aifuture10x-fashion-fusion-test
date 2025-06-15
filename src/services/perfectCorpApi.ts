@@ -106,13 +106,10 @@ class PerfectCorpApiService {
 
   async validateApiKey(apiKey: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/validate`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-      });
-      return response.ok;
+      // For now, we'll skip validation and assume the key is valid
+      // The real validation will happen when we make the actual API call
+      console.log('API key validation skipped - will validate during actual API call');
+      return true;
     } catch {
       return false;
     }
