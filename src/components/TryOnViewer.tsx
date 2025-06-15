@@ -19,23 +19,14 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   onShare,
   onBack
 }) => {
-  const [isProcessing, setIsProcessing] = useState(!tryOnResult);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [adjustments, setAdjustments] = useState({
     size: [100],
     position: [50],
     brightness: [100]
   });
 
-  // Simulate processing completion after component mounts
-  React.useEffect(() => {
-    if (!tryOnResult) {
-      const timer = setTimeout(() => {
-        setIsProcessing(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [tryOnResult]);
-
+  // Simulate processing when retry is clicked
   const handleRetry = () => {
     setIsProcessing(true);
     setTimeout(() => {
@@ -199,6 +190,11 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                 variant="outline" 
                 className="w-full"
                 disabled={isProcessing}
+                onClick={() => setAdjustments({
+                  size: [100],
+                  position: [50],
+                  brightness: [100]
+                })}
               >
                 Reset Adjustments
               </Button>
