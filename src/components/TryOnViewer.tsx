@@ -34,6 +34,13 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
     }, 2000);
   };
 
+  // Create a simulated try-on result - in a real app, this would come from the API
+  const getTryOnResult = () => {
+    // For demonstration, we'll use the clothing item image overlaid concept
+    // In a real implementation, this would be the result from Perfect Corp API
+    return selectedClothing.image;
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
@@ -110,11 +117,37 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                   </div>
                 </div>
               ) : (
-                <img
-                  src={userPhoto}
-                  alt="Try-on result"
-                  className="w-full h-full object-cover"
-                />
+                <div className="relative w-full h-full">
+                  {/* Base user photo with overlay effect */}
+                  <img
+                    src={userPhoto}
+                    alt="User photo base"
+                    className="w-full h-full object-cover opacity-80"
+                  />
+                  {/* Clothing overlay - this simulates the try-on effect */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div 
+                      className="w-32 h-48 bg-gradient-to-b from-transparent via-purple-200/30 to-transparent rounded-lg border-2 border-purple-300/50"
+                      style={{
+                        transform: `scale(${adjustments.size[0] / 100}) translateY(${(adjustments.position[0] - 50) * 2}px)`,
+                        filter: `brightness(${adjustments.brightness[0]}%)`
+                      }}
+                    >
+                      <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center">
+                        <span className="text-purple-700 font-semibold text-xs text-center px-2">
+                          {selectedClothing.name}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Success indicator */}
+                  <div className="absolute top-4 left-4">
+                    <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                      <Zap className="w-3 h-3 mr-1" />
+                      Try-On Applied
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
