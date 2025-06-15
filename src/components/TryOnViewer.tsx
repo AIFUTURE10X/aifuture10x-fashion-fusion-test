@@ -78,15 +78,26 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
           description: "Your virtual try-on has been generated successfully."
         });
       } else {
-        setError(response.error || 'Try-on failed');
+        // Enhance error message for fetch failures
+        const isFetchError = response.error?.toLowerCase().includes("fetch");
+        setError(
+          isFetchError
+            ? "Image fetch failed. Please double-check your uploaded photo and clothing image are public URLs (not local or protected links)."
+            : response.error || "Try-on failed"
+        );
         toast({
           title: "Try-On Failed",
-          description: response.error || 'An error occurred during processing',
+          description: isFetchError
+            ? "Image fetch failed. Only public image URLs (jpg/png on the internet) are supported for try-on."
+            : response.error || "An error occurred during processing",
           variant: "destructive"
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Unknown error occurred";
       setError(errorMessage);
       toast({
         title: "Processing Error",
