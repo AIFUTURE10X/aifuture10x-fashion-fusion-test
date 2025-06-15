@@ -25,14 +25,14 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  // Mock clothing data for MVP
+  // Updated clothing data with better placeholder images
   const clothingItems: ClothingItem[] = [
     {
       id: '1',
       name: 'Elegant Silk Blouse',
       brand: 'Fashion Forward',
       price: 89.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop',
       category: 'tops',
       rating: 4.5,
       colors: ['white', 'black', 'navy']
@@ -42,7 +42,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       name: 'Classic Denim Jacket',
       brand: 'Urban Style',
       price: 129.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=400&h=500&fit=crop',
       category: 'outerwear',
       rating: 4.8,
       colors: ['blue', 'black', 'white']
@@ -52,7 +52,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       name: 'Floral Summer Dress',
       brand: 'Bloom & Co',
       price: 159.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&h=500&fit=crop',
       category: 'dresses',
       rating: 4.6,
       colors: ['floral', 'navy', 'pink']
@@ -62,7 +62,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       name: 'Cozy Knit Sweater',
       brand: 'Comfort Wear',
       price: 79.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=500&fit=crop',
       category: 'tops',
       rating: 4.4,
       colors: ['cream', 'gray', 'burgundy']
@@ -72,7 +72,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       name: 'Tailored Blazer',
       brand: 'Professional',
       price: 199.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop',
       category: 'outerwear',
       rating: 4.7,
       colors: ['black', 'navy', 'gray']
@@ -82,7 +82,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       name: 'Casual T-Shirt',
       brand: 'Everyday',
       price: 29.99,
-      image: '/placeholder.svg',
+      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop',
       category: 'tops',
       rating: 4.2,
       colors: ['white', 'black', 'gray', 'navy']
@@ -166,6 +166,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
                 src={item.image}
                 alt={item.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                onError={(e) => {
+                  // Fallback to a solid color background if image fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).parentElement!.style.backgroundColor = '#f3f4f6';
+                }}
               />
               <button
                 onClick={(e) => {
