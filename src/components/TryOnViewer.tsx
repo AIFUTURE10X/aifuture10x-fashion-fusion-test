@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { perfectCorpApi, TryOnResponse } from '@/services/perfectCorpApi';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
 
 interface TryOnViewerProps {
   userPhoto: string;
@@ -33,15 +35,23 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   });
   const { toast } = useToast();
 
+  // --- Supabase configured logic (Lovable-native check) ---
   useEffect(() => {
-    const hasSupabase = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
-    setSupabaseConfigured(hasSupabase);
-    
-    // Auto-trigger try-on if Supabase is configured
-    if (hasSupabase && !tryOnResultImage && !isProcessing) {
+    // In Lovable, Supabase is considered configured if we have a valid client
+    setSupabaseConfigured(!!supabase);
+  }, []);
+
+  // --- Auto-trigger try-on ---
+  useEffect(() => {
+    if (
+      supabaseConfigured &&
+      !tryOnResultImage &&
+      !isProcessing
+    ) {
       handleTryOn();
     }
-  }, [selectedClothing, userPhoto]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClothing, userPhoto, supabaseConfigured]);
 
   const handleTryOn = async () => {
     if (!supabaseConfigured) {
@@ -130,25 +140,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
       </div>
 
       {/* Supabase Configuration Notice */}
-      {!supabaseConfigured && (
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-center text-blue-700 mb-2">
-            <Zap className="w-5 h-5 mr-2" />
-            <span className="font-medium">Supabase Integration Required</span>
-          </div>
-          <p className="text-blue-600 text-sm mb-4">
-            To use the virtual try-on feature, please connect your project to Supabase. This allows us to securely handle the AI processing on the server side.
-          </p>
-          <div className="text-sm text-blue-600">
-            <p className="mb-2">After connecting to Supabase:</p>
-            <ol className="list-decimal list-inside space-y-1 ml-4">
-              <li>Add your Perfect Corp API key to Supabase Edge Function Secrets as "PERFECTCORP_API_KEY"</li>
-              <li>Deploy the perfect-corp-proxy Edge Function</li>
-              <li>The virtual try-on will work automatically</li>
-            </ol>
-          </div>
-        </div>
-      )}
+      {/* REMOVED: The configuration notice, because Supabase is detected as configured via Lovable */}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Original Photo */}
@@ -225,7 +217,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                     <Zap className="w-6 h-6 text-blue-600" />
                   </div>
                   <h4 className="font-semibold text-gray-900 mb-2">Setup Required</h4>
-                  <p className="text-gray-600 text-sm">Connect to Supabase to enable virtual try-on</p>
+                  <p className="text-gray-600 text-sm">Supabase not connected</p>
                 </div>
               ) : (
                 <div className="text-center p-6">
@@ -342,3 +334,5 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
     </div>
   );
 };
+
+// End of TryOnViewer.tsx
