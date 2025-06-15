@@ -4,6 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { Camera, Upload, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 
 interface PhotoUploadProps {
   onPhotoUpload: (photoUrl: string) => void;
@@ -11,19 +12,34 @@ interface PhotoUploadProps {
 
 export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null); // local preview
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    setError(null);
     const file = acceptedFiles[0];
     if (file) {
       setIsProcessing(true);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const photoUrl = e.target?.result as string;
-        setUploadedPhoto(photoUrl);
+      try {
+        // Optional: create a local preview for user feedback before upload
+        const previewUrl = URL.createObjectURL(file);
+        setFilePreview(previewUrl);
+
+        // Upload image to Supabase Storage
+        const publicUrl = await uploadPhotoToSupabase(file);
+        setUploadedPhoto(publicUrl);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Upload failed. Please try again."
+        );
+        setFilePreview(null);
+        setUploadedPhoto(null);
+      } finally {
         setIsProcessing(false);
-      };
-      reader.readAsDataURL(file);
+      }
     }
   }, []);
 
@@ -44,6 +60,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
   const handleRemove = () => {
     setUploadedPhoto(null);
+    setFilePreview(null);
+    setError(null);
   };
 
   if (uploadedPhoto) {
@@ -52,7 +70,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
         <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="aspect-[3/4] relative">
             <img
-              src={uploadedPhoto}
+              src={filePreview || uploadedPhoto} // show fast preview if possible
               alt="Uploaded photo"
               className="w-full h-full object-cover"
             />
@@ -106,7 +124,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
           </div>
           
           {isProcessing ? (
-            <p className="text-gray-600">Processing your photo...</p>
+            <p className="text-gray-600">Uploading your photo...</p>
           ) : isDragActive ? (
             <p className="text-purple-600 font-medium">Drop your photo here</p>
           ) : (
@@ -130,6 +148,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
           <p>• Maximum file size: 10MB</p>
           <p>• For best results, use a clear photo with good lighting</p>
         </div>
+        {error && (
+          <div className="mt-4 text-sm text-red-600">{error}</div>
+        )}
       </div>
 
       {/* Privacy notice */}
@@ -141,3 +162,4 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     </div>
   );
 };
+
