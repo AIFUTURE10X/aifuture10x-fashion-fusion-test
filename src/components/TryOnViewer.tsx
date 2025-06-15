@@ -117,27 +117,60 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
                     alt="User photo base"
                     className="w-full h-full object-cover"
                   />
-                  {/* Clothing overlay - actual clothing image positioned over the user */}
-                  <div 
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      transform: `translateY(${(adjustments.position[0] - 50) * 2}px)`,
-                    }}
-                  >
-                    <div className="relative">
-                      <img
-                        src={selectedClothing.image}
-                        alt={selectedClothing.name}
-                        className="object-contain max-w-none"
+                  
+                  {/* Try-on effect overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-50/20 to-transparent pointer-events-none">
+                    {/* Clothing visualization based on category */}
+                    <div 
+                      className="absolute left-1/2 transform -translate-x-1/2"
+                      style={{
+                        top: selectedClothing.category === 'outerwear' ? '25%' : 
+                             selectedClothing.category === 'tops' ? '30%' : 
+                             selectedClothing.category === 'dresses' ? '25%' : '45%',
+                        transform: `translateX(-50%) scale(${adjustments.size[0] / 100}) translateY(${(adjustments.position[0] - 50) * 1.5}px)`,
+                      }}
+                    >
+                      {/* Simulated clothing overlay with proper styling based on item */}
+                      <div 
+                        className={`
+                          relative rounded-lg border-2 border-white/30 shadow-lg
+                          ${selectedClothing.category === 'outerwear' ? 'w-32 h-40 bg-gradient-to-b from-gray-800/60 to-gray-900/60' : ''}
+                          ${selectedClothing.category === 'tops' ? 'w-28 h-32 bg-gradient-to-b from-white/70 to-gray-100/70' : ''}
+                          ${selectedClothing.category === 'dresses' ? 'w-30 h-48 bg-gradient-to-b from-pink-200/60 to-pink-300/60' : ''}
+                          ${selectedClothing.category === 'bottoms' ? 'w-24 h-36 bg-gradient-to-b from-blue-200/60 to-blue-300/60' : ''}
+                        `}
                         style={{
-                          width: `${120 + (adjustments.size[0] - 100) * 2}px`,
-                          height: `${180 + (adjustments.size[0] - 100) * 3}px`,
-                          filter: `brightness(${adjustments.brightness[0]}%) opacity(0.85)`,
-                          mixBlendMode: 'multiply'
+                          filter: `brightness(${adjustments.brightness[0]}%)`,
+                          backdropFilter: 'blur(0.5px)',
                         }}
-                      />
+                      >
+                        {/* Clothing pattern/texture overlay */}
+                        <div 
+                          className="absolute inset-1 rounded opacity-80"
+                          style={{
+                            backgroundImage: `url(${selectedClothing.image})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat',
+                            mixBlendMode: 'overlay',
+                          }}
+                        />
+                        
+                        {/* Clothing details overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center mx-auto mb-1">
+                              <Zap className="w-3 h-3 text-purple-600" />
+                            </div>
+                            <span className="text-xs font-semibold text-gray-900 bg-white/90 px-2 py-1 rounded">
+                              {selectedClothing.name.split(' ')[0]}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  
                   {/* Success indicator */}
                   <div className="absolute top-4 left-4">
                     <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
