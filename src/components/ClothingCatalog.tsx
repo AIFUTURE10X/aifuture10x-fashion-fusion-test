@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Filter, Star, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,8 +24,18 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
-  // Updated clothing data with better placeholder images
+  // Green Midi Dress added at the top
   const clothingItems: ClothingItem[] = [
+    {
+      id: 'dress-green-midi-1',
+      name: "Solid Color V-Neck Cap Sleeve Side Knot Elegant Midi Dress",
+      brand: "SHEIN Unity",
+      price: 18.95,
+      image: "/lovable-uploads/ba7e7b5d-f949-46ce-9579-303ac63565fb.png",
+      category: "dresses",
+      rating: 4.7,
+      colors: ['#ffdde2', '#6c2728', '#2aa73b', '#191816'], // pink, burgundy, green, black
+    },
     {
       id: '1',
       name: 'Elegant Silk Blouse',
