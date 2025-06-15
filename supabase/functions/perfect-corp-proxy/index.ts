@@ -2,20 +2,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
+// Import supabase-js for edge functions
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
+
 interface TryOnRequest {
-  userPhoto: string;
+  userPhoto?: string; // legacy: public URL
+  userPhotoStoragePath?: string; // new: storage path
   clothingImage: string;
   clothingCategory: string;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { userPhoto, clothingImage, clothingCategory }: TryOnRequest = await req.json()
+    const { userPhoto, userPhotoStoragePath, clothingImage, clothingCategory }: TryOnRequest = await req.json()
     
     // Get API key from environment variables
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
@@ -23,14 +26,47 @@ serve(async (req) => {
       throw new Error('Perfect Corp API key not configured')
     }
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase URL or Service Role Key missing in edge function env')
+    }
+
+    // Just for safety, do not allow empty clothing image
+    if (!clothingImage) throw new Error('clothingImage is required')
+
     console.log('Perfect Corp proxy request:', {
       category: clothingCategory,
-      userPhotoLength: userPhoto.length,
+      userPhotoStoragePath,
+      userPhotoLength: userPhoto?.length,
       clothingImageLength: clothingImage.length
     })
 
-    // Convert image URLs to base64
-    const userPhotoBase64 = await imageUrlToBase64(userPhoto)
+    // --- Fetch the user photo as base64 ---
+    let userPhotoBase64: string | null = null
+
+    if (userPhotoStoragePath) {
+      // Use Supabase client with admin secret to download the file instantly
+      const supabase = createClient(supabaseUrl, supabaseServiceKey)
+      // .from(bucket).download(path)
+      const { data, error } = await supabase.storage.from('fashionfusion').download(userPhotoStoragePath)
+      if (error || !data) {
+        throw new Error(`Failed to fetch image from storage: ${error?.message || 'No data'}`)
+      }
+      // Read blob and convert to base64
+      const arrayBuffer = await data.arrayBuffer()
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      userPhotoBase64 = base64
+      console.log('Fetched user photo from Supabase Storage and converted to base64 (length: ' + base64.length + ')')
+    } else if (userPhoto) {
+      // Fallback/legacy behaviour: fetch from public URL
+      userPhotoBase64 = await imageUrlToBase64(userPhoto)
+      console.log('Fetched user photo from public URL as fallback.')
+    } else {
+      throw new Error('Neither userPhotoStoragePath nor userPhoto public url provided.')
+    }
+
+    // Clothing image: always fetch from public url
     const clothingImageBase64 = await imageUrlToBase64(clothingImage)
 
     const requestBody = {
@@ -40,7 +76,6 @@ serve(async (req) => {
     }
 
     console.log('Making request to Perfect Corp API...')
-    
     const response = await fetch('https://yce.perfectcorp.com/ai-clothes/virtual-tryon', {
       method: 'POST',
       headers: {
@@ -80,15 +115,15 @@ serve(async (req) => {
       }
     )
   }
-})
+});
 
+// Utility to fetch any public URL and convert to base64
 async function imageUrlToBase64(imageUrl: string): Promise<string> {
   try {
     const response = await fetch(imageUrl)
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.status}`)
     }
-    
     const arrayBuffer = await response.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     return base64
@@ -105,6 +140,5 @@ function mapCategoryToClothesType(category: string): string {
     'bottoms': 'lower_body',
     'shoes': 'shoes'
   }
-  
   return categoryMap[category.toLowerCase()] || 'upper_body'
 }
