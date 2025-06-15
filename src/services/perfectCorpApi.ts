@@ -12,17 +12,12 @@ export interface TryOnResponse {
 }
 
 class PerfectCorpApiService {
-  private supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  private supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  // Lovable native: use project-wide constants for Supabase URL and Anon Key
+  private supabaseUrl = "https://bpjlxtjbrunzibehbyrk.supabase.co";
+  private supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwamx4dGpicnVuemliZWhieXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjE1NTcsImV4cCI6MjA2NTUzNzU1N30.w3_oTurN_UesG_DpwNU67f216flzYmOnDo-lrEMLYDw";
 
   async tryOnClothing(request: TryOnRequest): Promise<TryOnResponse> {
-    if (!this.supabaseUrl || !this.supabaseAnonKey) {
-      return {
-        success: false,
-        error: 'Supabase configuration missing. Please connect your project to Supabase to use the virtual try-on feature.'
-      };
-    }
-
+    // Always proceed; the Supabase config is always present in Lovable projects
     try {
       console.log('=== Perfect Corp Proxy Request Start ===');
       console.log('Using Supabase proxy at:', this.supabaseUrl);
