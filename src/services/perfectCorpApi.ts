@@ -14,7 +14,7 @@ export interface TryOnResponse {
 
 class PerfectCorpApiService {
   private apiKey: string | null = null;
-  private baseUrl = 'https://api.perfectcorp.com/v1';
+  private baseUrl = 'https://yce.perfectcorp.com';
 
   setApiKey(key: string) {
     this.apiKey = key;
@@ -45,24 +45,21 @@ class PerfectCorpApiService {
       const userPhotoBase64 = await this.imageUrlToBase64(request.userPhoto);
       const clothingImageBase64 = await this.imageUrlToBase64(request.clothingImage);
 
-      // Try the correct Perfect Corp API endpoint
-      const response = await fetch(`${this.baseUrl}/virtual-fitting`, {
+      // Use the correct Perfect Corp API endpoint from documentation
+      const response = await fetch(`${this.baseUrl}/ai-clothes/virtual-tryon`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'X-API-KEY': apiKey,
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({
-          person_image: userPhotoBase64,
-          garment_image: clothingImageBase64,
-          category: request.clothingCategory,
-          format: 'base64'
+          person_img: userPhotoBase64,
+          clothes_img: clothingImageBase64,
+          clothes_type: this.mapCategoryToClothesType(request.clothingCategory)
         }),
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
 
       if (!response.ok) {
         let errorMessage = `API request failed: ${response.status}`;
@@ -75,7 +72,6 @@ class PerfectCorpApiService {
           console.log('Could not parse error response as JSON');
         }
         
-        // If it's a 404, the endpoint might be wrong
         if (response.status === 404) {
           errorMessage = 'API endpoint not found. Please check if you have the correct Perfect Corp API access.';
         } else if (response.status === 401) {
@@ -90,16 +86,20 @@ class PerfectCorpApiService {
       const data = await response.json();
       console.log('Perfect Corp API response received:', data);
 
-      return {
-        success: true,
-        resultImage: data.result_image || data.output_image,
-        processingTime: data.processing_time || data.time_taken
-      };
+      // Based on the API docs, the response should contain the result image
+      if (data && data.result_img) {
+        return {
+          success: true,
+          resultImage: data.result_img,
+          processingTime: data.processing_time
+        };
+      } else {
+        throw new Error('Invalid response format from API');
+      }
 
     } catch (error) {
       console.error('Perfect Corp API error:', error);
       
-      // Handle network errors specifically
       if (error instanceof TypeError && error.message.includes('fetch')) {
         return {
           success: false,
@@ -112,6 +112,19 @@ class PerfectCorpApiService {
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
+  }
+
+  private mapCategoryToClothesType(category: string): string {
+    // Map our internal categories to Perfect Corp's clothes_type values
+    const categoryMap: { [key: string]: string } = {
+      'tops': 'upper_body',
+      'dresses': 'dresses',
+      'outerwear': 'upper_body',
+      'bottoms': 'lower_body',
+      'shoes': 'shoes'
+    };
+    
+    return categoryMap[category.toLowerCase()] || 'upper_body';
   }
 
   private async imageUrlToBase64(imageUrl: string): Promise<string> {
@@ -129,9 +142,8 @@ class PerfectCorpApiService {
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
-          // Remove data URL prefix to get just the base64 data
-          const base64 = result.split(',')[1];
-          resolve(base64);
+          // Return the full data URL as Perfect Corp expects it
+          resolve(result);
         };
         reader.onerror = () => reject(new Error('Failed to convert image to base64'));
         reader.readAsDataURL(blob);
