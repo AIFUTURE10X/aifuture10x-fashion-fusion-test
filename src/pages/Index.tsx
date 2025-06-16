@@ -37,7 +37,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900">
       {/* Hero Section */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
