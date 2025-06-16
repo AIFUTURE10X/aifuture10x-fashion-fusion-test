@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -88,13 +87,10 @@ export default {
 				},
 				'border-spin': {
 					'0%': {
-						'background-position': '0% 50%'
-					},
-					'50%': {
-						'background-position': '100% 50%'
+						transform: 'rotate(0deg)'
 					},
 					'100%': {
-						'background-position': '0% 50%'
+						transform: 'rotate(360deg)'
 					}
 				},
 				'gradient-shift': {
