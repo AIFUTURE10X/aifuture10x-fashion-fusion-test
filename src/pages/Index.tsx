@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -72,7 +70,7 @@ const Index = () => {
           {/* Feature highlights - moved down 2 inches */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)', backgroundSize: '400% 400%' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-1" style={{ backgroundSize: '400% 400%' }}></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
@@ -80,7 +78,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)', backgroundSize: '400% 400%', animationDelay: '1s' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-2" style={{ backgroundSize: '400% 400%' }}></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
@@ -88,7 +86,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 240deg at 50% 50%, #3b82f6, #1d4ed8, #1e40af, #1e3a8a, #3b82f6, #1d4ed8)', backgroundSize: '400% 400%', animationDelay: '2s' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-3" style={{ backgroundSize: '400% 400%' }}></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
@@ -187,4 +185,3 @@ const Index = () => {
 };
 
 export default Index;
-
