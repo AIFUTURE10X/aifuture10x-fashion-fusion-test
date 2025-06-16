@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -36,40 +37,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
-                alt="UnowUafter Logo" 
-                className="h-16 w-auto"
-              />
-            </div>
-            <div className="flex items-center space-x-4">
-              {userPhoto && (
-                <Button variant="outline" onClick={resetApp} className="hidden sm:flex">
-                  Start Over
-                </Button>
-              )}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Community
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-12">
+            {/* Logo positioned where indicated */}
+            <div className="mb-8">
+              <img 
+                src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
+                alt="UnowUafter Logo" 
+                className="h-32 w-auto mx-auto"
+              />
+            </div>
+            
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
               Try On Clothes
               <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -102,6 +82,36 @@ const Index = () => {
           </div>
 
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+        </div>
+      )}
+
+      {/* Navigation for other steps */}
+      {currentStep !== 'upload' && (
+        <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
+                  alt="UnowUafter Logo" 
+                  className="h-12 w-auto"
+                />
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" onClick={resetApp} className="hidden sm:flex">
+                  Start Over
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Community
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
