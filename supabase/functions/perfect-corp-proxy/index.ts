@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
@@ -75,7 +76,8 @@ serve(async (req) => {
     }
 
     console.log('Making request to Perfect Corp API...')
-    const response = await fetch('https://yce.perfectcorp.com/ai-clothes/virtual-tryon', {
+    // Updated API endpoint - using the correct Perfect Corp API URL
+    const response = await fetch('https://api.perfectcorp.com/v1/virtual-tryon', {
       method: 'POST',
       headers: {
         'X-API-KEY': apiKey,
