@@ -68,40 +68,24 @@ serve(async (req) => {
     // Clothing image: always fetch from public url
     const clothingImageBase64 = await imageUrlToBase64(clothingImage)
 
-    const requestBody = {
-      person_img: userPhotoBase64,
-      clothes_img: clothingImageBase64,
-      clothes_type: mapCategoryToClothesType(clothingCategory)
+    console.log('API Key configured, length:', apiKey.length)
+    console.log('Simulating try-on process...')
+
+    // TEMPORARY: Mock response while we figure out the correct API
+    // This allows us to test the UI functionality
+    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing time
+
+    // Generate a simple mock result - in a real scenario, this would be the API response
+    const mockResult = {
+      success: true,
+      result_img: userPhotoBase64, // For now, just return the original photo
+      processing_time: 2.1,
+      message: "Mock try-on result - API endpoint needs to be configured with correct Perfect Corp service"
     }
 
-    console.log('Making request to Perfect Corp API...')
-    console.log('API Key length:', apiKey.length)
-    console.log('Request body keys:', Object.keys(requestBody))
-    
-    // Try the ModiFace API endpoint instead (Perfect Corp's actual service)
-    const response = await fetch('https://api.modiface.com/virtual-try-on', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    })
+    console.log('Mock try-on complete')
 
-    console.log('Perfect Corp API response status:', response.status)
-    console.log('Perfect Corp API response headers:', Object.fromEntries(response.headers.entries()))
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Perfect Corp API error response:', errorText)
-      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`)
-    }
-
-    const data = await response.json()
-    console.log('Perfect Corp API success, result keys:', Object.keys(data))
-
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(mockResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
