@@ -69,20 +69,29 @@ const Index = () => {
             
             {/* Feature highlights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
-                <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-gradient-shift blur-sm transition duration-1000"></div>
+                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                  <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
+                </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
-                <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 via-cyan-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-gradient-shift blur-sm transition duration-1000" style={{ animationDelay: '1s' }}></div>
+                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                  <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
+                </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
-                <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm">Share your looks and shop with confidence</p>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-600 via-green-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-gradient-shift blur-sm transition duration-1000" style={{ animationDelay: '2s' }}></div>
+                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                  <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">Share your looks and shop with confidence</p>
+                </div>
               </div>
             </div>
           </div>
