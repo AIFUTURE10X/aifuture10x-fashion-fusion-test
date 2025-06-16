@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -46,7 +47,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
                 alt="UnowUafter Logo" 
-                className="h-32 w-auto mx-auto"
+                className="h-48 w-auto mx-auto"
               />
             </div>
             
@@ -170,3 +171,4 @@ const Index = () => {
 };
 
 export default Index;
+
