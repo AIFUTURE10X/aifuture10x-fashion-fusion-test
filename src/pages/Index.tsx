@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -71,7 +70,7 @@ const Index = () => {
           {/* Feature highlights - moved down 2 inches */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-1 animate-border-spin blur-sm" style={{ backgroundSize: '400% 400%' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-60 group-hover:opacity-90 animate-color-cycle-1 animate-border-spin"></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
@@ -79,7 +78,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-2 animate-border-spin blur-sm" style={{ backgroundSize: '400% 400%' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-60 group-hover:opacity-90 animate-color-cycle-2 animate-border-spin"></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
@@ -87,7 +86,7 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl opacity-75 group-hover:opacity-100 animate-color-cycle-3 animate-border-spin blur-sm" style={{ backgroundSize: '400% 400%' }}></div>
+              <div className="absolute -inset-1 rounded-2xl opacity-60 group-hover:opacity-90 animate-color-cycle-3 animate-border-spin"></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
                 <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
