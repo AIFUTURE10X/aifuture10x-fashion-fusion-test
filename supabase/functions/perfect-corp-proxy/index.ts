@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
@@ -63,7 +62,7 @@ serve(async (req) => {
 
     console.log('API Key configured, starting virtual try-on...')
 
-    // Use Replicate's OOTDiffusion model (a working virtual try-on model)
+    // Use Replicate's IDM-VTON model (verified working model)
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -71,16 +70,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "951545c864e4b67bd4439d1fe85ed523c2d9521c1ad5581c92b1de9b5c21a8bb", // OOTDiffusion model
+        version: "c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2a15372785c2c03", // IDM-VTON verified model
         input: {
-          model_type: "hd",
-          garm_img: clothingImage,
           human_img: userPhotoUrl,
-          garment_des: `A ${clothingCategory} for virtual try-on`,
-          is_checked: true,
-          is_checked_crop: false,
-          denoise_steps: 20,
-          seed: 42
+          garm_img: clothingImage,
+          garment_des: `A ${clothingCategory} item for virtual try-on`
         }
       }),
     })
