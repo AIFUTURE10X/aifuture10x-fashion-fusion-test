@@ -36,10 +36,24 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #1c1c1c, #232323)' }}>
+    <div 
+      className="min-h-screen relative" 
+      style={{ 
+        background: 'linear-gradient(to bottom right, #1c1c1c, #232323)',
+      }}
+    >
+      {/* Noise texture overlay */}
+      <div 
+        className="absolute inset-0 opacity-30 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
+          backgroundSize: '100px 100px',
+        }}
+      />
+
       {/* Hero Section */}
       {currentStep === 'upload' && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4">
             <ThemeToggle />
@@ -132,7 +146,7 @@ const Index = () => {
 
       {/* Clothing Catalog */}
       {currentStep === 'browse' && userPhoto && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white dark:text-white light:text-gray-900 mb-4">Choose Your Style</h2>
             <p className="text-gray-300 dark:text-gray-300 light:text-gray-600">Select clothing items to try on virtually</p>
@@ -143,7 +157,7 @@ const Index = () => {
 
       {/* Try-On Viewer */}
       {currentStep === 'tryon' && userPhoto && selectedClothing && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
           <TryOnViewer
             userPhoto={userPhoto}
             selectedClothing={selectedClothing}
@@ -163,8 +177,21 @@ const Index = () => {
       />
 
       {/* Footer */}
-      <footer style={{ background: 'linear-gradient(to bottom right, #1c1c1c, #232323)' }} className="border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <footer 
+        style={{ 
+          background: 'linear-gradient(to bottom right, #1c1c1c, #232323)',
+        }} 
+        className="border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20 relative"
+      >
+        {/* Noise texture overlay for footer */}
+        <div 
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`,
+            backgroundSize: '100px 100px',
+          }}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <img 
