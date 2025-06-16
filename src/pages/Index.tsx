@@ -45,9 +45,9 @@ const Index = () => {
             <ThemeToggle />
           </div>
           
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             {/* Logo positioned where indicated */}
-            <div className="mb-8">
+            <div className="mb-6">
               <img 
                 src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
                 alt="UnowUafter Logo" 
@@ -65,32 +65,32 @@ const Index = () => {
               Upload your photo and see how clothes look on you before buying. 
               Powered by AI for the most accurate virtual try-on experience.
             </p>
-            
-            {/* Feature highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)', backgroundSize: '400% 400%' }}></div>
-                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
-                  <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
-                </div>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)', backgroundSize: '400% 400%' }}></div>
+              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                <Camera className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Upload Photo</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
               </div>
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)', backgroundSize: '400% 400%', animationDelay: '1s' }}></div>
-                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
-                  <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
-                </div>
+            </div>
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)', backgroundSize: '400% 400%', animationDelay: '1s' }}></div>
+              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                <Zap className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI Try-On</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
               </div>
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-600 via-green-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 240deg at 50% 50%, #06b6d4, #10b981, #9333ea, #ec4899, #3b82f6, #06b6d4)', backgroundSize: '400% 400%', animationDelay: '2s' }}></div>
-                <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
-                  <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">Share your looks and shop with confidence</p>
-                </div>
+            </div>
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-600 via-green-600 to-purple-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 240deg at 50% 50%, #06b6d4, #10b981, #9333ea, #ec4899, #3b82f6, #06b6d4)', backgroundSize: '400% 400%', animationDelay: '2s' }}></div>
+              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
+                <Users className="w-8 h-8 text-purple-600 mx-auto mb-4" />
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share & Shop</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">Share your looks and shop with confidence</p>
               </div>
             </div>
           </div>
