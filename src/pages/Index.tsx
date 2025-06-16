@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -63,7 +64,7 @@ const Index = () => {
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
-              <img src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto" />
+              <img src="/lovable-uploads/aa0177fd-7fc4-40d9-b1b6-20e0d8f82594.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto" />
             </div>
             
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
@@ -112,7 +113,7 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
-                <img src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" alt="UnowUafter Logo" className="h-12 w-auto" />
+                <img src="/lovable-uploads/aa0177fd-7fc4-40d9-b1b6-20e0d8f82594.png" alt="UnowUafter Logo" className="h-12 w-auto" />
               </div>
               <div className="flex items-center space-x-4">
                 <ThemeToggle />
@@ -155,7 +156,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <img src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" alt="UnowUafter Logo" className="h-12 w-auto" />
+              <img src="/lovable-uploads/aa0177fd-7fc4-40d9-b1b6-20e0d8f82594.png" alt="UnowUafter Logo" className="h-12 w-auto" />
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-4">Virtual clothing try-on powered by AI</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
