@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -39,13 +40,13 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-purple-900">
       {/* Hero Section */}
       {currentStep === 'upload' && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4">
             <ThemeToggle />
           </div>
           
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
               <img 
@@ -61,14 +62,14 @@ const Index = () => {
                 Virtually, Instantly
               </span>
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6">
               Upload your photo and see how clothes look on you before buying. 
               Powered by AI for the most accurate virtual try-on experience.
             </p>
           </div>
 
           {/* Feature highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)', backgroundSize: '400% 400%' }}></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
