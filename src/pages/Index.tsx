@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -68,8 +69,8 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Feature highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Feature highlights - moved down 2 inches */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl opacity-75 group-hover:opacity-100 animate-border-spin" style={{ background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)', backgroundSize: '400% 400%' }}></div>
               <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm">
@@ -186,3 +187,4 @@ const Index = () => {
 };
 
 export default Index;
+
