@@ -1,7 +1,6 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
-
-// Import supabase-js for edge functions
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
 
 interface TryOnRequest {
@@ -19,10 +18,10 @@ serve(async (req) => {
   try {
     const { userPhoto, userPhotoStoragePath, clothingImage, clothingCategory }: TryOnRequest = await req.json()
     
-    // Get API key from environment variables - using the new key
-    const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW')
+    // Get Replicate API key from environment variables
+    const apiKey = Deno.env.get('REPLICATE_API_KEY')
     if (!apiKey) {
-      throw new Error('Perfect Corp API key not configured')
+      throw new Error('Replicate API key not configured')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -34,7 +33,7 @@ serve(async (req) => {
     // Just for safety, do not allow empty clothing image
     if (!clothingImage) throw new Error('clothingImage is required')
 
-    console.log('Perfect Corp proxy request:', {
+    console.log('Replicate virtual try-on request:', {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
@@ -42,55 +41,109 @@ serve(async (req) => {
     })
 
     // --- Fetch the user photo as base64 ---
-    let userPhotoBase64: string | null = null
+    let userPhotoUrl: string | null = null
 
     if (userPhotoStoragePath) {
-      // Use Supabase client with admin secret to download the file instantly
+      // Use Supabase client with admin secret to get a signed URL
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      // .from(bucket).download(path)
-      const { data, error } = await supabase.storage.from('fashionfusion').download(userPhotoStoragePath)
-      if (error || !data) {
-        throw new Error(`Failed to fetch image from storage: ${error?.message || 'No data'}`)
+      const { data } = await supabase.storage.from('fashionfusion').createSignedUrl(userPhotoStoragePath, 3600)
+      if (data?.signedUrl) {
+        userPhotoUrl = data.signedUrl
+        console.log('Generated signed URL for user photo from Supabase Storage')
+      } else {
+        throw new Error('Failed to generate signed URL for user photo')
       }
-      // Read blob and convert to base64
-      const arrayBuffer = await data.arrayBuffer()
-      const base64 = arrayBufferToBase64(arrayBuffer)
-      userPhotoBase64 = base64
-      console.log('Fetched user photo from Supabase Storage and converted to base64 (length: ' + base64.length + ')')
     } else if (userPhoto) {
-      // Fallback/legacy behaviour: fetch from public URL
-      userPhotoBase64 = await imageUrlToBase64(userPhoto)
-      console.log('Fetched user photo from public URL as fallback.')
+      // Fallback/legacy behaviour: use public URL directly
+      userPhotoUrl = userPhoto
+      console.log('Using user photo public URL as fallback.')
     } else {
       throw new Error('Neither userPhotoStoragePath nor userPhoto public url provided.')
     }
 
-    // Clothing image: always fetch from public url
-    const clothingImageBase64 = await imageUrlToBase64(clothingImage)
+    console.log('API Key configured, starting virtual try-on...')
 
-    console.log('API Key configured, length:', apiKey.length)
-    console.log('Simulating try-on process...')
+    // Use Replicate's virtual try-on model
+    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: "c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2a15372785c2c03", // IDM-VTON model
+        input: {
+          human_img: userPhotoUrl,
+          garm_img: clothingImage,
+          garment_des: `A ${clothingCategory} item for virtual try-on`
+        }
+      }),
+    })
 
-    // TEMPORARY: Mock response while we figure out the correct API
-    // This allows us to test the UI functionality
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing time
-
-    // Generate a simple mock result - in a real scenario, this would be the API response
-    const mockResult = {
-      success: true,
-      result_img: userPhotoBase64, // For now, just return the original photo
-      processing_time: 2.1,
-      message: "Mock try-on result - API endpoint needs to be configured with correct Perfect Corp service"
+    if (!replicateResponse.ok) {
+      const errorData = await replicateResponse.text()
+      console.error('Replicate API error:', errorData)
+      throw new Error(`Replicate API request failed: ${replicateResponse.status} - ${errorData}`)
     }
 
-    console.log('Mock try-on complete')
+    const prediction = await replicateResponse.json()
+    console.log('Replicate prediction created:', prediction.id)
 
-    return new Response(JSON.stringify(mockResult), {
+    // Poll for completion
+    let result = prediction
+    let attempts = 0
+    const maxAttempts = 60 // Wait up to 60 seconds
+
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+      
+      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+        headers: {
+          'Authorization': `Token ${apiKey}`,
+        },
+      })
+
+      if (!statusResponse.ok) {
+        throw new Error(`Failed to check prediction status: ${statusResponse.status}`)
+      }
+
+      result = await statusResponse.json()
+      attempts++
+      console.log(`Prediction status: ${result.status} (attempt ${attempts})`)
+    }
+
+    if (result.status === 'failed') {
+      throw new Error(`Virtual try-on failed: ${result.error || 'Unknown error'}`)
+    }
+
+    if (result.status !== 'succeeded') {
+      throw new Error('Virtual try-on timed out')
+    }
+
+    // Convert result image to base64
+    let resultImageBase64: string
+    if (result.output && result.output.length > 0) {
+      const imageUrl = result.output[0] // Replicate returns array of URLs
+      resultImageBase64 = await imageUrlToBase64(imageUrl)
+    } else {
+      throw new Error('No output image received from virtual try-on')
+    }
+
+    const response = {
+      success: true,
+      result_img: resultImageBase64,
+      processing_time: (Date.now() - new Date(result.created_at).getTime()) / 1000,
+      message: "Virtual try-on completed successfully using Replicate AI"
+    }
+
+    console.log('Virtual try-on completed successfully')
+
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
-    console.error('Perfect Corp proxy error:', error)
+    console.error('Virtual try-on error:', error)
     
     return new Response(
       JSON.stringify({ 
