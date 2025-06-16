@@ -1,4 +1,3 @@
-
 export interface TryOnRequest {
   userPhoto: string;
   clothingImage: string;

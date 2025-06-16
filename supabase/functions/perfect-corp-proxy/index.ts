@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
@@ -17,10 +18,10 @@ serve(async (req) => {
   try {
     const { userPhoto, userPhotoStoragePath, clothingImage, clothingCategory }: TryOnRequest = await req.json()
     
-    // Get Replicate API key from environment variables
-    const apiKey = Deno.env.get('REPLICATE_API_KEY')
+    // Get Perfect Corp API key from environment variables
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW')
     if (!apiKey) {
-      throw new Error('Replicate API key not configured')
+      throw new Error('Perfect Corp API key not configured')
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -32,7 +33,7 @@ serve(async (req) => {
     // Just for safety, do not allow empty clothing image
     if (!clothingImage) throw new Error('clothingImage is required')
 
-    console.log('Replicate virtual try-on request:', {
+    console.log('Perfect Corp virtual try-on request:', {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
@@ -62,84 +63,61 @@ serve(async (req) => {
 
     console.log('API Key configured, starting virtual try-on...')
 
-    // Use Replicate's IDM-VTON model (verified working model)
-    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
+    // Use Perfect Corp's Virtual Try-On API
+    const perfectCorpResponse = await fetch('https://api.perfectcorp.com/v1/tryon', {
       method: 'POST',
       headers: {
-        'Authorization': `Token ${apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        'X-API-Key': apiKey
       },
       body: JSON.stringify({
-        version: "c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2a15372785c2c03", // IDM-VTON verified model
-        input: {
-          human_img: userPhotoUrl,
-          garm_img: clothingImage,
-          garment_des: `A ${clothingCategory} item for virtual try-on`
+        user_image: userPhotoUrl,
+        garment_image: clothingImage,
+        category: mapCategoryToClothesType(clothingCategory),
+        options: {
+          quality: 'high',
+          fit_adjustment: true,
+          lighting_adjustment: true
         }
       }),
     })
 
-    if (!replicateResponse.ok) {
-      const errorData = await replicateResponse.text()
-      console.error('Replicate API error:', errorData)
-      throw new Error(`Replicate API request failed: ${replicateResponse.status} - ${errorData}`)
+    if (!perfectCorpResponse.ok) {
+      const errorData = await perfectCorpResponse.text()
+      console.error('Perfect Corp API error:', errorData)
+      throw new Error(`Perfect Corp API request failed: ${perfectCorpResponse.status} - ${errorData}`)
     }
 
-    const prediction = await replicateResponse.json()
-    console.log('Replicate prediction created:', prediction.id)
+    const result = await perfectCorpResponse.json()
+    console.log('Perfect Corp response received:', result.status || 'unknown status')
 
-    // Poll for completion
-    let result = prediction
-    let attempts = 0
-    const maxAttempts = 60 // Wait up to 60 seconds
-
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
-      
-      const statusResponse = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
-        headers: {
-          'Authorization': `Token ${apiKey}`,
-        },
-      })
-
-      if (!statusResponse.ok) {
-        throw new Error(`Failed to check prediction status: ${statusResponse.status}`)
+    // Handle Perfect Corp's response format
+    if (result.status === 'success' && result.result_image) {
+      // Convert result image to base64 if it's a URL
+      let resultImageBase64: string
+      if (result.result_image.startsWith('http')) {
+        resultImageBase64 = await imageUrlToBase64(result.result_image)
+      } else {
+        // Assume it's already base64
+        resultImageBase64 = result.result_image
       }
 
-      result = await statusResponse.json()
-      attempts++
-      console.log(`Prediction status: ${result.status} (attempt ${attempts})`)
-    }
+      const response = {
+        success: true,
+        result_img: resultImageBase64,
+        processing_time: result.processing_time || null,
+        message: "Virtual try-on completed successfully using Perfect Corp AI"
+      }
 
-    if (result.status === 'failed') {
-      throw new Error(`Virtual try-on failed: ${result.error || 'Unknown error'}`)
-    }
+      console.log('Virtual try-on completed successfully')
 
-    if (result.status !== 'succeeded') {
-      throw new Error('Virtual try-on timed out')
-    }
-
-    // Convert result image to base64
-    let resultImageBase64: string
-    if (result.output && result.output.length > 0) {
-      const imageUrl = result.output[0] // Replicate returns array of URLs
-      resultImageBase64 = await imageUrlToBase64(imageUrl)
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     } else {
-      throw new Error('No output image received from virtual try-on')
+      throw new Error(`Virtual try-on failed: ${result.error || result.message || 'Unknown error'}`)
     }
-
-    const response = {
-      success: true,
-      result_img: resultImageBase64,
-      processing_time: (Date.now() - new Date(result.created_at).getTime()) / 1000,
-      message: "Virtual try-on completed successfully using Replicate AI"
-    }
-
-    console.log('Virtual try-on completed successfully')
-
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
 
   } catch (error) {
     console.error('Virtual try-on error:', error)
