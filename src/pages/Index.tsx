@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -37,7 +36,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #3a3a3a, #1c1c1c)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom right, #3a3a3a, #232323)' }}>
       {/* Hero Section */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -164,7 +163,7 @@ const Index = () => {
       />
 
       {/* Footer */}
-      <footer style={{ background: 'linear-gradient(to bottom right, #3a3a3a, #1c1c1c)' }} className="border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20">
+      <footer style={{ background: 'linear-gradient(to bottom right, #3a3a3a, #232323)' }} className="border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
