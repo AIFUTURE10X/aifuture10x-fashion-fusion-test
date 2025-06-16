@@ -63,7 +63,7 @@ serve(async (req) => {
 
     console.log('API Key configured, starting virtual try-on...')
 
-    // Use Replicate's virtual try-on model
+    // Use Replicate's OOTDiffusion model (a working virtual try-on model)
     const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -71,11 +71,16 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: "c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2a15372785c2c03", // IDM-VTON model
+        version: "951545c864e4b67bd4439d1fe85ed523c2d9521c1ad5581c92b1de9b5c21a8bb", // OOTDiffusion model
         input: {
-          human_img: userPhotoUrl,
+          model_type: "hd",
           garm_img: clothingImage,
-          garment_des: `A ${clothingCategory} item for virtual try-on`
+          human_img: userPhotoUrl,
+          garment_des: `A ${clothingCategory} for virtual try-on`,
+          is_checked: true,
+          is_checked_crop: false,
+          denoise_steps: 20,
+          seed: 42
         }
       }),
     })
