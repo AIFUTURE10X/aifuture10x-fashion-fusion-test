@@ -6,7 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
 interface TryOnRequest {
   userPhoto?: string; // legacy: public URL
   userPhotoStoragePath?: string; // new: storage path
-  clothingImage: string;
+  clothingImage: string; // This will be treated as style_id for Perfect Corp
   clothingCategory: string;
 }
 
@@ -36,11 +36,18 @@ serve(async (req) => {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
-      clothingImageLength: clothingImage.length
+      styleId: clothingImage
     })
 
-    // Step 1: Authenticate with Perfect Corp API
-    console.log('Step 1: Authenticating with Perfect Corp API...')
+    // Step 1: Generate id_token and authenticate with Perfect Corp API
+    console.log('Step 1: Generating id_token and authenticating...')
+    const timestamp = Date.now()
+    const idTokenData = `client_id=${apiKey}&timestamp=${timestamp}`
+    
+    // For now, use base64 encoding as a placeholder for RSA encryption
+    // In production, you should implement proper RSA X.509 encryption
+    const idToken = btoa(idTokenData)
+    
     const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
       method: 'POST',
       headers: {
@@ -48,7 +55,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         client_id: apiKey,
-        id_token: generateIdToken(apiKey, apiSecret)
+        id_token: idToken
       }),
     })
 
@@ -59,9 +66,10 @@ serve(async (req) => {
     }
 
     const authData = await authResponse.json()
-    const accessToken = authData.access_token
+    const accessToken = authData.result?.access_token || authData.access_token
 
     if (!accessToken) {
+      console.error('Auth response:', authData)
       throw new Error('No access token received from authentication')
     }
 
@@ -115,8 +123,9 @@ serve(async (req) => {
     }
 
     const uploadData = await uploadResponse.json()
-    const uploadUrl = uploadData.files[0].upload_url
-    const fileId = uploadData.files[0].file_id
+    const uploadResult = uploadData.result || uploadData
+    const uploadUrl = uploadResult.files[0].url
+    const fileId = uploadResult.files[0].file_id
 
     // Upload the actual image data
     const imageUploadResponse = await fetch(uploadUrl, {
@@ -135,6 +144,11 @@ serve(async (req) => {
 
     // Step 4: Run clothes try-on task
     console.log('Step 3: Running clothes try-on task...')
+    
+    // Use clothingImage as style_id (assuming it's a Perfect Corp style ID)
+    // In a real implementation, you'd map your clothing items to Perfect Corp style IDs
+    const styleId = clothingImage
+    
     const tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
       method: 'POST',
       headers: {
@@ -143,8 +157,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         file_id: fileId,
-        style_id: clothingImage, // Assuming clothingImage is the style/outfit ID
-        // You might need additional parameters based on the actual API requirements
+        style_id: styleId
       }),
     })
 
@@ -155,7 +168,8 @@ serve(async (req) => {
     }
 
     const tryOnData = await tryOnResponse.json()
-    const taskId = tryOnData.task_id
+    const tryOnResult = tryOnData.result || tryOnData
+    const taskId = tryOnResult.task_id
 
     console.log('Try-on task started, task_id:', taskId)
 
@@ -180,16 +194,17 @@ serve(async (req) => {
       }
 
       const statusData = await statusResponse.json()
+      const statusResult = statusData.result || statusData
       
-      if (statusData.status === 'success') {
-        result = statusData
+      if (statusResult.status === 'success') {
+        result = statusResult
         break
-      } else if (statusData.status === 'failed') {
-        throw new Error(`Try-on task failed: ${statusData.error || 'Unknown error'}`)
+      } else if (statusResult.status === 'failed') {
+        throw new Error(`Try-on task failed: ${statusResult.error || 'Unknown error'}`)
       }
       
       attempts++
-      console.log(`Polling attempt ${attempts}, status: ${statusData.status}`)
+      console.log(`Polling attempt ${attempts}, status: ${statusResult.status}`)
     }
 
     if (!result) {
@@ -198,7 +213,7 @@ serve(async (req) => {
 
     // Step 6: Download and convert result image
     console.log('Step 5: Downloading result image...')
-    const resultImageUrl = result.download_url
+    const resultImageUrl = result.output_url
     const resultImageResponse = await fetch(resultImageUrl)
     
     if (!resultImageResponse.ok) {
@@ -222,10 +237,27 @@ serve(async (req) => {
   } catch (error) {
     console.error('Virtual try-on error:', error)
     
+    // Handle specific Perfect Corp error codes
+    let errorMessage = error.message || 'Unknown error occurred'
+    
+    if (errorMessage.includes('exceed_max_filesize')) {
+      errorMessage = 'Image file size exceeds the maximum limit (10MB)'
+    } else if (errorMessage.includes('error_no_face')) {
+      errorMessage = 'No face detected in the uploaded image'
+    } else if (errorMessage.includes('error_multiple_people')) {
+      errorMessage = 'Multiple people detected in the image. Please use a photo with only one person'
+    } else if (errorMessage.includes('error_no_shoulder')) {
+      errorMessage = 'Shoulders are not visible in the image. Please use a full-body photo'
+    } else if (errorMessage.includes('error_large_face_angle')) {
+      errorMessage = 'The face angle in the image is too large. Please use a front-facing photo'
+    } else if (errorMessage.includes('invalid_parameter')) {
+      errorMessage = 'Invalid parameter provided to the API'
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error occurred' 
+        error: errorMessage
       }),
       {
         status: 500,
@@ -234,13 +266,6 @@ serve(async (req) => {
     )
   }
 });
-
-// Generate ID token for authentication (this is a simplified version)
-function generateIdToken(apiKey: string, apiSecret: string): string {
-  // In a real implementation, you would generate a proper JWT token
-  // For now, we'll use a simple base64 encoding of the secret
-  return btoa(`${apiKey}:${apiSecret}`)
-}
 
 // Safe function for large ArrayBuffers
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
