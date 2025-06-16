@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ClothingCard } from './ClothingCard';
 import { CategoryFilter } from './CategoryFilter';
 import { CatalogSearchBar } from './CatalogSearchBar';
+import { ClothingUpload } from './ClothingUpload';
 
 interface ClothingItem {
   id: string;
@@ -25,9 +26,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showUpload, setShowUpload] = useState(false);
+  const [customClothingItems, setCustomClothingItems] = useState<ClothingItem[]>([]);
 
-  // Green Midi Dress added at the top
-  const clothingItems: ClothingItem[] = [
+  // Default clothing items
+  const defaultClothingItems: ClothingItem[] = [
     {
       id: 'dress-green-midi-1',
       name: "Solid Color V-Neck Cap Sleeve Side Knot Elegant Midi Dress",
@@ -100,6 +103,9 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     }
   ];
 
+  // Combine default and custom items
+  const allClothingItems = [...defaultClothingItems, ...customClothingItems];
+
   const categories = [
     { id: 'all', label: 'All Items' },
     { id: 'tops', label: 'Tops' },
@@ -108,7 +114,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     { id: 'bottoms', label: 'Bottoms' }
   ];
 
-  const filteredItems = clothingItems.filter(item => {
+  const filteredItems = allClothingItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.brand.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -125,14 +131,29 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     setFavorites(newFavorites);
   };
 
+  const handleAddClothing = (newClothing: ClothingItem) => {
+    setCustomClothingItems(prev => [...prev, newClothing]);
+  };
+
   return (
     <div className="space-y-6">
       {/* Search and Filter Bar */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <CatalogSearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1">
+            <CatalogSearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          </div>
+          <Button
+            onClick={() => setShowUpload(true)}
+            className="ml-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
         <CategoryFilter
           categories={categories}
           selected={selectedCategory}
@@ -161,6 +182,14 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No items found</h3>
           <p className="text-gray-600">Try adjusting your search or filters</p>
         </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUpload && (
+        <ClothingUpload
+          onClothingAdd={handleAddClothing}
+          onClose={() => setShowUpload(false)}
+        />
       )}
     </div>
   );
