@@ -63,22 +63,24 @@ serve(async (req) => {
 
     console.log('API Key configured, starting virtual try-on...')
 
-    // Use Perfect Corp's Virtual Try-On API
-    const perfectCorpResponse = await fetch('https://api.perfectcorp.com/v1/tryon', {
+    // Use Perfect Corp's correct API endpoint and format
+    // Note: Perfect Corp's actual API endpoint might be different
+    // Let's try their documented endpoint format
+    const perfectCorpResponse = await fetch('https://api.perfectcorp.com/api/v2/virtual-try-on', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'X-API-Key': apiKey
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        user_image: userPhotoUrl,
-        garment_image: clothingImage,
-        category: mapCategoryToClothesType(clothingCategory),
+        person_image_url: userPhotoUrl,
+        garment_image_url: clothingImage,
+        category: mapCategoryToApiFormat(clothingCategory),
         options: {
           quality: 'high',
-          fit_adjustment: true,
-          lighting_adjustment: true
+          background_removal: true,
+          pose_preservation: true
         }
       }),
     })
@@ -86,14 +88,57 @@ serve(async (req) => {
     if (!perfectCorpResponse.ok) {
       const errorData = await perfectCorpResponse.text()
       console.error('Perfect Corp API error:', errorData)
-      throw new Error(`Perfect Corp API request failed: ${perfectCorpResponse.status} - ${errorData}`)
+      
+      // If the v2 endpoint fails, try the v1 endpoint with different format
+      console.log('Trying v1 endpoint as fallback...')
+      const fallbackResponse = await fetch('https://api.perfectcorp.com/v1/virtual-tryon', {
+        method: 'POST',
+        headers: {
+          'X-API-Key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_image: userPhotoUrl,
+          garment_image: clothingImage,
+          garment_type: mapCategoryToApiFormat(clothingCategory)
+        }),
+      })
+
+      if (!fallbackResponse.ok) {
+        const fallbackError = await fallbackResponse.text()
+        console.error('Perfect Corp fallback API error:', fallbackError)
+        throw new Error(`Perfect Corp API request failed: ${perfectCorpResponse.status} - ${errorData}`)
+      }
+
+      const fallbackResult = await fallbackResponse.json()
+      console.log('Perfect Corp fallback response received:', fallbackResult.status || 'unknown status')
+
+      if (fallbackResult.success && fallbackResult.result_image) {
+        let resultImageBase64: string
+        if (fallbackResult.result_image.startsWith('http')) {
+          resultImageBase64 = await imageUrlToBase64(fallbackResult.result_image)
+        } else {
+          resultImageBase64 = fallbackResult.result_image
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          result_img: resultImageBase64,
+          processing_time: fallbackResult.processing_time || null,
+          message: "Virtual try-on completed successfully using Perfect Corp AI"
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      } else {
+        throw new Error(`Virtual try-on failed: ${fallbackResult.error || fallbackResult.message || 'Unknown error'}`)
+      }
     }
 
     const result = await perfectCorpResponse.json()
     console.log('Perfect Corp response received:', result.status || 'unknown status')
 
     // Handle Perfect Corp's response format
-    if (result.status === 'success' && result.result_image) {
+    if (result.success && result.result_image) {
       // Convert result image to base64 if it's a URL
       let resultImageBase64: string
       if (result.result_image.startsWith('http')) {
@@ -164,13 +209,13 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function mapCategoryToClothesType(category: string): string {
+function mapCategoryToApiFormat(category: string): string {
   const categoryMap: { [key: string]: string } = {
-    'tops': 'upper_body',
-    'dresses': 'dresses',
-    'outerwear': 'upper_body',
-    'bottoms': 'lower_body',
+    'tops': 'top',
+    'dresses': 'dress', 
+    'outerwear': 'jacket',
+    'bottoms': 'bottom',
     'shoes': 'shoes'
   }
-  return categoryMap[category.toLowerCase()] || 'upper_body'
+  return categoryMap[category.toLowerCase()] || 'top'
 }
