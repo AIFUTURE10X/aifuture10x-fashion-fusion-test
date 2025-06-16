@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -39,7 +40,7 @@ const Index = () => {
     <div 
       className="min-h-screen relative" 
       style={{ 
-        background: 'linear-gradient(to bottom right, #1c1c1c, #232323)',
+        background: 'linear-gradient(to bottom right, #141414, #1a1a1a)',
       }}
     >
       {/* Noise texture overlay */}
@@ -179,7 +180,7 @@ const Index = () => {
       {/* Footer */}
       <footer 
         style={{ 
-          background: 'linear-gradient(to bottom right, #1c1c1c, #232323)',
+          background: 'linear-gradient(to bottom right, #141414, #1a1a1a)',
         }} 
         className="border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20 relative"
       >
