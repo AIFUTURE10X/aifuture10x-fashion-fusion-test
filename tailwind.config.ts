@@ -101,70 +101,18 @@ export default {
 					'50%': {
 						'background-position': '100% 50%'
 					}
-				},
-				'color-cycle-1': {
-					'0%': {
-						background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)'
-					},
-					'25%': {
-						background: 'conic-gradient(from 0deg at 50% 50%, #f59e0b, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b)'
-					},
-					'50%': {
-						background: 'conic-gradient(from 0deg at 50% 50%, #10b981, #f59e0b, #9333ea, #ec4899, #3b82f6, #10b981)'
-					},
-					'75%': {
-						background: 'conic-gradient(from 0deg at 50% 50%, #3b82f6, #10b981, #f59e0b, #9333ea, #ec4899, #3b82f6)'
-					},
-					'100%': {
-						background: 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)'
-					}
-				},
-				'color-cycle-2': {
-					'0%': {
-						background: 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)'
-					},
-					'25%': {
-						background: 'conic-gradient(from 120deg at 50% 50%, #ec4899, #3b82f6, #06b6d4, #9333ea, #f59e0b, #ec4899)'
-					},
-					'50%': {
-						background: 'conic-gradient(from 120deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #06b6d4, #f59e0b, #9333ea)'
-					},
-					'75%': {
-						background: 'conic-gradient(from 120deg at 50% 50%, #f59e0b, #9333ea, #ec4899, #3b82f6, #06b6d4, #f59e0b)'
-					},
-					'100%': {
-						background: 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)'
-					}
-				},
-				'color-cycle-3': {
-					'0%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #3b82f6, #1d4ed8, #1e40af, #1e3a8a, #3b82f6, #1d4ed8)'
-					},
-					'20%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #10b981, #059669, #047857, #065f46, #10b981, #059669)'
-					},
-					'40%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #ec4899, #db2777, #be185d, #9d174d, #ec4899, #db2777)'
-					},
-					'60%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #f59e0b, #d97706, #b45309, #92400e, #f59e0b, #d97706)'
-					},
-					'80%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #9333ea, #7c3aed, #6d28d9, #5b21b6, #9333ea, #7c3aed)'
-					},
-					'100%': {
-						background: 'conic-gradient(from 240deg at 50% 50%, #3b82f6, #1d4ed8, #1e40af, #1e3a8a, #3b82f6, #1d4ed8)'
-					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'border-spin': 'border-spin 3s linear infinite',
-				'gradient-shift': 'gradient-shift 4s ease-in-out infinite',
-				'color-cycle-1': 'color-cycle-1 6s ease-in-out infinite',
-				'color-cycle-2': 'color-cycle-2 8s ease-in-out infinite',
-				'color-cycle-3': 'color-cycle-3 10s ease-in-out infinite'
+				'gradient-shift': 'gradient-shift 4s ease-in-out infinite'
+			},
+			backgroundImage: {
+				'gradient-conic-1': 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)',
+				'gradient-conic-2': 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)',
+				'gradient-conic-3': 'conic-gradient(from 240deg at 50% 50%, #10b981, #059669, #047857, #065f46, #10b981, #059669)'
 			}
 		}
 	},
