@@ -19,8 +19,8 @@ serve(async (req) => {
   try {
     const { userPhoto, userPhotoStoragePath, clothingImage, clothingCategory }: TryOnRequest = await req.json()
     
-    // Get API key from environment variables
-    const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
+    // Get API key from environment variables - using the new key
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW')
     if (!apiKey) {
       throw new Error('Perfect Corp API key not configured')
     }
