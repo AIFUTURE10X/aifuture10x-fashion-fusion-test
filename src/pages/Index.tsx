@@ -37,7 +37,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-neutral-700 dark:from-black dark:via-neutral-900 dark:to-neutral-700 bg-gradient-to-br light:from-gray-50 light:via-gray-100 light:to-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-800 dark:to-gray-600 light:from-gray-50 light:to-gray-200">
       {/* Hero Section */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -164,7 +164,7 @@ const Index = () => {
       />
 
       {/* Footer */}
-      <footer className="bg-gradient-to-br from-black via-neutral-900 to-neutral-700 dark:from-black dark:via-neutral-900 dark:to-neutral-700 light:from-gray-50 light:via-gray-100 light:to-gray-200 border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20">
+      <footer className="bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-800 dark:to-gray-600 light:from-gray-50 light:to-gray-200 border-t border-gray-700 dark:border-gray-700 light:border-gray-200 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
