@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -45,7 +44,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
                 alt="UnowUafter Logo" 
-                className="h-10 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <div className="flex items-center space-x-4">
@@ -146,7 +145,7 @@ const Index = () => {
               <img 
                 src="/lovable-uploads/874b051a-d266-4c63-b611-9fdfd604fd54.png" 
                 alt="UnowUafter Logo" 
-                className="h-8 w-auto"
+                className="h-12 w-auto"
               />
             </div>
             <p className="text-gray-600 mb-4">Virtual clothing try-on powered by AI</p>
