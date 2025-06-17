@@ -17,9 +17,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     if (!ctx) return;
 
     let time = 0;
-    const speed = 0.02;
-    const scale = 2;
-    const noiseIntensity = 0.8;
+    const speed = 0.05; // Increased speed for more animation
+    const scale = 1.5; // Adjusted scale for better wave patterns
+    const noiseIntensity = 1.2; // Increased noise for more texture
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -40,16 +40,16 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create dark charcoal gradient background
+      // Create very dark charcoal gradient background to match image
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#1a1a1a');
-      gradient.addColorStop(0.5, '#2d2d2d');
-      gradient.addColorStop(1, '#1a1a1a');
+      gradient.addColorStop(0, '#0a0a0a');
+      gradient.addColorStop(0.5, '#151515');
+      gradient.addColorStop(1, '#0a0a0a');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Create silk-like pattern
+      // Create enhanced silk-like pattern with more waves
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
@@ -59,23 +59,31 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const v = (y / height) * scale;
           
           const tOffset = speed * time;
-          let tex_x = u;
-          let tex_y = v + 0.03 * Math.sin(8.0 * tex_x - tOffset);
+          
+          // Enhanced wave effects with multiple layers
+          let tex_x = u + 0.02 * Math.sin(12.0 * v - tOffset * 1.5);
+          let tex_y = v + 0.05 * Math.sin(8.0 * tex_x - tOffset) + 
+                         0.03 * Math.sin(15.0 * u + tOffset * 2.0);
 
-          const pattern = 0.6 + 0.4 * Math.sin(
-            5.0 * (tex_x + tex_y + 
-              Math.cos(3.0 * tex_x + 5.0 * tex_y) + 
-              0.02 * tOffset) +
-            Math.sin(20.0 * (tex_x + tex_y - 0.1 * tOffset))
+          // More complex wave pattern with additional harmonics
+          const pattern = 0.5 + 0.5 * Math.sin(
+            6.0 * (tex_x + tex_y + 
+              Math.cos(4.0 * tex_x + 6.0 * tex_y + tOffset) + 
+              0.5 * Math.cos(10.0 * tex_x - 8.0 * tex_y + tOffset * 1.5) +
+              0.03 * tOffset) +
+            Math.sin(25.0 * (tex_x + tex_y - 0.15 * tOffset)) +
+            0.3 * Math.sin(40.0 * (tex_x - tex_y + 0.1 * tOffset))
           );
 
-          const rnd = noise(x, y);
-          const intensity = Math.max(0, pattern - rnd / 15.0 * noiseIntensity);
+          const rnd = noise(x + time * 0.1, y + time * 0.15);
+          const intensity = Math.max(0, pattern - rnd / 12.0 * noiseIntensity);
           
-          // Dark charcoal silk color with subtle gray variations
-          const r = Math.floor(40 + 30 * intensity);
-          const g = Math.floor(42 + 32 * intensity);
-          const b = Math.floor(44 + 34 * intensity);
+          // Pure charcoal/black color to match the image - no purple tint
+          const baseColor = 15; // Very dark base
+          const variation = 25; // Subtle variation range
+          const r = Math.floor(baseColor + variation * intensity);
+          const g = Math.floor(baseColor + variation * intensity);
+          const b = Math.floor(baseColor + variation * intensity);
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -90,13 +98,13 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth with charcoal tones
+      // Add subtle overlay for depth with pure black tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
