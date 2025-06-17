@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -77,28 +78,28 @@ const Index = () => {
             <div className="relative group">
               {/* Spinning border effect */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Camera className="w-8 h-8 text-purple-300 mx-auto mb-4" />
+              <div className="relative bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                <Camera className="w-8 h-8 text-white mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Upload Photo</h3>
-                <p className="text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
+                <p className="text-gray-100 text-sm">Simply upload a clear photo of yourself</p>
               </div>
             </div>
             <div className="relative group">
               {/* Spinning border effect */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Zap className="w-8 h-8 text-purple-300 mx-auto mb-4" />
+              <div className="relative bg-gradient-to-br from-blue-600/80 to-purple-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                <Zap className="w-8 h-8 text-white mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">AI Try-On</h3>
-                <p className="text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
+                <p className="text-gray-100 text-sm">Advanced AI creates realistic try-on results</p>
               </div>
             </div>
             <div className="relative group">
               {/* Spinning border effect */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Users className="w-8 h-8 text-purple-300 mx-auto mb-4" />
+              <div className="relative bg-gradient-to-br from-green-600/80 to-teal-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                <Users className="w-8 h-8 text-white mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
-                <p className="text-gray-300 text-sm">Share your looks and shop with confidence</p>
+                <p className="text-gray-100 text-sm">Share your looks and shop with confidence</p>
               </div>
             </div>
           </div>
