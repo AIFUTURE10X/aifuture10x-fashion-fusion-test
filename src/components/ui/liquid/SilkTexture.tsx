@@ -40,11 +40,11 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create very dark charcoal gradient background to match image
+      // Create pure dark gray gradient background
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#0a0a0a');
-      gradient.addColorStop(0.5, '#151515');
-      gradient.addColorStop(1, '#0a0a0a');
+      gradient.addColorStop(0, '#0f0f0f');
+      gradient.addColorStop(0.5, '#1a1a1a');
+      gradient.addColorStop(1, '#0f0f0f');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -78,12 +78,11 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const rnd = noise(x + time * 0.1, y + time * 0.15);
           const intensity = Math.max(0, pattern - rnd / 12.0 * noiseIntensity);
           
-          // Pure charcoal/black color to match the image - no purple tint
-          const baseColor = 15; // Very dark base
-          const variation = 25; // Subtle variation range
-          const r = Math.floor(baseColor + variation * intensity);
-          const g = Math.floor(baseColor + variation * intensity);
-          const b = Math.floor(baseColor + variation * intensity);
+          // Pure grayscale charcoal color - no blue/purple tint
+          const grayValue = Math.floor(20 + 30 * intensity); // Consistent gray value for R, G, B
+          const r = grayValue;
+          const g = grayValue;
+          const b = grayValue;
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -98,13 +97,13 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth with pure black tones
+      // Add subtle overlay for depth with pure gray tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.05)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+      overlayGradient.addColorStop(0, 'rgba(30, 30, 30, 0.05)');
+      overlayGradient.addColorStop(1, 'rgba(10, 10, 10, 0.7)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
