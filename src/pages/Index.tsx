@@ -7,7 +7,6 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/ThemeProvider';
 import { Camera, Sparkles, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -17,12 +16,10 @@ const Index = () => {
   const {
     theme
   } = useTheme();
-  
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
   };
-  
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -31,7 +28,6 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
-  
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
@@ -50,7 +46,6 @@ const Index = () => {
       background: 'linear-gradient(to bottom right, #141414, #1a1a1a)'
     };
   };
-
   return <div className="min-h-screen relative" style={getBackgroundStyle()}>
       {/* Noise texture overlay */}
       <div className="absolute inset-0 opacity-30 pointer-events-none" style={{
@@ -71,7 +66,7 @@ const Index = () => {
               <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto" />
             </div>
             
-            <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-sky-500">
               Try On Clothes
               <span className="block bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Virtually, Instantly, AI</span>
             </h2>
@@ -171,5 +166,4 @@ const Index = () => {
       </footer>
     </div>;
 };
-
 export default Index;
