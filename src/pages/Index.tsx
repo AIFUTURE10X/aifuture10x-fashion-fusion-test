@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -52,13 +51,6 @@ const Index = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4 flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/liquid-demo'} 
-              className="border-purple-400/50 text-purple-300 hover:bg-purple-400/20 hover:text-white backdrop-blur-sm"
-            >
-              Liquid Demo
-            </Button>
             <Button 
               variant="outline" 
               onClick={() => window.location.href = '/silk-effect'} 
@@ -126,13 +118,6 @@ const Index = () => {
                 <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-12 w-auto" />
               </div>
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => window.location.href = '/liquid-demo'} 
-                  className="border-purple-400/50 text-purple-300 hover:bg-purple-400/20 hover:text-white backdrop-blur-sm"
-                >
-                  Liquid Demo
-                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => window.location.href = '/silk-effect'} 
