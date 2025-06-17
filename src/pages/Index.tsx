@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -9,20 +8,19 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
   const [tryOnResult, setTryOnResult] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
-  const { theme } = useTheme();
-
+  const {
+    theme
+  } = useTheme();
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
   };
-
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -31,16 +29,13 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
-
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
     setTryOnResult(null);
     setCurrentStep('upload');
   };
-
-  return (
-    <div className="min-h-screen relative">
+  return <div className="min-h-screen relative">
       {/* Animated Silk Background */}
       <SilkTexture className="fixed inset-0 z-0" />
 
@@ -48,8 +43,7 @@ const Index = () => {
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
       {/* Hero Section */}
-      {currentStep === 'upload' && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {currentStep === 'upload' && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4 flex items-center space-x-4">
             <ThemeToggle />
@@ -63,7 +57,7 @@ const Index = () => {
             
             <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-white drop-shadow-lg">
               Try On Clothes
-              <span className="block bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">Virtually, Instantly, AI</span>
+              <span className="block bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-purple-600">Virtually, Instantly, AI</span>
             </h2>
             <p className="text-xl text-gray-200 max-w-2xl mx-auto mb-6 drop-shadow-sm">
               Upload your photo and see how clothes look on you before buying. 
@@ -74,28 +68,25 @@ const Index = () => {
           {/* Feature highlights */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-purple-900/90 to-pink-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-400/50 to-pink-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
                 <Camera className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Upload Photo</h3>
                 <p className="text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
               </div>
             </div>
             <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-blue-900/90 to-purple-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Zap className="w-8 h-8 text-blue-300 mx-auto mb-4" />
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+                <Zap className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">AI Try-On</h3>
                 <p className="text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
               </div>
             </div>
             <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-emerald-900/90 to-teal-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Users className="w-8 h-8 text-emerald-300 mx-auto mb-4" />
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-pink-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+                <Users className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
                 <p className="text-gray-300 text-sm">Share your looks and shop with confidence</p>
               </div>
@@ -103,12 +94,10 @@ const Index = () => {
           </div>
 
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-        </div>
-      )}
+        </div>}
 
       {/* Navigation for other steps */}
-      {currentStep !== 'upload' && (
-        <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+      {currentStep !== 'upload' && <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
@@ -116,58 +105,34 @@ const Index = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <ThemeToggle />
-                <Button 
-                  variant="outline" 
-                  onClick={resetApp} 
-                  className="hidden sm:flex border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm"
-                >
+                <Button variant="outline" onClick={resetApp} className="hidden sm:flex border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm">
                   Start Over
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-200 hover:text-white hover:bg-white/10 backdrop-blur-sm"
-                >
+                <Button variant="ghost" size="sm" className="text-gray-200 hover:text-white hover:bg-white/10 backdrop-blur-sm">
                   <Users className="w-4 h-4 mr-2" />
                   Community
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Clothing Catalog */}
-      {currentStep === 'browse' && userPhoto && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
           <ClothingCatalog onClothingSelect={handleClothingSelect} />
-        </div>
-      )}
+        </div>}
 
       {/* Try-On Viewer */}
-      {currentStep === 'tryon' && userPhoto && selectedClothing && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
-          <TryOnViewer 
-            userPhoto={userPhoto} 
-            selectedClothing={selectedClothing} 
-            tryOnResult={tryOnResult} 
-            onShare={() => setShowShareModal(true)} 
-            onBack={() => setCurrentStep('browse')} 
-          />
-        </div>
-      )}
+      {currentStep === 'tryon' && userPhoto && selectedClothing && <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+          <TryOnViewer userPhoto={userPhoto} selectedClothing={selectedClothing} tryOnResult={tryOnResult} onShare={() => setShowShareModal(true)} onBack={() => setCurrentStep('browse')} />
+        </div>}
 
       {/* Share Modal */}
-      <ShareModal 
-        isOpen={showShareModal} 
-        onClose={() => setShowShareModal(false)} 
-        tryOnResult={tryOnResult} 
-        selectedClothing={selectedClothing} 
-      />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tryOnResult={tryOnResult} selectedClothing={selectedClothing} />
 
       {/* Footer */}
       <footer className="border-t border-white/10 mt-20 relative z-20">
@@ -183,8 +148,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
