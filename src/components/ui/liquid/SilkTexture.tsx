@@ -40,18 +40,18 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create gradient background using the new color palette
+      // Create gradient background with more black dominance
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#6E6873');
-      gradient.addColorStop(0.25, '#555159');
-      gradient.addColorStop(0.5, '#3C3A40');
-      gradient.addColorStop(0.75, '#242326');
-      gradient.addColorStop(1, '#0C0B0D');
+      gradient.addColorStop(0, '#000000');     // Deep Winter Black
+      gradient.addColorStop(0.13, '#000000');  // More black
+      gradient.addColorStop(0.87, '#38353B');  // Cool Winter Neutral
+      gradient.addColorStop(0.98, '#56515A');  // Cool Winter Neutral
+      gradient.addColorStop(1, '#000000');     // Back to black
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Create enhanced silk-like pattern with more waves
+      // Create enhanced silk-like pattern with darker tones
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
@@ -80,32 +80,25 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const rnd = noise(x + time * 0.1, y + time * 0.15);
           const intensity = Math.max(0, pattern - rnd / 12.0 * noiseIntensity);
           
-          // Use the new color palette for texture interpolation
+          // Use darker color distribution with 50% more black
           let r, g, b;
-          if (intensity < 0.2) {
-            // Interpolate between #0C0B0D and #242326
-            const factor = intensity * 5;
-            r = Math.floor(12 + (36 - 12) * factor);
-            g = Math.floor(11 + (35 - 11) * factor);
-            b = Math.floor(13 + (38 - 13) * factor);
-          } else if (intensity < 0.4) {
-            // Interpolate between #242326 and #3C3A40
-            const factor = (intensity - 0.2) * 5;
-            r = Math.floor(36 + (60 - 36) * factor);
-            g = Math.floor(35 + (58 - 35) * factor);
-            b = Math.floor(38 + (64 - 38) * factor);
-          } else if (intensity < 0.6) {
-            // Interpolate between #3C3A40 and #555159
-            const factor = (intensity - 0.4) * 5;
-            r = Math.floor(60 + (85 - 60) * factor);
-            g = Math.floor(58 + (81 - 58) * factor);
-            b = Math.floor(64 + (89 - 64) * factor);
+          if (intensity < 0.87) {
+            // Much more black (#000000) - 87% of the effect
+            r = 0;
+            g = 0;
+            b = 0;
+          } else if (intensity < 0.985) {
+            // Cool Winter Neutral (#38353B) - reduced to ~11.5%
+            const factor = (intensity - 0.87) / 0.115;
+            r = Math.floor(0 + (56 - 0) * factor);
+            g = Math.floor(0 + (53 - 0) * factor);
+            b = Math.floor(0 + (59 - 0) * factor);
           } else {
-            // Interpolate between #555159 and #6E6873
-            const factor = (intensity - 0.6) * 2.5;
-            r = Math.floor(85 + (110 - 85) * factor);
-            g = Math.floor(81 + (104 - 81) * factor);
-            b = Math.floor(89 + (115 - 89) * factor);
+            // Cool Winter Neutral (#56515A) - reduced to ~1.5%
+            const factor = (intensity - 0.985) / 0.015;
+            r = Math.floor(56 + (86 - 56) * factor);
+            g = Math.floor(53 + (81 - 53) * factor);
+            b = Math.floor(59 + (90 - 59) * factor);
           }
           
           const a = 255;
@@ -122,13 +115,13 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth using the new color palette
+      // Add subtle overlay for depth with darker tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(110, 104, 115, 0.05)'); // #6E6873 with low opacity
-      overlayGradient.addColorStop(1, 'rgba(12, 11, 13, 0.7)'); // #0C0B0D with higher opacity
+      overlayGradient.addColorStop(0, 'rgba(56, 53, 59, 0.03)'); // #38353B with very low opacity
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)'); // More black overlay
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
