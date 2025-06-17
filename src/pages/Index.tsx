@@ -169,19 +169,19 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Video Section - Full Width */}
+                {/* Video Section - Clean Embedded Video */}
                 <div className="flex justify-center">
-                  <div className="w-full">
+                  <div className="w-full rounded-xl overflow-hidden shadow-2xl">
                     <iframe 
                       width="100%" 
-                      height="550" 
-                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4" 
+                      height="420" 
+                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4&controls=0&modestbranding=1&rel=0&showinfo=0" 
                       title="YouTube video player" 
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                       referrerPolicy="strict-origin-when-cross-origin" 
                       allowFullScreen
-                      className="rounded-xl shadow-lg"
+                      className="rounded-xl"
                     ></iframe>
                   </div>
                 </div>
