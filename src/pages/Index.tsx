@@ -16,6 +16,7 @@ const Index = () => {
   const [tryOnResult, setTryOnResult] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
+  const [showUploadComponent, setShowUploadComponent] = useState(false);
   const {
     theme
   } = useTheme();
@@ -23,6 +24,7 @@ const Index = () => {
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
+    setShowUploadComponent(false);
   };
 
   const handleClothingSelect = (clothing: any) => {
@@ -39,11 +41,15 @@ const Index = () => {
     setSelectedClothing(null);
     setTryOnResult(null);
     setCurrentStep('upload');
+    setShowUploadComponent(false);
   };
 
   const handleGoToApp = () => {
-    // Always go to upload step - this will show the PhotoUpload component
-    setCurrentStep('upload');
+    if (!userPhoto) {
+      setShowUploadComponent(true);
+    } else {
+      setCurrentStep('browse');
+    }
   };
 
   return (
@@ -67,8 +73,8 @@ const Index = () => {
         <ThemeToggle />
       </div>
 
-      {/* Hero Section - Only show when on upload step and no photo */}
-      {currentStep === 'upload' && !userPhoto && (
+      {/* Hero Section - Only show when not showing upload component and no photo */}
+      {!showUploadComponent && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
@@ -119,15 +125,15 @@ const Index = () => {
         </div>
       )}
 
-      {/* Photo Upload Step - Show PhotoUpload component when on upload step */}
-      {currentStep === 'upload' && (
+      {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
+      {showUploadComponent && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
         </div>
       )}
 
       {/* Navigation for other steps */}
-      {currentStep !== 'upload' && (
+      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && (
         <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
