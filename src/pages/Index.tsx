@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -126,27 +127,65 @@ const Index = () => {
             </div>
           </div>
 
-          {/* AI Virtual Try-On Features Section - Centered and Video Only */}
+          {/* AI Virtual Try-On Features Section - With separate text and video */}
           <div className="mt-20 mb-16 flex justify-center">
             <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl" style={{ width: 'calc(100% + 40%)' }}>
               <h3 className="text-3xl font-bold text-white mb-8 text-center">
                 AI Clothes Virtual Try-On: Hyper-Realistic Results
               </h3>
               
-              {/* Video Section - Full width */}
-              <div className="flex justify-center">
-                <div className="w-full rounded-xl overflow-hidden shadow-2xl">
-                  <iframe 
-                    width="100%" 
-                    height="480" 
-                    src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4&controls=0&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
-                    title="YouTube video player" 
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    referrerPolicy="strict-origin-when-cross-origin" 
-                    allowFullScreen
-                    className="rounded-xl"
-                  ></iframe>
+              {/* Content Section - Text and Video Side by Side */}
+              <div className="flex gap-8 items-start">
+                {/* Text Features - Left Side */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="text-white font-semibold mb-1">One-click outfit change:</h4>
+                      <p className="text-gray-300 text-sm">Easily transform your look with a single click.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="text-white font-semibold mb-1">AI face detection:</h4>
+                      <p className="text-gray-300 text-sm">Accurately detects facial features to provide vivid and realistic results.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="text-white font-semibold mb-1">Change clothes styles instantly:</h4>
+                      <p className="text-gray-300 text-sm">Experiment with different clothing styles effortlessly.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="text-white font-semibold mb-1">Upload your photo as style reference:</h4>
+                      <p className="text-gray-300 text-sm">Use your own photo to customize and explore various outfit options.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Section - Right Side */}
+                <div className="flex-1">
+                  <div className="rounded-xl overflow-hidden shadow-2xl">
+                    <iframe 
+                      width="100%" 
+                      height="480" 
+                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4&controls=0&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
+                      title="YouTube video player" 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      referrerPolicy="strict-origin-when-cross-origin" 
+                      allowFullScreen
+                      className="rounded-xl"
+                    ></iframe>
+                  </div>
                 </div>
               </div>
             </div>
