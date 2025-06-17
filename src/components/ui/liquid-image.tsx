@@ -7,10 +7,11 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 interface DeformationImageProps {
-  imageSrc: string;
+  imageSrc?: string;
+  color?: string;
 }
 
-const DeformationPlane = ({ imageSrc }: DeformationImageProps) => {
+const DeformationPlane = ({ imageSrc, color }: DeformationImageProps) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -18,11 +19,11 @@ const DeformationPlane = ({ imageSrc }: DeformationImageProps) => {
   const lerpedMousePosRef = useRef({ x: 0, y: 0 });
   const { viewport, gl } = useThree();
 
-  const texture = useTexture(imageSrc);
+  const texture = imageSrc ? useTexture(imageSrc) : null;
 
   // Calculate dimensions for object-fit: cover behavior
   const planeAspect = viewport.width / viewport.height;
-  const imageAspect = texture.image
+  const imageAspect = texture?.image
     ? texture.image.width / texture.image.height
     : 1;
 
@@ -60,6 +61,8 @@ const DeformationPlane = ({ imageSrc }: DeformationImageProps) => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uTexture: { value: texture },
+        uColor: { value: color ? new THREE.Color(color) : new THREE.Color(0x000000) },
+        uUseColor: { value: !!color || !imageSrc },
         uMouse: { value: new THREE.Vector2(0, 0) },
         uStrength: { value: 0.0 },
         uHoverProgress: { value: 0.0 },
@@ -112,15 +115,21 @@ const DeformationPlane = ({ imageSrc }: DeformationImageProps) => {
        `,
       fragmentShader: `
         uniform sampler2D uTexture;
+        uniform vec3 uColor;
+        uniform bool uUseColor;
         varying vec2 vUv;
 
         void main() {
-          vec4 color = texture2D(uTexture, vUv);
-          gl_FragColor = color;
+          if (uUseColor) {
+            gl_FragColor = vec4(uColor, 1.0);
+          } else {
+            vec4 color = texture2D(uTexture, vUv);
+            gl_FragColor = color;
+          }
         }
       `,
     });
-  }, [texture]);
+  }, [texture, color, imageSrc]);
 
   useFrame((state) => {
     if (shaderMaterial) {
@@ -248,7 +257,7 @@ const DeformationPlane = ({ imageSrc }: DeformationImageProps) => {
   );
 };
 
-const DeformationImage = ({ imageSrc }: DeformationImageProps) => {
+const DeformationImage = ({ imageSrc, color }: DeformationImageProps) => {
   return (
     <div className="w-full h-full absolute">
       <Canvas
@@ -256,7 +265,7 @@ const DeformationImage = ({ imageSrc }: DeformationImageProps) => {
         style={{ width: "100%", height: "100%" }}
       >
         <ambientLight intensity={1} />
-        <DeformationPlane imageSrc={imageSrc} />
+        <DeformationPlane imageSrc={imageSrc} color={color} />
       </Canvas>
     </div>
   );
