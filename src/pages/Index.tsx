@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
 import { TryOnViewer } from '@/components/TryOnViewer';
 import { ShareModal } from '@/components/ShareModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { VirtualTryOnAnimation } from '@/components/VirtualTryOnAnimation';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap } from 'lucide-react';
@@ -50,13 +52,13 @@ const Index = () => {
 
       {/* Hero Section */}
       {currentStep === 'upload' && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4 flex items-center space-x-4">
             <ThemeToggle />
           </div>
           
-          <div className="text-center mb-6">
+          <div className="text-center mb-8">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
               <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto drop-shadow-lg" />
@@ -66,44 +68,56 @@ const Index = () => {
               Try On Clothes
               <span className="block bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-purple-600">Virtually, Instantly, AI</span>
             </h2>
-            <p className="text-xl text-gray-200 max-w-2xl mx-auto mb-6 drop-shadow-sm">
+            <p className="text-xl text-gray-200 max-w-2xl mx-auto mb-8 drop-shadow-sm">
               Upload your photo and see how clothes look on you before buying. 
               Powered by AI for the most accurate virtual try-on experience.
             </p>
           </div>
 
-          {/* Feature highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
-            <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                <Camera className="w-8 h-8 text-white mx-auto mb-4" />
-                <h3 className="font-semibold text-white mb-2">Upload Photo</h3>
-                <p className="text-gray-100 text-sm">Simply upload a clear photo of yourself</p>
-              </div>
+          {/* Main content with animation and features */}
+          <div className="grid lg:grid-cols-5 gap-8 mb-12 items-start">
+            {/* Left side - Animation (60% width) */}
+            <div className="lg:col-span-3">
+              <VirtualTryOnAnimation />
             </div>
-            <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-blue-600/80 to-purple-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                <Zap className="w-8 h-8 text-white mx-auto mb-4" />
-                <h3 className="font-semibold text-white mb-2">AI Try-On</h3>
-                <p className="text-gray-100 text-sm">Advanced AI creates realistic try-on results</p>
+
+            {/* Right side - Feature cards (40% width) */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="relative group">
+                {/* Spinning border effect */}
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+                <div className="relative bg-gradient-to-br from-purple-600/80 to-pink-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                  <Camera className="w-8 h-8 text-white mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2 text-center">Upload Photo</h3>
+                  <p className="text-gray-100 text-sm text-center">Simply upload a clear photo of yourself</p>
+                </div>
               </div>
-            </div>
-            <div className="relative group">
-              {/* Spinning border effect */}
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-cyan-500/80 to-blue-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-                <Users className="w-8 h-8 text-white mx-auto mb-4" />
-                <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
-                <p className="text-gray-100 text-sm">Share your looks and shop with confidence</p>
+              
+              <div className="relative group">
+                {/* Spinning border effect */}
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+                <div className="relative bg-gradient-to-br from-blue-600/80 to-purple-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                  <Zap className="w-8 h-8 text-white mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2 text-center">AI Try-On</h3>
+                  <p className="text-gray-100 text-sm text-center">Advanced AI creates realistic try-on results</p>
+                </div>
+              </div>
+              
+              <div className="relative group">
+                {/* Spinning border effect */}
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+                <div className="relative bg-gradient-to-br from-cyan-500/80 to-blue-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+                  <Users className="w-8 h-8 text-white mx-auto mb-4" />
+                  <h3 className="font-semibold text-white mb-2 text-center">Share & Shop</h3>
+                  <p className="text-gray-100 text-sm text-center">Share your looks and shop with confidence</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+          <div className="text-center">
+            <PhotoUpload onPhotoUpload={handlePhotoUpload} />
+          </div>
         </div>
       )}
 
