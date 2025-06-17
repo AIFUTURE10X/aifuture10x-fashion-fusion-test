@@ -176,7 +176,7 @@ const Index = () => {
                     <iframe 
                       width="100%" 
                       height="480" 
-                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4&controls=0&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
+                      src="https://www.youtube.com/embed/dfAFXzOczHk?si=oopKKeyS_i7Qddi5&start=7&autoplay=1&loop=1&controls=0&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
                       title="YouTube video player" 
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
