@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -136,7 +137,7 @@ const Index = () => {
             <Button
               onClick={handleBackToHome}
               variant="outline"
-              className="border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg"
             >
               <Home className="w-4 h-4 mr-2" />
               Back to Home
