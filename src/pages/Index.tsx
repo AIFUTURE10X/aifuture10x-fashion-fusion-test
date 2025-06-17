@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -6,7 +7,7 @@ import { ShareModal } from '@/components/ShareModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
-import { Camera, Sparkles, Users, Zap } from 'lucide-react';
+import { Camera, Sparkles, Users, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
@@ -40,6 +41,10 @@ const Index = () => {
     setCurrentStep('upload');
   };
 
+  const handleGoToApp = () => {
+    setCurrentStep('browse');
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Animated Silk Background */}
@@ -48,14 +53,22 @@ const Index = () => {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
+      {/* Go To App Button - Always visible in top right */}
+      <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
+        <Button
+          onClick={handleGoToApp}
+          size="sm"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg"
+        >
+          Go To App
+          <ArrowRight className="w-4 h-4 ml-1" />
+        </Button>
+        <ThemeToggle />
+      </div>
+
       {/* Hero Section */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
-          {/* Theme toggle in top right */}
-          <div className="absolute top-4 right-4 flex items-center space-x-4">
-            <ThemeToggle />
-          </div>
-          
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
@@ -116,7 +129,6 @@ const Index = () => {
                 <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-12 w-auto" />
               </div>
               <div className="flex items-center space-x-4">
-                <ThemeToggle />
                 <Button variant="outline" onClick={resetApp} className="hidden sm:flex border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm">
                   Start Over
                 </Button>
