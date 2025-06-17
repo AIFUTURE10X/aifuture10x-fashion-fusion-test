@@ -42,7 +42,13 @@ const Index = () => {
   };
 
   const handleGoToApp = () => {
-    setCurrentStep('browse');
+    // If no photo uploaded yet, go to photo upload step
+    if (!userPhoto) {
+      setCurrentStep('upload');
+    } else {
+      // If photo already uploaded, go to browse
+      setCurrentStep('browse');
+    }
   };
 
   return (
@@ -66,8 +72,8 @@ const Index = () => {
         <ThemeToggle />
       </div>
 
-      {/* Hero Section */}
-      {currentStep === 'upload' && (
+      {/* Hero Section - Only show when on upload step and no photo */}
+      {currentStep === 'upload' && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
@@ -115,7 +121,12 @@ const Index = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
 
+      {/* Photo Upload Step */}
+      {currentStep === 'upload' && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
         </div>
       )}
