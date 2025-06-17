@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -173,11 +171,11 @@ const Index = () => {
 
                 {/* Video Section */}
                 <div className="flex justify-center">
-                  <div className="w-full max-w-md">
+                  <div className="w-full max-w-xl">
                     <iframe 
                       width="100%" 
-                      height="315" 
-                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW" 
+                      height="450" 
+                      src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4" 
                       title="YouTube video player" 
                       frameBorder="0" 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
@@ -273,4 +271,3 @@ const Index = () => {
 };
 
 export default Index;
-
