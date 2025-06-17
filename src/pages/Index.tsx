@@ -257,7 +257,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-12 w-auto" />
+              <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-16 w-auto" />
             </div>
             <p className="text-gray-300 mb-4 drop-shadow-sm">Virtual clothing try-on powered by AI</p>
             <p className="text-sm text-gray-400">
