@@ -74,25 +74,28 @@ const Index = () => {
           {/* Feature highlights */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-400/50 to-pink-400/50 opacity-75 group-hover:opacity-100 blur"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+              <div className="relative bg-gradient-to-br from-purple-900/90 to-pink-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
                 <Camera className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Upload Photo</h3>
                 <p className="text-gray-300 text-sm">Simply upload a clear photo of yourself</p>
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Zap className="w-8 h-8 text-purple-300 mx-auto mb-4" />
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+              <div className="relative bg-gradient-to-br from-blue-900/90 to-purple-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+                <Zap className="w-8 h-8 text-blue-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">AI Try-On</h3>
                 <p className="text-gray-300 text-sm">Advanced AI creates realistic try-on results</p>
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-pink-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
-                <Users className="w-8 h-8 text-purple-300 mx-auto mb-4" />
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
+              <div className="relative bg-gradient-to-br from-emerald-900/90 to-teal-900/90 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
+                <Users className="w-8 h-8 text-emerald-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
                 <p className="text-gray-300 text-sm">Share your looks and shop with confidence</p>
               </div>
