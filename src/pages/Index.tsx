@@ -133,7 +133,7 @@ const Index = () => {
                 AI Clothes Virtual Try-On: Hyper-Realistic Results
               </h3>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* Features List */}
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
@@ -169,12 +169,12 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Video Section */}
+                {/* Video Section - Much Larger */}
                 <div className="flex justify-center">
-                  <div className="w-full max-w-xl">
+                  <div className="w-full max-w-3xl">
                     <iframe 
                       width="100%" 
-                      height="450" 
+                      height="600" 
                       src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4" 
                       title="YouTube video player" 
                       frameBorder="0" 
