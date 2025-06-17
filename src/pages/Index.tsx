@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -96,7 +95,7 @@ const Index = () => {
             <div className="relative group">
               {/* Spinning border effect */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
-              <div className="relative bg-gradient-to-br from-green-600/80 to-teal-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="relative bg-gradient-to-br from-cyan-500/80 to-blue-600/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
                 <Users className="w-8 h-8 text-white mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
                 <p className="text-gray-100 text-sm">Share your looks and shop with confidence</p>
