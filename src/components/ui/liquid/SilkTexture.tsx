@@ -40,11 +40,11 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create pure dark gray gradient background
+      // Create gradient background using the specified colors
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#0f0f0f');
-      gradient.addColorStop(0.5, '#1a1a1a');
-      gradient.addColorStop(1, '#0f0f0f');
+      gradient.addColorStop(0, '#242226');
+      gradient.addColorStop(0.5, '#020202');
+      gradient.addColorStop(1, '#000000');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -78,11 +78,23 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const rnd = noise(x + time * 0.1, y + time * 0.15);
           const intensity = Math.max(0, pattern - rnd / 12.0 * noiseIntensity);
           
-          // Pure grayscale charcoal color - no blue/purple tint
-          const grayValue = Math.floor(20 + 30 * intensity); // Consistent gray value for R, G, B
-          const r = grayValue;
-          const g = grayValue;
-          const b = grayValue;
+          // Use the specified color palette for texture
+          // Interpolate between #000000, #020202, and #242226 based on intensity
+          let r, g, b;
+          if (intensity < 0.5) {
+            // Interpolate between #000000 and #020202
+            const factor = intensity * 2;
+            r = Math.floor(0 + (2 - 0) * factor);
+            g = Math.floor(0 + (2 - 0) * factor);
+            b = Math.floor(0 + (2 - 0) * factor);
+          } else {
+            // Interpolate between #020202 and #242226
+            const factor = (intensity - 0.5) * 2;
+            r = Math.floor(2 + (36 - 2) * factor); // 36 is hex 24
+            g = Math.floor(2 + (34 - 2) * factor); // 34 is hex 22
+            b = Math.floor(2 + (38 - 2) * factor); // 38 is hex 26
+          }
+          
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -97,13 +109,13 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth with pure gray tones
+      // Add subtle overlay for depth using the specified colors
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(30, 30, 30, 0.05)');
-      overlayGradient.addColorStop(1, 'rgba(10, 10, 10, 0.7)');
+      overlayGradient.addColorStop(0, 'rgba(36, 34, 38, 0.05)'); // #242226 with low opacity
+      overlayGradient.addColorStop(1, 'rgba(2, 2, 2, 0.7)'); // #020202 with higher opacity
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
