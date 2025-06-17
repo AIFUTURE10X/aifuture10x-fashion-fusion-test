@@ -8,6 +8,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -17,10 +18,12 @@ const Index = () => {
   const {
     theme
   } = useTheme();
+
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
   };
+
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -29,13 +32,16 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
+
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
     setTryOnResult(null);
     setCurrentStep('upload');
   };
-  return <div className="min-h-screen relative">
+
+  return (
+    <div className="min-h-screen relative">
       {/* Animated Silk Background */}
       <SilkTexture className="fixed inset-0 z-0" />
 
@@ -43,7 +49,8 @@ const Index = () => {
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
       {/* Hero Section */}
-      {currentStep === 'upload' && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {currentStep === 'upload' && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Theme toggle in top right */}
           <div className="absolute top-4 right-4 flex items-center space-x-4">
             <ThemeToggle />
@@ -68,7 +75,8 @@ const Index = () => {
           {/* Feature highlights */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-purple-400/50 to-pink-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-1 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
               <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
                 <Camera className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Upload Photo</h3>
@@ -76,7 +84,8 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-2 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
               <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
                 <Zap className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">AI Try-On</h3>
@@ -84,7 +93,8 @@ const Index = () => {
               </div>
             </div>
             <div className="relative group">
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-pink-400/50 to-purple-400/50 opacity-75 group-hover:opacity-100 blur"></div>
+              {/* Spinning border effect */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-conic-3 opacity-75 group-hover:opacity-100 animate-border-spin"></div>
               <div className="relative bg-black/40 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-white/10">
                 <Users className="w-8 h-8 text-purple-300 mx-auto mb-4" />
                 <h3 className="font-semibold text-white mb-2">Share & Shop</h3>
@@ -94,10 +104,12 @@ const Index = () => {
           </div>
 
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-        </div>}
+        </div>
+      )}
 
       {/* Navigation for other steps */}
-      {currentStep !== 'upload' && <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+      {currentStep !== 'upload' && (
+        <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
@@ -115,21 +127,26 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Clothing Catalog */}
-      {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'browse' && userPhoto && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
           <ClothingCatalog onClothingSelect={handleClothingSelect} />
-        </div>}
+        </div>
+      )}
 
       {/* Try-On Viewer */}
-      {currentStep === 'tryon' && userPhoto && selectedClothing && <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'tryon' && userPhoto && selectedClothing && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <TryOnViewer userPhoto={userPhoto} selectedClothing={selectedClothing} tryOnResult={tryOnResult} onShare={() => setShowShareModal(true)} onBack={() => setCurrentStep('browse')} />
-        </div>}
+        </div>
+      )}
 
       {/* Share Modal */}
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tryOnResult={tryOnResult} selectedClothing={selectedClothing} />
@@ -148,6 +165,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
