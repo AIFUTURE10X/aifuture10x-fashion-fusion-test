@@ -23,6 +23,7 @@ export const VirtualTryOnAnimation = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showClothing, setShowClothing] = useState(true);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -30,6 +31,7 @@ export const VirtualTryOnAnimation = () => {
     const interval = setInterval(() => {
       setIsTransitioning(true);
       setProgress(0);
+      setShowClothing(false);
       
       // Simulate AI processing with progress
       const progressInterval = setInterval(() => {
@@ -38,14 +40,15 @@ export const VirtualTryOnAnimation = () => {
             clearInterval(progressInterval);
             setTimeout(() => {
               setCurrentClothingIndex(prev => (prev + 1) % clothingItems.length);
+              setShowClothing(true);
               setIsTransitioning(false);
               setProgress(0);
-            }, 500);
+            }, 300);
             return 100;
           }
-          return prev + 10;
+          return prev + 8;
         });
-      }, 150);
+      }, 120);
     }, 4000);
 
     return () => clearInterval(interval);
@@ -55,6 +58,7 @@ export const VirtualTryOnAnimation = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setProgress(0);
+    setShowClothing(false);
     
     const progressInterval = setInterval(() => {
       setProgress(prev => {
@@ -62,14 +66,15 @@ export const VirtualTryOnAnimation = () => {
           clearInterval(progressInterval);
           setTimeout(() => {
             setCurrentClothingIndex(index);
+            setShowClothing(true);
             setIsTransitioning(false);
             setProgress(0);
-          }, 500);
+          }, 300);
           return 100;
         }
-        return prev + 20;
+        return prev + 15;
       });
-    }, 100);
+    }, 80);
   };
 
   const currentClothing = clothingItems[currentClothingIndex];
@@ -111,31 +116,97 @@ export const VirtualTryOnAnimation = () => {
           </div>
         </div>
 
-        {/* Model and Clothing Display */}
+        {/* Virtual Try-On Display */}
         <div className="relative z-10 flex items-center justify-center mb-6">
-          <div className="relative">
-            {/* Model silhouette placeholder */}
-            <div className="w-48 h-64 bg-gradient-to-b from-gray-200 to-gray-300 rounded-full opacity-40 mx-auto"></div>
+          <div className="relative w-64 h-80">
+            {/* Person Silhouette Base */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg
+                width="160"
+                height="280"
+                viewBox="0 0 160 280"
+                className="drop-shadow-lg"
+              >
+                {/* Head */}
+                <ellipse cx="80" cy="30" rx="20" ry="25" fill="#E5E7EB" stroke="#D1D5DB" strokeWidth="2" />
+                
+                {/* Neck */}
+                <rect x="75" y="50" width="10" height="15" fill="#E5E7EB" />
+                
+                {/* Body outline for dress fitting */}
+                <path
+                  d="M 60 65 Q 50 70 45 85 L 40 120 Q 38 140 42 160 Q 45 180 50 200 Q 55 220 60 240 L 70 270 Q 80 275 90 270 L 100 240 Q 105 220 110 200 Q 115 180 118 160 Q 122 140 120 120 L 115 85 Q 110 70 100 65 Q 90 60 80 62 Q 70 60 60 65 Z"
+                  fill="#F3F4F6"
+                  stroke="#D1D5DB"
+                  strokeWidth="2"
+                  opacity="0.8"
+                />
+                
+                {/* Arms */}
+                <ellipse cx="40" cy="90" rx="8" ry="25" fill="#E5E7EB" transform="rotate(-15 40 90)" />
+                <ellipse cx="120" cy="90" rx="8" ry="25" fill="#E5E7EB" transform="rotate(15 120 90)" />
+                
+                {/* Legs (visible below dress) */}
+                <ellipse cx="70" cy="260" rx="6" ry="20" fill="#E5E7EB" />
+                <ellipse cx="90" cy="260" rx="6" ry="20" fill="#E5E7EB" />
+              </svg>
+            </div>
             
-            {/* Clothing overlay */}
+            {/* Clothing Overlay */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div 
-                className={`relative transition-all duration-1000 ${
-                  isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+                className={`relative transition-all duration-700 ${
+                  showClothing && !isTransitioning 
+                    ? 'opacity-100 scale-100' 
+                    : 'opacity-0 scale-95'
                 }`}
               >
                 <img
                   src={currentClothing.image}
                   alt={currentClothing.name}
-                  className="w-40 h-52 object-cover rounded-2xl shadow-lg"
+                  className="w-36 h-48 object-cover rounded-lg shadow-lg"
+                  style={{
+                    clipPath: 'polygon(15% 10%, 85% 10%, 95% 25%, 90% 85%, 10% 85%, 5% 25%)',
+                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+                  }}
                 />
-                {isTransitioning && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-purple-600 animate-spin" />
-                  </div>
-                )}
+                
+                {/* Blending overlay for realistic fitting */}
+                <div 
+                  className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent rounded-lg"
+                  style={{
+                    clipPath: 'polygon(15% 10%, 85% 10%, 95% 25%, 90% 85%, 10% 85%, 5% 25%)'
+                  }}
+                />
               </div>
             </div>
+
+            {/* AI Processing Overlay */}
+            {isTransitioning && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded-2xl p-6 backdrop-blur-sm border border-white/30">
+                  <Sparkles className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-2" />
+                  <div className="text-sm text-purple-700 font-medium">AI Fitting...</div>
+                </div>
+              </div>
+            )}
+
+            {/* Fitting Guide Lines */}
+            {!isTransitioning && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Shoulder guides */}
+                <div className="absolute top-16 left-8 w-2 h-2 bg-purple-400/60 rounded-full animate-pulse"></div>
+                <div className="absolute top-16 right-8 w-2 h-2 bg-purple-400/60 rounded-full animate-pulse"></div>
+                
+                {/* Waist guides */}
+                <div className="absolute top-32 left-6 w-1.5 h-1.5 bg-pink-400/60 rounded-full animate-pulse delay-300"></div>
+                <div className="absolute top-32 right-6 w-1.5 h-1.5 bg-pink-400/60 rounded-full animate-pulse delay-300"></div>
+                
+                {/* Hem guides */}
+                <div className="absolute bottom-16 left-10 w-1 h-1 bg-purple-300/60 rounded-full animate-pulse delay-500"></div>
+                <div className="absolute bottom-16 right-10 w-1 h-1 bg-purple-300/60 rounded-full animate-pulse delay-500"></div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -144,7 +215,7 @@ export const VirtualTryOnAnimation = () => {
           <div className="relative z-10 mb-6">
             <div className="bg-white/60 rounded-full p-4 border border-purple-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-purple-700">AI Processing...</span>
+                <span className="text-sm font-medium text-purple-700">AI Fitting Clothes...</span>
                 <span className="text-sm text-purple-600">{progress}%</span>
               </div>
               <div className="w-full bg-purple-100 rounded-full h-2">
@@ -152,6 +223,11 @@ export const VirtualTryOnAnimation = () => {
                   className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-150"
                   style={{ width: `${progress}%` }}
                 ></div>
+              </div>
+              <div className="text-xs text-purple-600 mt-1">
+                {progress < 30 ? 'Analyzing body shape...' : 
+                 progress < 60 ? 'Adjusting fit...' : 
+                 progress < 90 ? 'Applying final touches...' : 'Complete!'}
               </div>
             </div>
           </div>
@@ -163,6 +239,9 @@ export const VirtualTryOnAnimation = () => {
             <div>
               <h4 className="font-semibold text-gray-900">{currentClothing.name}</h4>
               <p className="text-sm text-gray-600">{currentClothing.brand}</p>
+              <p className="text-xs text-purple-600 mt-1">
+                {showClothing ? 'Try-on complete' : 'Processing...'}
+              </p>
             </div>
             <div className="flex space-x-1">
               {clothingItems.map((_, index) => (
