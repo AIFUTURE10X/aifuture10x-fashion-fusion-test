@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -176,7 +175,7 @@ const Index = () => {
                     <iframe 
                       width="100%" 
                       height="480" 
-                      src="https://www.youtube.com/embed/dfAFXzOczHk?si=oopKKeyS_i7Qddi5&start=7&controls=0&modestbranding=1&rel=0&loop=1&playlist=dfAFXzOczHk&autoplay=1&mute=1&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
+                      src="https://www.youtube.com/embed/dfAFXzOczHk?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=dfAFXzOczHk&start=7&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
                       title="YouTube video player" 
                       frameBorder="0" 
                       allow="autoplay; encrypted-media" 
