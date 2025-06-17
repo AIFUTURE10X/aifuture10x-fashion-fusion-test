@@ -112,7 +112,7 @@ export default {
 			backgroundImage: {
 				'gradient-conic-1': 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)',
 				'gradient-conic-2': 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)',
-				'gradient-conic-3': 'conic-gradient(from 240deg at 50% 50%, #10b981, #059669, #047857, #065f46, #10b981, #059669)'
+				'gradient-conic-3': 'conic-gradient(from 240deg at 50% 50%, #8b5cf6, #a855f7, #9333ea, #7c3aed, #8b5cf6, #a855f7)'
 			}
 		}
 	},
