@@ -128,8 +128,8 @@ const Index = () => {
           </div>
 
           {/* AI Virtual Try-On Features Section - Expanded */}
-          <div className="mt-20 mb-16">
-            <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl w-full max-w-none mx-4" style={{ width: 'calc(100% + 40%)' }}>
+          <div className="mt-20 mb-16 flex justify-center">
+            <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl" style={{ width: 'calc(100% + 40%)' }}>
               <h3 className="text-3xl font-bold text-white mb-8 text-center">
                 AI Clothes Virtual Try-On: Hyper-Realistic Results
               </h3>
