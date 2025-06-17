@@ -42,9 +42,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       
       // Create gradient background
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#1a1a1a');
-      gradient.addColorStop(0.5, '#2a2a2a');
-      gradient.addColorStop(1, '#1a1a1a');
+      gradient.addColorStop(0, '#0a0a0a');
+      gradient.addColorStop(0.5, '#1a1a1a');
+      gradient.addColorStop(1, '#0a0a0a');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -72,10 +72,10 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const rnd = noise(x, y);
           const intensity = Math.max(0, pattern - rnd / 15.0 * noiseIntensity);
           
-          // Purple-gray silk color
-          const r = Math.floor(123 * intensity);
-          const g = Math.floor(116 * intensity);
-          const b = Math.floor(129 * intensity);
+          // Enhanced purple-gray silk color with more depth
+          const r = Math.floor(80 + 60 * intensity);
+          const g = Math.floor(70 + 50 * intensity);
+          const b = Math.floor(90 + 70 * intensity);
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -96,7 +96,7 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
         width / 2, height / 2, Math.max(width, height) / 2
       );
       overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
