@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -128,12 +129,12 @@ const Index = () => {
 
           {/* AI Virtual Try-On Features Section - Expanded */}
           <div className="mt-20 mb-16">
-            <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-12 border border-white/20 shadow-2xl max-w-7xl mx-auto">
+            <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl w-full max-w-none mx-4" style={{ width: 'calc(100% + 40%)' }}>
               <h3 className="text-3xl font-bold text-white mb-8 text-center">
                 AI Clothes Virtual Try-On: Hyper-Realistic Results
               </h3>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
                 {/* Features List - Takes 1/3 */}
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
@@ -174,7 +175,7 @@ const Index = () => {
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
                     <iframe 
                       width="100%" 
-                      height="840" 
+                      height="480" 
                       src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4&controls=0&modestbranding=1&rel=0&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
                       title="YouTube video player" 
                       frameBorder="0" 
