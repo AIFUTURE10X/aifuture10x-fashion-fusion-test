@@ -40,11 +40,11 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create gradient background
+      // Create dark charcoal gradient background
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#0a0a0a');
-      gradient.addColorStop(0.5, '#1a1a1a');
-      gradient.addColorStop(1, '#0a0a0a');
+      gradient.addColorStop(0, '#1a1a1a');
+      gradient.addColorStop(0.5, '#2d2d2d');
+      gradient.addColorStop(1, '#1a1a1a');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -72,10 +72,10 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const rnd = noise(x, y);
           const intensity = Math.max(0, pattern - rnd / 15.0 * noiseIntensity);
           
-          // Enhanced purple-gray silk color with more depth
-          const r = Math.floor(80 + 60 * intensity);
-          const g = Math.floor(70 + 50 * intensity);
-          const b = Math.floor(90 + 70 * intensity);
+          // Dark charcoal silk color with subtle gray variations
+          const r = Math.floor(40 + 30 * intensity);
+          const g = Math.floor(42 + 32 * intensity);
+          const b = Math.floor(44 + 34 * intensity);
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -90,13 +90,13 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth
+      // Add subtle overlay for depth with charcoal tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
       overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
