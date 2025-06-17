@@ -42,13 +42,8 @@ const Index = () => {
   };
 
   const handleGoToApp = () => {
-    // If no photo uploaded yet, go to photo upload step
-    if (!userPhoto) {
-      setCurrentStep('upload');
-    } else {
-      // If photo already uploaded, go to browse
-      setCurrentStep('browse');
-    }
+    // Always go to upload step - this will show the PhotoUpload component
+    setCurrentStep('upload');
   };
 
   return (
@@ -124,7 +119,7 @@ const Index = () => {
         </div>
       )}
 
-      {/* Photo Upload Step */}
+      {/* Photo Upload Step - Show PhotoUpload component when on upload step */}
       {currentStep === 'upload' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
@@ -187,7 +182,7 @@ const Index = () => {
             </p>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };
