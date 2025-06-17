@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import LiquidDemo from "./pages/LiquidDemo";
+import SilkEffect from "./pages/SilkEffect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/liquid-demo" element={<LiquidDemo />} />
+            <Route path="/silk-effect" element={<SilkEffect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
