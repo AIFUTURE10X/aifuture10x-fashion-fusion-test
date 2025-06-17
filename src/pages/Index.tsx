@@ -169,12 +169,12 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Video Section - Large Width, Reduced Height */}
+                {/* Video Section - Full Width */}
                 <div className="flex justify-center">
-                  <div className="w-full max-w-3xl">
+                  <div className="w-full">
                     <iframe 
                       width="100%" 
-                      height="450" 
+                      height="550" 
                       src="https://www.youtube.com/embed/cHhw9VCIYQ4?si=pTdDfaqfZp_-QDGW&loop=1&playlist=cHhw9VCIYQ4" 
                       title="YouTube video player" 
                       frameBorder="0" 
