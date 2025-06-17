@@ -182,7 +182,7 @@ const Index = () => {
             </p>
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };
