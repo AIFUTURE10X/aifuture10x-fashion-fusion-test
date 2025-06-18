@@ -8,7 +8,6 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -19,13 +18,11 @@ const Index = () => {
   const {
     theme
   } = useTheme();
-
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
     setShowUploadComponent(false);
   };
-
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -34,7 +31,6 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
-
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
@@ -42,7 +38,6 @@ const Index = () => {
     setCurrentStep('upload');
     setShowUploadComponent(false);
   };
-
   const handleGoToApp = () => {
     if (!userPhoto) {
       setShowUploadComponent(true);
@@ -50,13 +45,10 @@ const Index = () => {
       setCurrentStep('browse');
     }
   };
-
   const handleBackToHome = () => {
     setShowUploadComponent(false);
   };
-
-  return (
-    <div className="min-h-screen relative">
+  return <div className="min-h-screen relative">
       {/* Animated Silk Background */}
       <SilkTexture className="fixed inset-0 z-0" />
 
@@ -65,11 +57,7 @@ const Index = () => {
 
       {/* Go To App Button - Always visible in top right */}
       <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
-        <Button
-          onClick={handleGoToApp}
-          size="sm"
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg"
-        >
+        <Button onClick={handleGoToApp} size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg">
           Go To App
           <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
@@ -77,13 +65,12 @@ const Index = () => {
       </div>
 
       {/* Hero Section - Only show when not showing upload component and no photo */}
-      {!showUploadComponent && !userPhoto && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {!showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
               <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto drop-shadow-lg" />
-              <p className="text-2xl text-white font-semibold drop-shadow-lg -mt-2">Your Fashion Reveal:</p>
+              <p className="text-2xl text-white font-semibold drop-shadow-lg -mt-2">Your Fashion Reveal</p>
             </div>
             
             <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-white drop-shadow-lg">
@@ -172,46 +159,28 @@ const Index = () => {
                 {/* Video Section - Takes 2/3 of container */}
                 <div className="lg:col-span-2 flex justify-center">
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
-                    <iframe 
-                      width="100%" 
-                      height="480" 
-                      src="https://www.youtube.com/embed/dfAFXzOczHk?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=dfAFXzOczHk&start=7&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" 
-                      title="YouTube video player" 
-                      frameBorder="0" 
-                      allow="autoplay; encrypted-media" 
-                      referrerPolicy="strict-origin-when-cross-origin" 
-                      allowFullScreen
-                      className="rounded-xl"
-                    ></iframe>
+                    <iframe width="100%" height="480" src="https://www.youtube.com/embed/dfAFXzOczHk?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=dfAFXzOczHk&start=7&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" title="YouTube video player" frameBorder="0" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="rounded-xl"></iframe>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
-      {showUploadComponent && !userPhoto && (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Back to Home Button */}
           <div className="mb-6">
-            <Button
-              onClick={handleBackToHome}
-              variant="outline"
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg"
-            >
+            <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg">
               <Home className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
           </div>
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-        </div>
-      )}
+        </div>}
 
       {/* Navigation for other steps */}
-      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && (
-        <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
@@ -228,26 +197,21 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Clothing Catalog */}
-      {currentStep === 'browse' && userPhoto && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
           <ClothingCatalog onClothingSelect={handleClothingSelect} />
-        </div>
-      )}
+        </div>}
 
       {/* Try-On Viewer */}
-      {currentStep === 'tryon' && userPhoto && selectedClothing && (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'tryon' && userPhoto && selectedClothing && <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <TryOnViewer userPhoto={userPhoto} selectedClothing={selectedClothing} tryOnResult={tryOnResult} onShare={() => setShowShareModal(true)} onBack={() => setCurrentStep('browse')} />
-        </div>
-      )}
+        </div>}
 
       {/* Share Modal */}
       <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tryOnResult={tryOnResult} selectedClothing={selectedClothing} />
@@ -266,8 +230,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
