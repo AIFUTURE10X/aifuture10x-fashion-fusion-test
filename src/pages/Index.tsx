@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -83,7 +84,7 @@ const Index = () => {
             {/* Logo positioned where indicated */}
             <div className="mb-6">
               <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto drop-shadow-lg" />
-              <p className="text-2xl text-white mt-4 font-semibold drop-shadow-lg">Your Fashion Reveal:</p>
+              <p className="text-2xl text-white mt-2 font-semibold drop-shadow-lg">Your Fashion Reveal:</p>
             </div>
             
             <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-white drop-shadow-lg">
