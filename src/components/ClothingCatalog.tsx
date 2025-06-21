@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -137,13 +138,14 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
   isCustom?: boolean
 }) {
   return (
-    <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group">
-      <CardContent className="p-3 relative">
-        <div className="aspect-w-3 aspect-h-4 relative rounded-md overflow-hidden mb-3" onClick={onSelect}>
+    <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group relative">
+      <CardContent className="p-0 relative">
+        {/* Image container with proper aspect ratio */}
+        <div className="relative w-full aspect-[3/4] overflow-hidden" onClick={onSelect}>
           <img
             src={clothing.image}
             alt={clothing.name}
-            className="w-full h-48 object-cover rounded-md"
+            className="w-full h-full object-cover object-center"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=600&fit=crop`;
@@ -151,13 +153,13 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
           />
         </div>
         
-        {/* Edit and Delete buttons for custom clothing */}
+        {/* Edit and Delete buttons for custom clothing - always visible for better UX */}
         {isCustom && (
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+          <div className="absolute top-2 right-2 flex space-x-1 bg-black/20 rounded-lg p-1">
             <Button
               size="sm"
               variant="secondary"
-              className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+              className="h-7 w-7 p-0 bg-white/90 hover:bg-white"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.();
@@ -168,7 +170,7 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
             <Button
               size="sm"
               variant="destructive"
-              className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600"
+              className="h-7 w-7 p-0 bg-red-500/90 hover:bg-red-600"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete?.();
@@ -179,7 +181,8 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
           </div>
         )}
         
-        <div onClick={onSelect}>
+        {/* Content overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3" onClick={onSelect}>
           <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
           <p className="text-sm text-gray-300">{clothing.brand}</p>
           <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
@@ -387,9 +390,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           <Button
             onClick={() => setShowUploadModal(true)}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            Add Custom Clothing
-          </Button>
+          />
         </div>
       )}
 
