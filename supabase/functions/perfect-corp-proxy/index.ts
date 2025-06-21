@@ -50,14 +50,26 @@ serve(async (req) => {
       styleId: isCustomClothing ? undefined : clothingImage
     })
 
-    // Step 1: Generate id_token and authenticate with Perfect Corp API
+    // Step 1: Generate id_token with proper structure for Perfect Corp
     console.log('Step 1: Generating id_token and authenticating...')
     const timestamp = Date.now()
-    const idTokenData = `client_id=${apiKey}&timestamp=${timestamp}`
     
-    // For now, use base64 encoding as a placeholder for RSA encryption
-    // In production, you should implement proper RSA X.509 encryption
-    const idToken = btoa(idTokenData)
+    // Create a properly structured JWT-like payload
+    const payload = {
+      iss: apiKey,
+      aud: 'https://yce-api-01.perfectcorp.com',
+      iat: Math.floor(timestamp / 1000),
+      exp: Math.floor(timestamp / 1000) + 3600, // 1 hour expiry
+      client_id: apiKey
+    }
+    
+    // For now, we'll use a simplified approach since we don't have RSA private key
+    // In production, this should be properly signed with RSA private key
+    const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }))
+    const payloadEncoded = btoa(JSON.stringify(payload))
+    const idToken = `${header}.${payloadEncoded}.signature_placeholder`
+    
+    console.log('Using simplified authentication approach')
     
     const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
       method: 'POST',
@@ -73,7 +85,49 @@ serve(async (req) => {
     if (!authResponse.ok) {
       const authError = await authResponse.text()
       console.error('Perfect Corp authentication failed:', authError)
-      throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
+      
+      // Try alternative authentication method with client_secret
+      console.log('Trying alternative authentication with client_secret...')
+      
+      const altAuthResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: apiKey,
+          client_secret: apiSecret,
+          grant_type: 'client_credentials'
+        }),
+      })
+
+      if (!altAuthResponse.ok) {
+        const altAuthError = await altAuthResponse.text()
+        console.error('Alternative authentication also failed:', altAuthError)
+        throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
+      }
+
+      const altAuthData = await altAuthResponse.json()
+      const accessToken = altAuthData.result?.access_token || altAuthData.access_token
+
+      if (!accessToken) {
+        console.error('Alt auth response:', altAuthData)
+        throw new Error('No access token received from alternative authentication')
+      }
+
+      console.log('Alternative authentication successful')
+
+      // Continue with the rest of the process using the access token
+      return await processWithAccessToken(accessToken, {
+        userPhoto,
+        userPhotoStoragePath,
+        clothingImage,
+        clothingCategory,
+        isCustomClothing,
+        perfectCorpRefId,
+        supabaseUrl,
+        supabaseServiceKey
+      })
     }
 
     const authData = await authResponse.json()
@@ -86,173 +140,15 @@ serve(async (req) => {
 
     console.log('Authentication successful')
 
-    // Step 2: Get user photo data
-    let userPhotoData: ArrayBuffer
-    
-    if (userPhotoStoragePath) {
-      // Use Supabase client with admin secret to get a signed URL
-      const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      const { data } = await supabase.storage.from('fashionfusion').createSignedUrl(userPhotoStoragePath, 3600)
-      if (data?.signedUrl) {
-        const photoResponse = await fetch(data.signedUrl)
-        userPhotoData = await photoResponse.arrayBuffer()
-        console.log('Fetched user photo from Supabase Storage')
-      } else {
-        throw new Error('Failed to generate signed URL for user photo')
-      }
-    } else if (userPhoto) {
-      // Fallback: use public URL directly
-      const photoResponse = await fetch(userPhoto)
-      userPhotoData = await photoResponse.arrayBuffer()
-      console.log('Fetched user photo from public URL')
-    } else {
-      throw new Error('Neither userPhotoStoragePath nor userPhoto public url provided.')
-    }
-
-    // Step 3: Upload user photo to Perfect Corp
-    console.log('Step 2: Uploading user photo...')
-    const uploadResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/file/clothes-tryon', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        files: [
-          {
-            content_type: 'image/jpeg',
-            file_name: 'user_photo.jpg'
-          }
-        ]
-      }),
-    })
-
-    if (!uploadResponse.ok) {
-      const uploadError = await uploadResponse.text()
-      console.error('Perfect Corp upload request failed:', uploadError)
-      throw new Error(`Upload request failed: ${uploadResponse.status} - ${uploadError}`)
-    }
-
-    const uploadData = await uploadResponse.json()
-    const uploadResult = uploadData.result || uploadData
-    const uploadUrl = uploadResult.files[0].url
-    const fileId = uploadResult.files[0].file_id
-
-    // Upload the actual image data
-    const imageUploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'image/jpeg',
-      },
-      body: userPhotoData,
-    })
-
-    if (!imageUploadResponse.ok) {
-      throw new Error(`Image upload failed: ${imageUploadResponse.status}`)
-    }
-
-    console.log('User photo uploaded successfully, file_id:', fileId)
-
-    // Step 4: Run clothes try-on task
-    console.log('Step 3: Running clothes try-on task...')
-    
-    // Build request body based on clothing type
-    let tryOnRequestBody: any = {
-      file_id: fileId
-    }
-
-    if (isCustomClothing && perfectCorpRefId) {
-      // Use ref_ids for custom clothing
-      tryOnRequestBody.ref_ids = [perfectCorpRefId]
-      console.log('Using custom clothing with ref_id:', perfectCorpRefId)
-    } else {
-      // Use style_id for predefined styles
-      tryOnRequestBody.style_id = clothingImage
-      console.log('Using predefined style with style_id:', clothingImage)
-    }
-    
-    const tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(tryOnRequestBody),
-    })
-
-    if (!tryOnResponse.ok) {
-      const tryOnError = await tryOnResponse.text()
-      console.error('Perfect Corp try-on task failed:', tryOnError)
-      throw new Error(`Try-on task failed: ${tryOnResponse.status} - ${tryOnError}`)
-    }
-
-    const tryOnData = await tryOnResponse.json()
-    const tryOnResult = tryOnData.result || tryOnData
-    const taskId = tryOnResult.task_id
-
-    console.log('Try-on task started, task_id:', taskId)
-
-    // Step 5: Poll for task completion
-    console.log('Step 4: Polling for task completion...')
-    let result
-    let attempts = 0
-    const maxAttempts = 30 // 30 seconds timeout
-    
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
-      
-      const statusResponse = await fetch(`https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon?task_id=${taskId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      })
-
-      if (!statusResponse.ok) {
-        throw new Error(`Status check failed: ${statusResponse.status}`)
-      }
-
-      const statusData = await statusResponse.json()
-      const statusResult = statusData.result || statusData
-      
-      if (statusResult.status === 'success') {
-        result = statusResult
-        break
-      } else if (statusResult.status === 'failed') {
-        throw new Error(`Try-on task failed: ${statusResult.error || 'Unknown error'}`)
-      }
-      
-      attempts++
-      console.log(`Polling attempt ${attempts}, status: ${statusResult.status}`)
-    }
-
-    if (!result) {
-      throw new Error('Try-on task timed out')
-    }
-
-    // Step 6: Download and convert result image
-    console.log('Step 5: Downloading result image...')
-    const resultImageUrl = result.output_url
-    const resultImageResponse = await fetch(resultImageUrl)
-    
-    if (!resultImageResponse.ok) {
-      throw new Error(`Failed to download result image: ${resultImageResponse.status}`)
-    }
-
-    const resultImageData = await resultImageResponse.arrayBuffer()
-    const resultImageBase64 = arrayBufferToBase64(resultImageData)
-
-    console.log('Clothes try-on completed successfully')
-
-    return new Response(JSON.stringify({
-      success: true,
-      result_img: resultImageBase64,
-      processing_time: result.processing_time || null,
-      message: isCustomClothing 
-        ? "Virtual try-on completed successfully using your custom clothing"
-        : "Virtual try-on completed successfully using Perfect Corp AI"
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return await processWithAccessToken(accessToken, {
+      userPhoto,
+      userPhotoStoragePath,
+      clothingImage,
+      clothingCategory,
+      isCustomClothing,
+      perfectCorpRefId,
+      supabaseUrl,
+      supabaseServiceKey
     })
 
   } catch (error) {
@@ -286,7 +182,189 @@ serve(async (req) => {
       }
     )
   }
-});
+})
+
+async function processWithAccessToken(accessToken: string, params: any): Promise<Response> {
+  const {
+    userPhoto,
+    userPhotoStoragePath,
+    clothingImage,
+    clothingCategory,
+    isCustomClothing,
+    perfectCorpRefId,
+    supabaseUrl,
+    supabaseServiceKey
+  } = params
+
+  // Step 2: Get user photo data
+  let userPhotoData: ArrayBuffer
+  
+  if (userPhotoStoragePath) {
+    // Use Supabase client with admin secret to get a signed URL
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { data } = await supabase.storage.from('fashionfusion').createSignedUrl(userPhotoStoragePath, 3600)
+    if (data?.signedUrl) {
+      const photoResponse = await fetch(data.signedUrl)
+      userPhotoData = await photoResponse.arrayBuffer()
+      console.log('Fetched user photo from Supabase Storage')
+    } else {
+      throw new Error('Failed to generate signed URL for user photo')
+    }
+  } else if (userPhoto) {
+    // Fallback: use public URL directly
+    const photoResponse = await fetch(userPhoto)
+    userPhotoData = await photoResponse.arrayBuffer()
+    console.log('Fetched user photo from public URL')
+  } else {
+    throw new Error('Neither userPhotoStoragePath nor userPhoto public url provided.')
+  }
+
+  // Step 3: Upload user photo to Perfect Corp
+  console.log('Step 2: Uploading user photo...')
+  const uploadResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/file/clothes-tryon', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      files: [
+        {
+          content_type: 'image/jpeg',
+          file_name: 'user_photo.jpg'
+        }
+      ]
+    }),
+  })
+
+  if (!uploadResponse.ok) {
+    const uploadError = await uploadResponse.text()
+    console.error('Perfect Corp upload request failed:', uploadError)
+    throw new Error(`Upload request failed: ${uploadResponse.status} - ${uploadError}`)
+  }
+
+  const uploadData = await uploadResponse.json()
+  const uploadResult = uploadData.result || uploadData
+  const uploadUrl = uploadResult.files[0].url
+  const fileId = uploadResult.files[0].file_id
+
+  // Upload the actual image data
+  const imageUploadResponse = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'image/jpeg',
+    },
+    body: userPhotoData,
+  })
+
+  if (!imageUploadResponse.ok) {
+    throw new Error(`Image upload failed: ${imageUploadResponse.status}`)
+  }
+
+  console.log('User photo uploaded successfully, file_id:', fileId)
+
+  // Step 4: Run clothes try-on task
+  console.log('Step 3: Running clothes try-on task...')
+  
+  // Build request body based on clothing type
+  let tryOnRequestBody: any = {
+    file_id: fileId
+  }
+
+  if (isCustomClothing && perfectCorpRefId) {
+    // Use ref_ids for custom clothing
+    tryOnRequestBody.ref_ids = [perfectCorpRefId]
+    console.log('Using custom clothing with ref_id:', perfectCorpRefId)
+  } else {
+    // Use style_id for predefined styles
+    tryOnRequestBody.style_id = clothingImage
+    console.log('Using predefined style with style_id:', clothingImage)
+  }
+  
+  const tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(tryOnRequestBody),
+  })
+
+  if (!tryOnResponse.ok) {
+    const tryOnError = await tryOnResponse.text()
+    console.error('Perfect Corp try-on task failed:', tryOnError)
+    throw new Error(`Try-on task failed: ${tryOnResponse.status} - ${tryOnError}`)
+  }
+
+  const tryOnData = await tryOnResponse.json()
+  const tryOnResult = tryOnData.result || tryOnData
+  const taskId = tryOnResult.task_id
+
+  console.log('Try-on task started, task_id:', taskId)
+
+  // Step 5: Poll for task completion
+  console.log('Step 4: Polling for task completion...')
+  let result
+  let attempts = 0
+  const maxAttempts = 30 // 30 seconds timeout
+  
+  while (attempts < maxAttempts) {
+    await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+    
+    const statusResponse = await fetch(`https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon?task_id=${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    })
+
+    if (!statusResponse.ok) {
+      throw new Error(`Status check failed: ${statusResponse.status}`)
+    }
+
+    const statusData = await statusResponse.json()
+    const statusResult = statusData.result || statusData
+    
+    if (statusResult.status === 'success') {
+      result = statusResult
+      break
+    } else if (statusResult.status === 'failed') {
+      throw new Error(`Try-on task failed: ${statusResult.error || 'Unknown error'}`)
+    }
+    
+    attempts++
+    console.log(`Polling attempt ${attempts}, status: ${statusResult.status}`)
+  }
+
+  if (!result) {
+    throw new Error('Try-on task timed out')
+  }
+
+  // Step 6: Download and convert result image
+  console.log('Step 5: Downloading result image...')
+  const resultImageUrl = result.output_url
+  const resultImageResponse = await fetch(resultImageUrl)
+  
+  if (!resultImageResponse.ok) {
+    throw new Error(`Failed to download result image: ${resultImageResponse.status}`)
+  }
+
+  const resultImageData = await resultImageResponse.arrayBuffer()
+  const resultImageBase64 = arrayBufferToBase64(resultImageData)
+
+  console.log('Clothes try-on completed successfully')
+
+  return new Response(JSON.stringify({
+    success: true,
+    result_img: resultImageBase64,
+    processing_time: result.processing_time || null,
+    message: isCustomClothing 
+      ? "Virtual try-on completed successfully using your custom clothing"
+      : "Virtual try-on completed successfully using Perfect Corp AI"
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
 
 // Safe function for large ArrayBuffers
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
