@@ -9,7 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      clothing_items: {
+        Row: {
+          brand: string | null
+          colors: string[] | null
+          created_at: string | null
+          garment_category: string
+          id: string
+          name: string
+          perfect_corp_ref_id: string | null
+          price: number | null
+          supabase_image_url: string | null
+        }
+        Insert: {
+          brand?: string | null
+          colors?: string[] | null
+          created_at?: string | null
+          garment_category: string
+          id?: string
+          name: string
+          perfect_corp_ref_id?: string | null
+          price?: number | null
+          supabase_image_url?: string | null
+        }
+        Update: {
+          brand?: string | null
+          colors?: string[] | null
+          created_at?: string | null
+          garment_category?: string
+          id?: string
+          name?: string
+          perfect_corp_ref_id?: string | null
+          price?: number | null
+          supabase_image_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

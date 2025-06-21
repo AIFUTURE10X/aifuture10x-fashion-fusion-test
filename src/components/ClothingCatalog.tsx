@@ -32,7 +32,7 @@ const clothingData: ClothingItem[] = [
     name: 'Classic White Tee',
     brand: 'Uniqlo',
     price: 19.99,
-    image: '/lovable-uploads/clothing/white-tee.png',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=600&fit=crop',
     category: 'upper_body',
     rating: 4.5,
     colors: ['white']
@@ -42,7 +42,7 @@ const clothingData: ClothingItem[] = [
     name: 'Slim Fit Jeans',
     brand: 'Levi\'s',
     price: 59.99,
-    image: '/lovable-uploads/clothing/blue-jeans.png',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=600&fit=crop',
     category: 'lower_body',
     rating: 4.2,
     colors: ['blue']
@@ -52,7 +52,7 @@ const clothingData: ClothingItem[] = [
     name: 'Summer Dress',
     brand: 'H&M',
     price: 39.99,
-    image: '/lovable-uploads/clothing/summer-dress.png',
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=600&fit=crop',
     category: 'full_body',
     rating: 4.0,
     colors: ['floral']
@@ -62,7 +62,7 @@ const clothingData: ClothingItem[] = [
     name: 'Leather Jacket',
     brand: 'Zara',
     price: 79.99,
-    image: '/lovable-uploads/clothing/leather-jacket.png',
+    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=600&fit=crop',
     category: 'upper_body',
     rating: 4.7,
     colors: ['black']
@@ -72,7 +72,7 @@ const clothingData: ClothingItem[] = [
     name: 'Chino Shorts',
     brand: 'Gap',
     price: 44.99,
-    image: '/lovable-uploads/clothing/chino-shorts.png',
+    image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=600&fit=crop',
     category: 'lower_body',
     rating: 4.3,
     colors: ['khaki']
@@ -82,7 +82,7 @@ const clothingData: ClothingItem[] = [
     name: 'Striped Shirt',
     brand: 'Banana Republic',
     price: 69.50,
-    image: '/lovable-uploads/clothing/striped-shirt.png',
+    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=600&fit=crop',
     category: 'upper_body',
     rating: 4.1,
     colors: ['navy', 'white']
@@ -92,7 +92,7 @@ const clothingData: ClothingItem[] = [
     name: 'Denim Skirt',
     brand: 'Old Navy',
     price: 34.99,
-    image: '/lovable-uploads/clothing/denim-skirt.png',
+    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=600&fit=crop',
     category: 'lower_body',
     rating: 4.4,
     colors: ['blue']
@@ -102,7 +102,7 @@ const clothingData: ClothingItem[] = [
     name: 'Pencil Dress',
     brand: 'Ann Taylor',
     price: 98.00,
-    image: '/lovable-uploads/clothing/pencil-dress.png',
+    image: 'https://images.unsplash.com/photo-1566479179817-92e8b94be0f0?w=400&h=600&fit=crop',
     category: 'full_body',
     rating: 4.6,
     colors: ['red']
@@ -112,7 +112,7 @@ const clothingData: ClothingItem[] = [
     name: 'Bomber Jacket',
     brand: 'Adidas',
     price: 89.99,
-    image: '/lovable-uploads/clothing/bomber-jacket.png',
+    image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5c?w=400&h=600&fit=crop',
     category: 'upper_body',
     rating: 4.8,
     colors: ['green']
@@ -122,7 +122,7 @@ const clothingData: ClothingItem[] = [
     name: 'Cargo Pants',
     brand: 'REI',
     price: 79.99,
-    image: '/lovable-uploads/clothing/cargo-pants.png',
+    image: 'https://images.unsplash.com/photo-1584701154663-7f6d85d8b3df?w=400&h=600&fit=crop',
     category: 'lower_body',
     rating: 4.0,
     colors: ['olive']
@@ -137,7 +137,11 @@ function ClothingCard({ clothing, onSelect }: { clothing: ClothingItem, onSelect
           <img
             src={clothing.image}
             alt={clothing.name}
-            className="object-cover rounded-md"
+            className="w-full h-48 object-cover rounded-md"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=600&fit=crop`;
+            }}
           />
         </div>
         <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
