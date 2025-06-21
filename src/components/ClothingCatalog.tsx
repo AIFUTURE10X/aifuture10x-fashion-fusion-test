@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -322,14 +321,18 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       <div>
         <Label className="text-sm text-gray-300 block mb-2">Category</Label>
         <select
-          className="bg-white/10 border-white/20 text-white rounded-md p-2 w-full [&>option]:bg-gray-800 [&>option]:text-white"
+          className="bg-gray-800 border border-gray-600 text-white rounded-md p-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
+          style={{
+            backgroundColor: '#374151',
+            color: 'white'
+          }}
         >
-          <option value="all">All Categories</option>
-          <option value="upper_body">Upper Body</option>
-          <option value="lower_body">Lower Body</option>
-          <option value="full_body">Full Body</option>
+          <option value="all" className="bg-gray-800 text-white">All Categories</option>
+          <option value="upper_body" className="bg-gray-800 text-white">Upper Body</option>
+          <option value="lower_body" className="bg-gray-800 text-white">Lower Body</option>
+          <option value="full_body" className="bg-gray-800 text-white">Full Body</option>
         </select>
       </div>
 
@@ -337,10 +340,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       <div>
         <Label className="text-sm text-gray-300 block mb-2">Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
         <Slider
-          defaultValue={priceRange}
+          value={priceRange}
           max={5000}
           step={10}
           onValueChange={(value) => setPriceRange(value)}
+          className="w-full"
         />
       </div>
 
@@ -420,4 +424,3 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     </div>
   );
 };
-
