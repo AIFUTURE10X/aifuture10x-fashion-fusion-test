@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -160,7 +161,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   useEffect(() => {
     const loadCustomClothing = async () => {
       try {
-        const { data, error } = await supabase
+        // Use type assertion to bypass TypeScript type checking for the table name
+        const { data, error } = await (supabase as any)
           .from('clothing_items')
           .select('*')
           .order('created_at', { ascending: false });
@@ -170,19 +172,21 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           return;
         }
 
-        const formattedClothing: ClothingItem[] = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          brand: item.brand || 'Custom',
-          price: item.price || 0,
-          image: item.supabase_image_url,
-          category: item.garment_category,
-          rating: 4.5,
-          colors: item.colors || ['custom'],
-          perfect_corp_ref_id: item.perfect_corp_ref_id
-        }));
+        if (data) {
+          const formattedClothing: ClothingItem[] = data.map((item: any) => ({
+            id: item.id || '',
+            name: item.name || '',
+            brand: item.brand || 'Custom',
+            price: item.price || 0,
+            image: item.supabase_image_url || '',
+            category: item.garment_category || 'upper_body',
+            rating: 4.5,
+            colors: item.colors || ['custom'],
+            perfect_corp_ref_id: item.perfect_corp_ref_id
+          }));
 
-        setCustomClothing(formattedClothing);
+          setCustomClothing(formattedClothing);
+        }
       } catch (err) {
         console.error('Failed to load custom clothing:', err);
       }

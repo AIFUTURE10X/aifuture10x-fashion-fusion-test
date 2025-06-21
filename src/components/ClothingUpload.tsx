@@ -143,8 +143,8 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
     }
 
     try {
-      // Save to database
-      const { data, error: dbError } = await supabase
+      // Save to database with type assertion
+      const { data, error: dbError } = await (supabase as any)
         .from('clothing_items')
         .insert({
           name: clothingName.trim(),
@@ -162,26 +162,28 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
         throw new Error(dbError.message);
       }
 
-      // Create clothing item for the catalog
-      const newClothing: ClothingItem = {
-        id: data.id,
-        name: data.name,
-        brand: data.brand,
-        price: data.price,
-        image: data.supabase_image_url,
-        category: data.garment_category,
-        rating: 4.5,
-        colors: data.colors,
-        perfect_corp_ref_id: data.perfect_corp_ref_id
-      };
+      if (data) {
+        // Create clothing item for the catalog
+        const newClothing: ClothingItem = {
+          id: data.id || '',
+          name: data.name || '',
+          brand: data.brand || 'Custom',
+          price: data.price || 0,
+          image: data.supabase_image_url || '',
+          category: data.garment_category || 'upper_body',
+          rating: 4.5,
+          colors: data.colors || ['custom'],
+          perfect_corp_ref_id: data.perfect_corp_ref_id
+        };
 
-      onClothingAdd(newClothing);
-      onClose();
-      
-      toast({
-        title: "Clothing Added!",
-        description: "Your custom clothing item is now available for try-on"
-      });
+        onClothingAdd(newClothing);
+        onClose();
+        
+        toast({
+          title: "Clothing Added!",
+          description: "Your custom clothing item is now available for try-on"
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save clothing item');
     }
