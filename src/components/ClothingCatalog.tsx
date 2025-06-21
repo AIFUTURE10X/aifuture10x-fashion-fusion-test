@@ -198,7 +198,7 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
 export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 100]);
+  const [priceRange, setPriceRange] = useState([0, 5000]);
   const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
@@ -322,7 +322,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       <div>
         <Label className="text-sm text-gray-300 block mb-2">Category</Label>
         <select
-          className="bg-white/10 border-white/20 text-white rounded-md p-2 w-full"
+          className="bg-white/10 border-white/20 text-white rounded-md p-2 w-full [&>option]:bg-gray-800 [&>option]:text-white"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
         >
@@ -338,8 +338,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         <Label className="text-sm text-gray-300 block mb-2">Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
         <Slider
           defaultValue={priceRange}
-          max={100}
-          step={1}
+          max={5000}
+          step={10}
           onValueChange={(value) => setPriceRange(value)}
         />
       </div>
