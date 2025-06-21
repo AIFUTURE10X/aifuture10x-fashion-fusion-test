@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
@@ -27,10 +28,21 @@ serve(async (req) => {
     }: TryOnRequest = await req.json()
     
     // Get Perfect Corp API credentials from environment variables
-    const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
+    // Try both possible secret names
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY') || Deno.env.get('PERFECTCORP_API_KEY_NEW')
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET')
     
+    console.log('Environment check:', {
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret,
+      keySource: Deno.env.get('PERFECTCORP_API_KEY') ? 'PERFECTCORP_API_KEY' : 'PERFECTCORP_API_KEY_NEW'
+    })
+    
     if (!apiKey || !apiSecret) {
+      console.error('Missing credentials:', {
+        apiKey: apiKey ? 'present' : 'missing',
+        apiSecret: apiSecret ? 'present' : 'missing'
+      })
       throw new Error('Perfect Corp API credentials not configured')
     }
 
@@ -51,6 +63,10 @@ serve(async (req) => {
 
     // Step 1: Authenticate with Perfect Corp using client credentials grant
     console.log('Step 1: Authenticating with Perfect Corp...')
+    console.log('Using credentials:', {
+      clientId: apiKey?.substring(0, 8) + '...',
+      clientSecretLength: apiSecret?.length
+    })
     
     const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
       method: 'POST',
@@ -64,14 +80,25 @@ serve(async (req) => {
       }),
     })
 
+    console.log('Auth response status:', authResponse.status)
+    console.log('Auth response headers:', Object.fromEntries(authResponse.headers.entries()))
+
     if (!authResponse.ok) {
       const authError = await authResponse.text()
-      console.error('Perfect Corp authentication failed:', authError)
+      console.error('Perfect Corp authentication failed:', {
+        status: authResponse.status,
+        statusText: authResponse.statusText,
+        error: authError
+      })
       throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
     }
 
     const authData = await authResponse.json()
-    console.log('Auth response received:', { status: authResponse.status, hasResult: !!authData.result })
+    console.log('Auth response received:', { 
+      status: authResponse.status, 
+      hasResult: !!authData.result,
+      authDataKeys: Object.keys(authData)
+    })
     
     const accessToken = authData.result?.access_token || authData.access_token
 
