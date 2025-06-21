@@ -28,14 +28,13 @@ serve(async (req) => {
     }: TryOnRequest = await req.json()
     
     // Get Perfect Corp API credentials from environment variables
-    // Try both possible secret names
-    const apiKey = Deno.env.get('PERFECTCORP_API_KEY') || Deno.env.get('PERFECTCORP_API_KEY_NEW')
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW') || Deno.env.get('PERFECTCORP_API_KEY')
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET')
     
     console.log('Environment check:', {
       hasApiKey: !!apiKey,
       hasApiSecret: !!apiSecret,
-      keySource: Deno.env.get('PERFECTCORP_API_KEY') ? 'PERFECTCORP_API_KEY' : 'PERFECTCORP_API_KEY_NEW'
+      keySource: Deno.env.get('PERFECTCORP_API_KEY_NEW') ? 'PERFECTCORP_API_KEY_NEW' : 'PERFECTCORP_API_KEY'
     })
     
     if (!apiKey || !apiSecret) {
@@ -61,23 +60,26 @@ serve(async (req) => {
       styleId: isCustomClothing ? undefined : clothingImage
     })
 
-    // Step 1: Authenticate with Perfect Corp using client credentials grant
+    // Step 1: Authenticate with Perfect Corp using the correct OAuth2 endpoint
     console.log('Step 1: Authenticating with Perfect Corp...')
     console.log('Using credentials:', {
       clientId: apiKey?.substring(0, 8) + '...',
       clientSecretLength: apiSecret?.length
     })
     
-    const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
+    // Use the correct OAuth2 token endpoint
+    const authResponse = await fetch('https://yce-api-01.perfectcorp.com/oauth2/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        client_id: apiKey,
-        client_secret: apiSecret,
-        grant_type: 'client_credentials'
-      }),
+      body: new URLSearchParams({
+        'grant_type': 'client_credentials',
+        'client_id': apiKey,
+        'client_secret': apiSecret,
+        'scope': 'api'
+      }).toString(),
     })
 
     console.log('Auth response status:', authResponse.status)
@@ -96,11 +98,12 @@ serve(async (req) => {
     const authData = await authResponse.json()
     console.log('Auth response received:', { 
       status: authResponse.status, 
-      hasResult: !!authData.result,
-      authDataKeys: Object.keys(authData)
+      hasAccessToken: !!authData.access_token,
+      authDataKeys: Object.keys(authData),
+      tokenType: authData.token_type
     })
     
-    const accessToken = authData.result?.access_token || authData.access_token
+    const accessToken = authData.access_token
 
     if (!accessToken) {
       console.error('No access token in auth response:', authData)
