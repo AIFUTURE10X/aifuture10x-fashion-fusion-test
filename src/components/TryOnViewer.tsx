@@ -65,11 +65,27 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
     console.log('Starting virtual try-on process...');
 
     try {
-      const response: TryOnResponse = await perfectCorpApi.tryOnClothing({
+      // Check if this is custom clothing with Perfect Corp ref_id
+      const isCustomClothing = !!selectedClothing.perfect_corp_ref_id;
+      
+      const payload: any = {
         userPhoto,
-        clothingImage: selectedClothing.image,
         clothingCategory: selectedClothing.category
-      });
+      };
+
+      if (isCustomClothing) {
+        // Use Perfect Corp ref_id for custom clothing
+        payload.isCustomClothing = true;
+        payload.perfectCorpRefId = selectedClothing.perfect_corp_ref_id;
+        payload.clothingImage = selectedClothing.image; // Still send for logging
+        console.log('Using custom clothing with ref_id:', selectedClothing.perfect_corp_ref_id);
+      } else {
+        // Use traditional style_id approach for predefined clothing
+        payload.clothingImage = selectedClothing.image;
+        console.log('Using predefined clothing');
+      }
+
+      const response: TryOnResponse = await perfectCorpApi.tryOnClothing(payload);
 
       if (response.success && response.resultImage) {
         const resultImageUrl = `data:image/jpeg;base64,${response.resultImage}`;
@@ -77,7 +93,9 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         setProcessingTime(response.processingTime || null);
         toast({
           title: "Try-On Complete!",
-          description: "Your virtual try-on has been generated successfully."
+          description: isCustomClothing 
+            ? "Your custom clothing try-on has been generated successfully."
+            : "Your virtual try-on has been generated successfully."
         });
       } else {
         // Enhance error message for fetch failures

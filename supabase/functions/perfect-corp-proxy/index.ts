@@ -6,8 +6,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
 interface TryOnRequest {
   userPhoto?: string; // legacy: public URL
   userPhotoStoragePath?: string; // new: storage path
-  clothingImage: string; // This will be treated as style_id for Perfect Corp
+  clothingImage: string; // This will be either style_id OR ref_id
   clothingCategory: string;
+  isCustomClothing?: boolean; // new: indicates if using custom clothing
+  perfectCorpRefId?: string; // new: Perfect Corp reference ID
 }
 
 serve(async (req) => {
@@ -16,7 +18,14 @@ serve(async (req) => {
   }
 
   try {
-    const { userPhoto, userPhotoStoragePath, clothingImage, clothingCategory }: TryOnRequest = await req.json()
+    const { 
+      userPhoto, 
+      userPhotoStoragePath, 
+      clothingImage, 
+      clothingCategory,
+      isCustomClothing,
+      perfectCorpRefId
+    }: TryOnRequest = await req.json()
     
     // Get Perfect Corp API credentials from environment variables
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
@@ -36,7 +45,9 @@ serve(async (req) => {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
-      styleId: clothingImage
+      isCustomClothing,
+      perfectCorpRefId,
+      styleId: isCustomClothing ? undefined : clothingImage
     })
 
     // Step 1: Generate id_token and authenticate with Perfect Corp API
@@ -145,9 +156,20 @@ serve(async (req) => {
     // Step 4: Run clothes try-on task
     console.log('Step 3: Running clothes try-on task...')
     
-    // Use clothingImage as style_id (assuming it's a Perfect Corp style ID)
-    // In a real implementation, you'd map your clothing items to Perfect Corp style IDs
-    const styleId = clothingImage
+    // Build request body based on clothing type
+    let tryOnRequestBody: any = {
+      file_id: fileId
+    }
+
+    if (isCustomClothing && perfectCorpRefId) {
+      // Use ref_ids for custom clothing
+      tryOnRequestBody.ref_ids = [perfectCorpRefId]
+      console.log('Using custom clothing with ref_id:', perfectCorpRefId)
+    } else {
+      // Use style_id for predefined styles
+      tryOnRequestBody.style_id = clothingImage
+      console.log('Using predefined style with style_id:', clothingImage)
+    }
     
     const tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
       method: 'POST',
@@ -155,10 +177,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        file_id: fileId,
-        style_id: styleId
-      }),
+      body: JSON.stringify(tryOnRequestBody),
     })
 
     if (!tryOnResponse.ok) {
@@ -229,7 +248,9 @@ serve(async (req) => {
       success: true,
       result_img: resultImageBase64,
       processing_time: result.processing_time || null,
-      message: "Virtual try-on completed successfully using Perfect Corp AI"
+      message: isCustomClothing 
+        ? "Virtual try-on completed successfully using your custom clothing"
+        : "Virtual try-on completed successfully using Perfect Corp AI"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

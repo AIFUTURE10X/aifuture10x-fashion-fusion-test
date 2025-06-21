@@ -1,32 +1,41 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Uploads a file to the "fashionfusion" bucket in Supabase and returns the public URL.
- * The returned URL is always public (bucket is public).
- * Throws error on failure.
- */
-export async function uploadPhotoToSupabase(file: File): Promise<string> {
-  // Use a unique file name to avoid collisions
+export async function uploadPhotoToSupabase(
+  file: File, 
+  bucket: string = 'fashionfusion'
+): Promise<string> {
+  console.log(`Starting upload to ${bucket}...`);
+  
+  // Generate unique filename
   const fileExt = file.name.split('.').pop();
-  const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-  const filePath = `uploads/${uniqueId}.${fileExt}`;
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  
+  console.log(`Generated filename: ${fileName}`);
+  
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
 
-  // Upload file
-  const { error } = await supabase.storage
-    .from("fashionfusion")
-    .upload(filePath, file, { upsert: true });
-
-  if (error) throw new Error(error.message);
-
-  // Get public URL
-  const { data } = supabase.storage
-    .from("fashionfusion")
-    .getPublicUrl(filePath);
-
-  if (!data || !data.publicUrl) {
-    throw new Error("Could not retrieve uploaded image URL.");
+  if (error) {
+    console.error(`Upload error to ${bucket}:`, error);
+    throw new Error(`Upload failed: ${error.message}`);
   }
 
-  return data.publicUrl;
+  console.log(`Upload successful to ${bucket}:`, data);
+
+  // Get public URL
+  const { data: urlData } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(fileName);
+
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to get public URL');
+  }
+
+  console.log(`Public URL generated: ${urlData.publicUrl}`);
+  return urlData.publicUrl;
 }

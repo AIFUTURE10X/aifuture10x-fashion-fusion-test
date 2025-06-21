@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Search, Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ClothingCard } from './ClothingCard';
-import { CategoryFilter } from './CategoryFilter';
-import { CatalogSearchBar } from './CatalogSearchBar';
-import { ClothingUpload } from './ClothingUpload';
+import { Card, CardContent } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Upload, Package } from 'lucide-react';
+import { ClothingUpload } from '@/components/ClothingUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ClothingItem {
   id: string;
@@ -16,179 +18,278 @@ interface ClothingItem {
   category: string;
   rating: number;
   colors: string[];
+  perfect_corp_ref_id?: string;
 }
 
 interface ClothingCatalogProps {
-  onClothingSelect: (clothing: ClothingItem) => void;
+  onClothingSelect: (clothing: any) => void;
+}
+
+const clothingData: ClothingItem[] = [
+  {
+    id: '1',
+    name: 'Classic White Tee',
+    brand: 'Uniqlo',
+    price: 19.99,
+    image: '/lovable-uploads/clothing/white-tee.png',
+    category: 'upper_body',
+    rating: 4.5,
+    colors: ['white']
+  },
+  {
+    id: '2',
+    name: 'Slim Fit Jeans',
+    brand: 'Levi\'s',
+    price: 59.99,
+    image: '/lovable-uploads/clothing/blue-jeans.png',
+    category: 'lower_body',
+    rating: 4.2,
+    colors: ['blue']
+  },
+  {
+    id: '3',
+    name: 'Summer Dress',
+    brand: 'H&M',
+    price: 39.99,
+    image: '/lovable-uploads/clothing/summer-dress.png',
+    category: 'full_body',
+    rating: 4.0,
+    colors: ['floral']
+  },
+  {
+    id: '4',
+    name: 'Leather Jacket',
+    brand: 'Zara',
+    price: 79.99,
+    image: '/lovable-uploads/clothing/leather-jacket.png',
+    category: 'upper_body',
+    rating: 4.7,
+    colors: ['black']
+  },
+  {
+    id: '5',
+    name: 'Chino Shorts',
+    brand: 'Gap',
+    price: 44.99,
+    image: '/lovable-uploads/clothing/chino-shorts.png',
+    category: 'lower_body',
+    rating: 4.3,
+    colors: ['khaki']
+  },
+  {
+    id: '6',
+    name: 'Striped Shirt',
+    brand: 'Banana Republic',
+    price: 69.50,
+    image: '/lovable-uploads/clothing/striped-shirt.png',
+    category: 'upper_body',
+    rating: 4.1,
+    colors: ['navy', 'white']
+  },
+  {
+    id: '7',
+    name: 'Denim Skirt',
+    brand: 'Old Navy',
+    price: 34.99,
+    image: '/lovable-uploads/clothing/denim-skirt.png',
+    category: 'lower_body',
+    rating: 4.4,
+    colors: ['blue']
+  },
+  {
+    id: '8',
+    name: 'Pencil Dress',
+    brand: 'Ann Taylor',
+    price: 98.00,
+    image: '/lovable-uploads/clothing/pencil-dress.png',
+    category: 'full_body',
+    rating: 4.6,
+    colors: ['red']
+  },
+  {
+    id: '9',
+    name: 'Bomber Jacket',
+    brand: 'Adidas',
+    price: 89.99,
+    image: '/lovable-uploads/clothing/bomber-jacket.png',
+    category: 'upper_body',
+    rating: 4.8,
+    colors: ['green']
+  },
+  {
+    id: '10',
+    name: 'Cargo Pants',
+    brand: 'REI',
+    price: 79.99,
+    image: '/lovable-uploads/clothing/cargo-pants.png',
+    category: 'lower_body',
+    rating: 4.0,
+    colors: ['olive']
+  },
+];
+
+function ClothingCard({ clothing, onSelect }: { clothing: ClothingItem, onSelect: () => void }) {
+  return (
+    <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={onSelect}>
+      <CardContent className="p-3 relative">
+        <div className="aspect-w-3 aspect-h-4 relative rounded-md overflow-hidden mb-3">
+          <img
+            src={clothing.image}
+            alt={clothing.name}
+            className="object-cover rounded-md"
+          />
+        </div>
+        <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
+        <p className="text-sm text-gray-300">{clothing.brand}</p>
+        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+          ${clothing.price.toFixed(2)}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSelect }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [showUpload, setShowUpload] = useState(false);
-  const [customClothingItems, setCustomClothingItems] = useState<ClothingItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [priceRange, setPriceRange] = useState([0, 100]);
+  const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Default clothing items
-  const defaultClothingItems: ClothingItem[] = [
-    {
-      id: 'dress-green-midi-1',
-      name: "Solid Color V-Neck Cap Sleeve Side Knot Elegant Midi Dress",
-      brand: "SHEIN Unity",
-      price: 18.95,
-      image: "/lovable-uploads/ba7e7b5d-f949-46ce-9579-303ac63565fb.png",
-      category: "dresses",
-      rating: 4.7,
-      colors: ['#ffdde2', '#6c2728', '#2aa73b', '#191816'],
-    },
-    {
-      id: '1',
-      name: 'Elegant Silk Blouse',
-      brand: 'Fashion Forward',
-      price: 89.99,
-      image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop',
-      category: 'tops',
-      rating: 4.5,
-      colors: ['white', 'black', 'navy']
-    },
-    {
-      id: '2',
-      name: 'Classic Denim Jacket',
-      brand: 'Urban Style',
-      price: 129.99,
-      image: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?w=400&h=500&fit=crop',
-      category: 'outerwear',
-      rating: 4.8,
-      colors: ['blue', 'black', 'white']
-    },
-    {
-      id: '3',
-      name: 'Floral Summer Dress',
-      brand: 'Bloom & Co',
-      price: 159.99,
-      image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&h=500&fit=crop',
-      category: 'dresses',
-      rating: 4.6,
-      colors: ['floral', 'navy', 'pink']
-    },
-    {
-      id: '4',
-      name: 'Cozy Knit Sweater',
-      brand: 'Comfort Wear',
-      price: 79.99,
-      image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=500&fit=crop',
-      category: 'tops',
-      rating: 4.4,
-      colors: ['cream', 'gray', 'burgundy']
-    },
-    {
-      id: '5',
-      name: 'Tailored Blazer',
-      brand: 'Professional',
-      price: 199.99,
-      image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=500&fit=crop',
-      category: 'outerwear',
-      rating: 4.7,
-      colors: ['black', 'navy', 'gray']
-    },
-    {
-      id: '6',
-      name: 'Casual T-Shirt',
-      brand: 'Everyday',
-      price: 29.99,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop',
-      category: 'tops',
-      rating: 4.2,
-      colors: ['white', 'black', 'gray', 'navy']
-    }
-  ];
+  // Load custom clothing from database
+  useEffect(() => {
+    const loadCustomClothing = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('clothing_items')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-  // Combine default and custom items
-  const allClothingItems = [...defaultClothingItems, ...customClothingItems];
+        if (error) {
+          console.error('Error loading custom clothing:', error);
+          return;
+        }
 
-  const categories = [
-    { id: 'all', label: 'All Items' },
-    { id: 'tops', label: 'Tops' },
-    { id: 'dresses', label: 'Dresses' },
-    { id: 'outerwear', label: 'Outerwear' },
-    { id: 'bottoms', label: 'Bottoms' }
-  ];
+        const formattedClothing: ClothingItem[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          brand: item.brand || 'Custom',
+          price: item.price || 0,
+          image: item.supabase_image_url,
+          category: item.garment_category,
+          rating: 4.5,
+          colors: item.colors || ['custom'],
+          perfect_corp_ref_id: item.perfect_corp_ref_id
+        }));
 
-  const filteredItems = allClothingItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+        setCustomClothing(formattedClothing);
+      } catch (err) {
+        console.error('Failed to load custom clothing:', err);
+      }
+    };
+
+    loadCustomClothing();
+  }, []);
+
+  const filteredClothing = clothingData.filter(item => {
+    const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.brand.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryMatch = categoryFilter === 'all' || item.category === categoryFilter;
+    const priceMatch = item.price >= priceRange[0] && item.price <= priceRange[1];
+    return searchMatch && categoryMatch && priceMatch;
   });
 
-  const toggleFavorite = (itemId: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(itemId)) {
-      newFavorites.delete(itemId);
-    } else {
-      newFavorites.add(itemId);
-    }
-    setFavorites(newFavorites);
+  const handleCustomClothingAdd = (newClothing: ClothingItem) => {
+    setCustomClothing(prev => [newClothing, ...prev]);
+    setShowUploadModal(false);
   };
 
-  const handleAddClothing = (newClothing: ClothingItem) => {
-    setCustomClothingItems(prev => [...prev, newClothing]);
-  };
+  // Combine predefined and custom clothing
+  const allClothing = [...customClothing, ...filteredClothing];
 
   return (
     <div className="space-y-6">
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex-1">
-            <CatalogSearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-            />
-          </div>
-          <Button
-            onClick={() => setShowUpload(true)}
-            className="ml-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Item
-          </Button>
-        </div>
-        <CategoryFilter
-          categories={categories}
-          selected={selectedCategory}
-          onChange={setSelectedCategory}
+      {/* Search Bar */}
+      <Input
+        type="text"
+        placeholder="Search clothing..."
+        className="bg-white/10 border-white/20 text-white placeholder-gray-300"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+
+      {/* Category Filter */}
+      <div>
+        <Label className="text-sm text-gray-300 block mb-2">Category</Label>
+        <select
+          className="bg-white/10 border-white/20 text-white rounded-md p-2 w-full"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="all">All Categories</option>
+          <option value="upper_body">Upper Body</option>
+          <option value="lower_body">Lower Body</option>
+          <option value="full_body">Full Body</option>
+        </select>
+      </div>
+
+      {/* Price Range Filter */}
+      <div>
+        <Label className="text-sm text-gray-300 block mb-2">Price Range: ${priceRange[0]} - ${priceRange[1]}</Label>
+        <Slider
+          defaultValue={priceRange}
+          max={100}
+          step={1}
+          onValueChange={(value) => setPriceRange(value)}
         />
       </div>
 
+      {/* Add Custom Clothing Button */}
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-white">Available Clothing</h3>
+        <Button
+          onClick={() => setShowUploadModal(true)}
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Add Custom Clothing
+        </Button>
+      </div>
+
       {/* Clothing Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map(item => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {allClothing.map((item) => (
           <ClothingCard
             key={item.id}
-            item={item}
-            isFavorite={favorites.has(item.id)}
-            onToggleFavorite={toggleFavorite}
-            onSelect={onClothingSelect}
+            clothing={item}
+            onSelect={() => onClothingSelect(item)}
           />
         ))}
       </div>
 
-      {filteredItems.length === 0 && (
+      {allClothing.length === 0 && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Package className="w-8 h-8 text-white" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No items found</h3>
-          <p className="text-gray-600">Try adjusting your search or filters</p>
+          <h3 className="text-xl font-semibold text-white mb-2">No clothing found</h3>
+          <p className="text-gray-300 mb-4">
+            Try adjusting your search or category filter, or add your own custom clothing.
+          </p>
+          <Button
+            onClick={() => setShowUploadModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+          >
+            Add Custom Clothing
+          </Button>
         </div>
       )}
 
       {/* Upload Modal */}
-      {showUpload && (
+      {showUploadModal && (
         <ClothingUpload
-          onClothingAdd={handleAddClothing}
-          onClose={() => setShowUpload(false)}
+          onClothingAdd={handleCustomClothingAdd}
+          onClose={() => setShowUploadModal(false)}
         />
       )}
     </div>
