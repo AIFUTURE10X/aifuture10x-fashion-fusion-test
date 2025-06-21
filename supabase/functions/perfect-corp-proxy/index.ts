@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
@@ -50,26 +49,8 @@ serve(async (req) => {
       styleId: isCustomClothing ? undefined : clothingImage
     })
 
-    // Step 1: Generate id_token with proper structure for Perfect Corp
-    console.log('Step 1: Generating id_token and authenticating...')
-    const timestamp = Date.now()
-    
-    // Create a properly structured JWT-like payload
-    const payload = {
-      iss: apiKey,
-      aud: 'https://yce-api-01.perfectcorp.com',
-      iat: Math.floor(timestamp / 1000),
-      exp: Math.floor(timestamp / 1000) + 3600, // 1 hour expiry
-      client_id: apiKey
-    }
-    
-    // For now, we'll use a simplified approach since we don't have RSA private key
-    // In production, this should be properly signed with RSA private key
-    const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }))
-    const payloadEncoded = btoa(JSON.stringify(payload))
-    const idToken = `${header}.${payloadEncoded}.signature_placeholder`
-    
-    console.log('Using simplified authentication approach')
+    // Step 1: Authenticate with Perfect Corp using client credentials grant
+    console.log('Step 1: Authenticating with Perfect Corp...')
     
     const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
       method: 'POST',
@@ -78,67 +59,28 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         client_id: apiKey,
-        id_token: idToken
+        client_secret: apiSecret,
+        grant_type: 'client_credentials'
       }),
     })
 
     if (!authResponse.ok) {
       const authError = await authResponse.text()
       console.error('Perfect Corp authentication failed:', authError)
-      
-      // Try alternative authentication method with client_secret
-      console.log('Trying alternative authentication with client_secret...')
-      
-      const altAuthResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: apiKey,
-          client_secret: apiSecret,
-          grant_type: 'client_credentials'
-        }),
-      })
-
-      if (!altAuthResponse.ok) {
-        const altAuthError = await altAuthResponse.text()
-        console.error('Alternative authentication also failed:', altAuthError)
-        throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
-      }
-
-      const altAuthData = await altAuthResponse.json()
-      const accessToken = altAuthData.result?.access_token || altAuthData.access_token
-
-      if (!accessToken) {
-        console.error('Alt auth response:', altAuthData)
-        throw new Error('No access token received from alternative authentication')
-      }
-
-      console.log('Alternative authentication successful')
-
-      // Continue with the rest of the process using the access token
-      return await processWithAccessToken(accessToken, {
-        userPhoto,
-        userPhotoStoragePath,
-        clothingImage,
-        clothingCategory,
-        isCustomClothing,
-        perfectCorpRefId,
-        supabaseUrl,
-        supabaseServiceKey
-      })
+      throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
     }
 
     const authData = await authResponse.json()
+    console.log('Auth response received:', { status: authResponse.status, hasResult: !!authData.result })
+    
     const accessToken = authData.result?.access_token || authData.access_token
 
     if (!accessToken) {
-      console.error('Auth response:', authData)
+      console.error('No access token in auth response:', authData)
       throw new Error('No access token received from authentication')
     }
 
-    console.log('Authentication successful')
+    console.log('Authentication successful, access token received')
 
     return await processWithAccessToken(accessToken, {
       userPhoto,
@@ -169,6 +111,8 @@ serve(async (req) => {
       errorMessage = 'The face angle in the image is too large. Please use a front-facing photo'
     } else if (errorMessage.includes('invalid_parameter')) {
       errorMessage = 'Invalid parameter provided to the API'
+    } else if (errorMessage.includes('Authentication failed')) {
+      errorMessage = 'API authentication failed. Please check your Perfect Corp credentials'
     }
     
     return new Response(
