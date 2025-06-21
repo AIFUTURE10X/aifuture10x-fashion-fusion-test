@@ -8,91 +8,59 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     clientSecretLength: apiSecret?.length
   });
   
-  // Try the main Perfect Corp authentication endpoint
-  let authResponse;
-  let authUrl = 'https://api.perfectcorp.com/v2/auth/token';
+  // Perfect Corp uses OAuth 2.0 client credentials flow
+  const authUrl = 'https://openapi.perfectcorp.com/v1/oauth/token';
   
   try {
-    console.log('Trying Perfect Corp auth endpoint:', authUrl);
-    authResponse = await fetch(authUrl, {
+    console.log('Attempting Perfect Corp OAuth authentication:', authUrl);
+    
+    const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        client_id: apiKey,
-        client_secret: apiSecret,
-        grant_type: 'client_credentials'
-      }),
+      body: new URLSearchParams({
+        'grant_type': 'client_credentials',
+        'client_id': apiKey,
+        'client_secret': apiSecret
+      }).toString(),
     });
-  } catch (error) {
-    console.log('First auth attempt failed, trying alternative endpoint...');
-    
-    // Try alternative endpoint format
-    authUrl = 'https://developer-api.perfectcorp.com/v1/auth/token';
-    try {
-      authResponse = await fetch(authUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: apiKey,
-          client_secret: apiSecret,
-          grant_type: 'client_credentials'
-        }),
+
+    console.log('Auth response status:', authResponse.status);
+    console.log('Auth response headers:', Object.fromEntries(authResponse.headers.entries()));
+
+    if (!authResponse.ok) {
+      const authError = await authResponse.text();
+      console.error('Perfect Corp authentication failed:', {
+        status: authResponse.status,
+        statusText: authResponse.statusText,
+        error: authError,
+        url: authUrl
       });
-    } catch (error2) {
-      console.log('Second auth attempt failed, trying basic auth...');
-      
-      // Try with basic authentication
-      const basicAuth = btoa(`${apiKey}:${apiSecret}`);
-      authResponse = await fetch('https://api.perfectcorp.com/auth/token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${basicAuth}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          grant_type: 'client_credentials'
-        }),
-      });
+      throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`);
     }
-  }
 
-  console.log('Auth response status:', authResponse.status);
-  console.log('Auth response headers:', Object.fromEntries(authResponse.headers.entries()));
-
-  if (!authResponse.ok) {
-    const authError = await authResponse.text();
-    console.error('Perfect Corp authentication failed:', {
-      status: authResponse.status,
-      statusText: authResponse.statusText,
-      error: authError,
-      url: authUrl
+    const authData = await authResponse.json();
+    console.log('Auth response received:', { 
+      status: authResponse.status, 
+      hasAccessToken: !!authData.access_token,
+      authDataKeys: Object.keys(authData),
+      tokenType: authData.token_type
     });
-    throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`);
+    
+    const accessToken = authData.access_token;
+
+    if (!accessToken) {
+      console.error('No access token in auth response:', authData);
+      throw new Error('No access token received from authentication');
+    }
+
+    console.log('Authentication successful, access token received');
+    
+    return { accessToken };
+  } catch (error) {
+    console.error('Perfect Corp authentication error:', error);
+    throw error;
   }
-
-  const authData = await authResponse.json();
-  console.log('Auth response received:', { 
-    status: authResponse.status, 
-    hasAccessToken: !!authData.access_token,
-    authDataKeys: Object.keys(authData),
-    tokenType: authData.token_type
-  });
-  
-  const accessToken = authData.access_token;
-
-  if (!accessToken) {
-    console.error('No access token in auth response:', authData);
-    throw new Error('No access token received from authentication');
-  }
-
-  console.log('Authentication successful, access token received');
-  
-  return { accessToken };
 }
