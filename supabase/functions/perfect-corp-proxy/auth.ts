@@ -8,18 +8,19 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     clientSecretLength: apiSecret?.length
   });
   
-  // Use the correct Perfect Corp authentication endpoint
-  const authResponse = await fetch('https://yce-api-01.perfectcorp.com/oauth/token', {
+  // Use the correct Perfect Corp OAuth2 endpoint with proper format
+  const authResponse = await fetch('https://api.perfectcorp.com/oauth2/token', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
     },
-    body: JSON.stringify({
+    body: new URLSearchParams({
       'grant_type': 'client_credentials',
       'client_id': apiKey,
-      'client_secret': apiSecret
-    }),
+      'client_secret': apiSecret,
+      'scope': 'api'
+    }).toString(),
   });
 
   console.log('Auth response status:', authResponse.status);
@@ -32,48 +33,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       statusText: authResponse.statusText,
       error: authError
     });
-    
-    // Try alternative endpoint if the first one fails
-    console.log('Trying alternative authentication endpoint...');
-    const altAuthResponse = await fetch('https://api.perfectcorp.com/v1/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
-      },
-      body: new URLSearchParams({
-        'grant_type': 'client_credentials',
-        'scope': 'tryon'
-      }).toString(),
-    });
-
-    if (!altAuthResponse.ok) {
-      const altError = await altAuthResponse.text();
-      console.error('Alternative authentication also failed:', {
-        status: altAuthResponse.status,
-        error: altError
-      });
-      throw new Error(`Authentication failed: ${authResponse.status} - ${authError}. Alternative: ${altAuthResponse.status} - ${altError}`);
-    }
-
-    const altAuthData = await altAuthResponse.json();
-    console.log('Alternative auth response received:', { 
-      status: altAuthResponse.status, 
-      hasAccessToken: !!altAuthData.access_token,
-      authDataKeys: Object.keys(altAuthData),
-      tokenType: altAuthData.token_type
-    });
-    
-    const accessToken = altAuthData.access_token;
-
-    if (!accessToken) {
-      console.error('No access token in alternative auth response:', altAuthData);
-      throw new Error('No access token received from alternative authentication');
-    }
-
-    console.log('Alternative authentication successful, access token received');
-    return { accessToken };
+    throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`);
   }
 
   const authData = await authResponse.json();
