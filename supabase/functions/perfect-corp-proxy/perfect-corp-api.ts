@@ -1,7 +1,9 @@
 
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
   console.log('Step 2: Uploading user photo...');
-  const uploadResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/file/clothes-tryon', {
+  
+  // Try the main API endpoint first
+  let uploadResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/file/clothes-tryon', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -17,6 +19,22 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     }),
   });
 
+  // If the main endpoint fails, try alternative endpoint
+  if (!uploadResponse.ok) {
+    console.log('Primary upload endpoint failed, trying alternative...');
+    uploadResponse = await fetch('https://api.perfectcorp.com/v1/file/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_type: 'image/jpeg',
+        file_name: 'user_photo.jpg'
+      }),
+    });
+  }
+
   if (!uploadResponse.ok) {
     const uploadError = await uploadResponse.text();
     console.error('Perfect Corp upload request failed:', uploadError);
@@ -25,8 +43,8 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
 
   const uploadData = await uploadResponse.json();
   const uploadResult = uploadData.result || uploadData;
-  const uploadUrl = uploadResult.files[0].url;
-  const fileId = uploadResult.files[0].file_id;
+  const uploadUrl = uploadResult.files?.[0]?.url || uploadResult.upload_url;
+  const fileId = uploadResult.files?.[0]?.file_id || uploadResult.file_id;
 
   // Upload the actual image data
   const imageUploadResponse = await fetch(uploadUrl, {
@@ -69,7 +87,8 @@ export async function startTryOnTask(
     console.log('Using predefined style with style_id:', clothingImage);
   }
   
-  const tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
+  // Try main endpoint first
+  let tryOnResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -77,6 +96,19 @@ export async function startTryOnTask(
     },
     body: JSON.stringify(tryOnRequestBody),
   });
+
+  // If main endpoint fails, try alternative
+  if (!tryOnResponse.ok) {
+    console.log('Primary try-on endpoint failed, trying alternative...');
+    tryOnResponse = await fetch('https://api.perfectcorp.com/v1/tryon/start', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tryOnRequestBody),
+    });
+  }
 
   if (!tryOnResponse.ok) {
     const tryOnError = await tryOnResponse.text();
@@ -101,12 +133,24 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   while (attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
     
-    const statusResponse = await fetch(`https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon?task_id=${taskId}`, {
+    // Try main endpoint first
+    let statusResponse = await fetch(`https://yce-api-01.perfectcorp.com/s2s/v1.0/task/clothes-tryon?task_id=${taskId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
     });
+
+    // If main endpoint fails, try alternative
+    if (!statusResponse.ok) {
+      console.log('Primary status endpoint failed, trying alternative...');
+      statusResponse = await fetch(`https://api.perfectcorp.com/v1/tryon/status/${taskId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    }
 
     if (!statusResponse.ok) {
       throw new Error(`Status check failed: ${statusResponse.status}`);
