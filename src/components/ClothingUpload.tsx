@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Shirt, User, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ interface ClothingItem {
 interface ClothingUploadProps {
   onClothingAdd: (clothing: ClothingItem) => void;
   onClose: () => void;
+  editingItem?: ClothingItem | null;
 }
 
 const garmentCategories = [
@@ -34,7 +35,7 @@ const garmentCategories = [
   { value: 'full_body', label: 'Full Body', icon: Package, description: 'Dresses, jumpsuits, full outfits' }
 ];
 
-export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, onClose }) => {
+export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, onClose, editingItem }) => {
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,6 +47,20 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
   const [perfectCorpStatus, setPerfectCorpStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [perfectCorpRefId, setPerfectCorpRefId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Pre-populate form when editing
+  useEffect(() => {
+    if (editingItem) {
+      setClothingName(editingItem.name);
+      setClothingBrand(editingItem.brand);
+      setClothingPrice(editingItem.price.toString());
+      setGarmentCategory(editingItem.category);
+      setUploadedPhoto(editingItem.image);
+      setFilePreview(editingItem.image);
+      setPerfectCorpRefId(editingItem.perfect_corp_ref_id || null);
+      setPerfectCorpStatus(editingItem.perfect_corp_ref_id ? 'success' : 'idle');
+    }
+  }, [editingItem]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
@@ -59,6 +74,10 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
         // Upload image to Supabase Storage
         const publicUrl = await uploadPhotoToSupabase(file, 'clothing-references');
         setUploadedPhoto(publicUrl);
+        
+        // Reset Perfect Corp status when new image is uploaded
+        setPerfectCorpStatus('idle');
+        setPerfectCorpRefId(null);
         
         toast({
           title: "Image uploaded!",
@@ -123,7 +142,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
       setError(err instanceof Error ? err.message : 'Perfect Corp upload failed');
       toast({
         title: "Upload Failed",
-        description: "Failed to process with Perfect Corp AI",
+        description: "Failed to process with Perfect Corp AI. You can still add the item without AI processing.",
         variant: "destructive"
       });
     }
@@ -137,52 +156,88 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
       return;
     }
 
-    if (perfectCorpStatus !== 'success') {
-      setError('Please process with Perfect Corp AI first');
-      return;
-    }
-
     try {
-      // Save to database with type assertion
-      const { data, error: dbError } = await (supabase as any)
-        .from('clothing_items')
-        .insert({
-          name: clothingName.trim(),
-          brand: clothingBrand.trim() || 'Custom',
-          price: clothingPrice ? parseFloat(clothingPrice) : 0,
-          garment_category: garmentCategory,
-          supabase_image_url: uploadedPhoto,
-          perfect_corp_ref_id: perfectCorpRefId,
-          colors: ['custom']
-        })
-        .select()
-        .single();
+      if (editingItem) {
+        // Update existing item
+        const { data, error: dbError } = await supabase
+          .from('clothing_items')
+          .update({
+            name: clothingName.trim(),
+            brand: clothingBrand.trim() || 'Custom',
+            price: clothingPrice ? parseFloat(clothingPrice) : 0,
+            garment_category: garmentCategory,
+            supabase_image_url: uploadedPhoto,
+            perfect_corp_ref_id: perfectCorpRefId,
+            colors: ['custom']
+          })
+          .eq('id', editingItem.id)
+          .select()
+          .single();
 
-      if (dbError) {
-        throw new Error(dbError.message);
-      }
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
 
-      if (data) {
-        // Create clothing item for the catalog
-        const newClothing: ClothingItem = {
-          id: data.id || '',
-          name: data.name || '',
-          brand: data.brand || 'Custom',
-          price: data.price || 0,
-          image: data.supabase_image_url || '',
-          category: data.garment_category || 'upper_body',
-          rating: 4.5,
-          colors: data.colors || ['custom'],
-          perfect_corp_ref_id: data.perfect_corp_ref_id
-        };
+        if (data) {
+          const updatedClothing: ClothingItem = {
+            id: data.id || '',
+            name: data.name || '',
+            brand: data.brand || 'Custom',
+            price: data.price || 0,
+            image: data.supabase_image_url || '',
+            category: data.garment_category || 'upper_body',
+            rating: 4.5,
+            colors: data.colors || ['custom'],
+            perfect_corp_ref_id: data.perfect_corp_ref_id
+          };
 
-        onClothingAdd(newClothing);
-        onClose();
-        
-        toast({
-          title: "Clothing Added!",
-          description: "Your custom clothing item is now available for try-on"
-        });
+          onClothingAdd(updatedClothing);
+          
+          toast({
+            title: "Clothing Updated!",
+            description: "Your clothing item has been successfully updated"
+          });
+        }
+      } else {
+        // Create new item
+        const { data, error: dbError } = await supabase
+          .from('clothing_items')
+          .insert({
+            name: clothingName.trim(),
+            brand: clothingBrand.trim() || 'Custom',
+            price: clothingPrice ? parseFloat(clothingPrice) : 0,
+            garment_category: garmentCategory,
+            supabase_image_url: uploadedPhoto,
+            perfect_corp_ref_id: perfectCorpRefId,
+            colors: ['custom']
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          throw new Error(dbError.message);
+        }
+
+        if (data) {
+          const newClothing: ClothingItem = {
+            id: data.id || '',
+            name: data.name || '',
+            brand: data.brand || 'Custom',
+            price: data.price || 0,
+            image: data.supabase_image_url || '',
+            category: data.garment_category || 'upper_body',
+            rating: 4.5,
+            colors: data.colors || ['custom'],
+            perfect_corp_ref_id: data.perfect_corp_ref_id
+          };
+
+          onClothingAdd(newClothing);
+          
+          toast({
+            title: "Clothing Added!",
+            description: "Your custom clothing item is now available for try-on"
+          });
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save clothing item');
@@ -194,7 +249,9 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Add Custom Clothing</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {editingItem ? 'Edit Clothing' : 'Add Custom Clothing'}
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -347,7 +404,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                 {perfectCorpStatus === 'idle' && (
                   <div>
                     <p className="text-purple-700 text-sm mb-3">
-                      Process your clothing with Perfect Corp AI for realistic try-on results.
+                      Process your clothing with Perfect Corp AI for realistic try-on results. (Optional)
                     </p>
                     <Button
                       type="button"
@@ -406,10 +463,10 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
               <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                disabled={!uploadedPhoto || !garmentCategory || !clothingName || perfectCorpStatus !== 'success'}
+                disabled={!uploadedPhoto || !garmentCategory || !clothingName}
               >
                 <Check className="w-4 h-4 mr-2" />
-                Add to Catalog
+                {editingItem ? 'Update Clothing' : 'Add to Catalog'}
               </Button>
             </div>
           </form>

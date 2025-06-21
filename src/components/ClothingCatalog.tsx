@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -6,9 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Upload, Package } from 'lucide-react';
+import { Upload, Package, Edit, Trash2 } from 'lucide-react';
 import { ClothingUpload } from '@/components/ClothingUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClothingItem {
   id: string;
@@ -129,11 +129,17 @@ const clothingData: ClothingItem[] = [
   },
 ];
 
-function ClothingCard({ clothing, onSelect }: { clothing: ClothingItem, onSelect: () => void }) {
+function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: { 
+  clothing: ClothingItem, 
+  onSelect: () => void,
+  onEdit?: () => void,
+  onDelete?: () => void,
+  isCustom?: boolean
+}) {
   return (
-    <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={onSelect}>
+    <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group">
       <CardContent className="p-3 relative">
-        <div className="aspect-w-3 aspect-h-4 relative rounded-md overflow-hidden mb-3">
+        <div className="aspect-w-3 aspect-h-4 relative rounded-md overflow-hidden mb-3" onClick={onSelect}>
           <img
             src={clothing.image}
             alt={clothing.name}
@@ -144,10 +150,41 @@ function ClothingCard({ clothing, onSelect }: { clothing: ClothingItem, onSelect
             }}
           />
         </div>
-        <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
-        <p className="text-sm text-gray-300">{clothing.brand}</p>
-        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-          ${clothing.price.toFixed(2)}
+        
+        {/* Edit and Delete buttons for custom clothing */}
+        {isCustom && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.();
+              }}
+            >
+              <Edit className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.();
+              }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+        
+        <div onClick={onSelect}>
+          <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
+          <p className="text-sm text-gray-300">{clothing.brand}</p>
+          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            ${clothing.price.toFixed(2)}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -160,13 +197,14 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
+  const { toast } = useToast();
 
   // Load custom clothing from database
   useEffect(() => {
     const loadCustomClothing = async () => {
       try {
-        // Use type assertion to bypass TypeScript type checking for the table name
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('clothing_items')
           .select('*')
           .order('created_at', { ascending: false });
@@ -207,13 +245,58 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     return searchMatch && categoryMatch && priceMatch;
   });
 
+  const filteredCustomClothing = customClothing.filter(item => {
+    const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.brand.toLowerCase().includes(searchTerm.toLowerCase());
+    const categoryMatch = categoryFilter === 'all' || item.category === categoryFilter;
+    const priceMatch = item.price >= priceRange[0] && item.price <= priceRange[1];
+    return searchMatch && categoryMatch && priceMatch;
+  });
+
   const handleCustomClothingAdd = (newClothing: ClothingItem) => {
     setCustomClothing(prev => [newClothing, ...prev]);
     setShowUploadModal(false);
+    setEditingItem(null);
+  };
+
+  const handleEdit = (item: ClothingItem) => {
+    setEditingItem(item);
+    setShowUploadModal(true);
+  };
+
+  const handleDelete = async (item: ClothingItem) => {
+    if (!confirm(`Are you sure you want to delete "${item.name}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('clothing_items')
+        .delete()
+        .eq('id', item.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setCustomClothing(prev => prev.filter(clothing => clothing.id !== item.id));
+      
+      toast({
+        title: "Clothing Deleted",
+        description: `"${item.name}" has been removed from your catalog`
+      });
+    } catch (err) {
+      console.error('Failed to delete clothing:', err);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete the clothing item. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Combine predefined and custom clothing
-  const allClothing = [...customClothing, ...filteredClothing];
+  const allClothing = [...filteredCustomClothing, ...filteredClothing];
 
   return (
     <div className="space-y-6">
@@ -256,7 +339,10 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-white">Available Clothing</h3>
         <Button
-          onClick={() => setShowUploadModal(true)}
+          onClick={() => {
+            setEditingItem(null);
+            setShowUploadModal(true);
+          }}
           className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
         >
           <Upload className="w-4 h-4 mr-2" />
@@ -266,11 +352,25 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
 
       {/* Clothing Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {allClothing.map((item) => (
+        {/* Custom Clothing */}
+        {filteredCustomClothing.map((item) => (
           <ClothingCard
             key={item.id}
             clothing={item}
             onSelect={() => onClothingSelect(item)}
+            onEdit={() => handleEdit(item)}
+            onDelete={() => handleDelete(item)}
+            isCustom={true}
+          />
+        ))}
+        
+        {/* Predefined Clothing */}
+        {filteredClothing.map((item) => (
+          <ClothingCard
+            key={item.id}
+            clothing={item}
+            onSelect={() => onClothingSelect(item)}
+            isCustom={false}
           />
         ))}
       </div>
@@ -297,7 +397,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       {showUploadModal && (
         <ClothingUpload
           onClothingAdd={handleCustomClothingAdd}
-          onClose={() => setShowUploadModal(false)}
+          onClose={() => {
+            setShowUploadModal(false);
+            setEditingItem(null);
+          }}
+          editingItem={editingItem}
         />
       )}
     </div>
