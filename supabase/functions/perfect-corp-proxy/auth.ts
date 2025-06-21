@@ -8,20 +8,60 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     clientSecretLength: apiSecret?.length
   });
   
-  // Use the correct Perfect Corp OAuth2 endpoint with proper format
-  const authResponse = await fetch('https://api.perfectcorp.com/oauth2/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json',
-    },
-    body: new URLSearchParams({
-      'grant_type': 'client_credentials',
-      'client_id': apiKey,
-      'client_secret': apiSecret,
-      'scope': 'api'
-    }).toString(),
-  });
+  // Try the main Perfect Corp authentication endpoint
+  let authResponse;
+  let authUrl = 'https://api.perfectcorp.com/v2/auth/token';
+  
+  try {
+    console.log('Trying Perfect Corp auth endpoint:', authUrl);
+    authResponse = await fetch(authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: apiKey,
+        client_secret: apiSecret,
+        grant_type: 'client_credentials'
+      }),
+    });
+  } catch (error) {
+    console.log('First auth attempt failed, trying alternative endpoint...');
+    
+    // Try alternative endpoint format
+    authUrl = 'https://developer-api.perfectcorp.com/v1/auth/token';
+    try {
+      authResponse = await fetch(authUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: apiKey,
+          client_secret: apiSecret,
+          grant_type: 'client_credentials'
+        }),
+      });
+    } catch (error2) {
+      console.log('Second auth attempt failed, trying basic auth...');
+      
+      // Try with basic authentication
+      const basicAuth = btoa(`${apiKey}:${apiSecret}`);
+      authResponse = await fetch('https://api.perfectcorp.com/auth/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          grant_type: 'client_credentials'
+        }),
+      });
+    }
+  }
 
   console.log('Auth response status:', authResponse.status);
   console.log('Auth response headers:', Object.fromEntries(authResponse.headers.entries()));
@@ -31,7 +71,8 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.error('Perfect Corp authentication failed:', {
       status: authResponse.status,
       statusText: authResponse.statusText,
-      error: authError
+      error: authError,
+      url: authUrl
     });
     throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`);
   }

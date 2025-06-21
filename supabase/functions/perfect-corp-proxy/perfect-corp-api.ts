@@ -2,18 +2,37 @@
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
   console.log('Step 2: Uploading user photo...');
   
-  // Use the correct Perfect Corp file upload endpoint
-  const uploadResponse = await fetch('https://api.perfectcorp.com/v1/files', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      file_type: 'image/jpeg',
-      file_name: 'user_photo.jpg'
-    }),
-  });
+  // Try multiple upload endpoints
+  let uploadResponse;
+  let uploadUrl = 'https://api.perfectcorp.com/v2/files/upload';
+  
+  try {
+    uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_type: 'image/jpeg',
+        file_name: 'user_photo.jpg'
+      }),
+    });
+  } catch (error) {
+    console.log('First upload endpoint failed, trying alternative...');
+    uploadUrl = 'https://developer-api.perfectcorp.com/v1/files';
+    uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_type: 'image/jpeg',
+        file_name: 'user_photo.jpg'
+      }),
+    });
+  }
 
   if (!uploadResponse.ok) {
     const uploadError = await uploadResponse.text();
@@ -22,11 +41,11 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   }
 
   const uploadData = await uploadResponse.json();
-  const uploadUrl = uploadData.upload_url;
+  const uploadTargetUrl = uploadData.upload_url;
   const fileId = uploadData.file_id;
 
   // Upload the actual image data to the pre-signed URL
-  const imageUploadResponse = await fetch(uploadUrl, {
+  const imageUploadResponse = await fetch(uploadTargetUrl, {
     method: 'PUT',
     headers: {
       'Content-Type': 'image/jpeg',
@@ -66,15 +85,31 @@ export async function startTryOnTask(
     console.log('Using garment image URL:', clothingImage);
   }
   
-  // Use the correct Perfect Corp try-on endpoint
-  const tryOnResponse = await fetch('https://api.perfectcorp.com/v1/tryon', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(tryOnRequestBody),
-  });
+  // Try multiple try-on endpoints
+  let tryOnResponse;
+  let tryOnUrl = 'https://api.perfectcorp.com/v2/tryon';
+  
+  try {
+    tryOnResponse = await fetch(tryOnUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tryOnRequestBody),
+    });
+  } catch (error) {
+    console.log('First try-on endpoint failed, trying alternative...');
+    tryOnUrl = 'https://developer-api.perfectcorp.com/v1/tryon';
+    tryOnResponse = await fetch(tryOnUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tryOnRequestBody),
+    });
+  }
 
   if (!tryOnResponse.ok) {
     const tryOnError = await tryOnResponse.text();
@@ -98,13 +133,27 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   while (attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
     
-    // Check task status using the correct endpoint
-    const statusResponse = await fetch(`https://api.perfectcorp.com/v1/tryon/${taskId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
+    // Try multiple status check endpoints
+    let statusResponse;
+    let statusUrl = `https://api.perfectcorp.com/v2/tryon/${taskId}`;
+    
+    try {
+      statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    } catch (error) {
+      console.log('First status endpoint failed, trying alternative...');
+      statusUrl = `https://developer-api.perfectcorp.com/v1/tryon/${taskId}`;
+      statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+    }
 
     if (!statusResponse.ok) {
       throw new Error(`Status check failed: ${statusResponse.status}`);
