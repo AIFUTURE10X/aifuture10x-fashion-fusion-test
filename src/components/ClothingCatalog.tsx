@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -153,30 +154,30 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
           />
         </div>
         
-        {/* Edit and Delete buttons for custom clothing - always visible for better UX */}
+        {/* Edit and Delete buttons for custom clothing - always visible */}
         {isCustom && (
-          <div className="absolute top-2 right-2 flex space-x-1 bg-black/20 rounded-lg p-1">
+          <div className="absolute top-2 right-2 flex space-x-2 z-10">
             <Button
               size="sm"
               variant="secondary"
-              className="h-7 w-7 p-0 bg-white/90 hover:bg-white"
+              className="h-8 w-8 p-0 bg-white hover:bg-gray-100 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.();
               }}
             >
-              <Edit className="w-3 h-3" />
+              <Edit className="w-4 h-4 text-gray-700" />
             </Button>
             <Button
               size="sm"
               variant="destructive"
-              className="h-7 w-7 p-0 bg-red-500/90 hover:bg-red-600"
+              className="h-8 w-8 p-0 bg-red-500 hover:bg-red-600 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete?.();
               }}
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-4 h-4 text-white" />
             </Button>
           </div>
         )}
@@ -260,6 +261,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     setCustomClothing(prev => [newClothing, ...prev]);
     setShowUploadModal(false);
     setEditingItem(null);
+    
+    toast({
+      title: "Success!",
+      description: editingItem ? "Clothing item updated successfully" : "Custom clothing added to catalog"
+    });
   };
 
   const handleEdit = (item: ClothingItem) => {
@@ -388,9 +394,15 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
             Try adjusting your search or category filter, or add your own custom clothing.
           </p>
           <Button
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => {
+              setEditingItem(null);
+              setShowUploadModal(true);
+            }}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          />
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Add Custom Clothing
+          </Button>
         </div>
       )}
 
@@ -408,3 +420,4 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     </div>
   );
 };
+
