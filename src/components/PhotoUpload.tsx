@@ -63,15 +63,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
   return (
     <div className="max-w-md mx-auto -mt-20">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
-        <div className="text-center mb-6">
-          <Camera className="w-10 h-10 text-white mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-3">Upload Your Photo</h2>
-          <p className="text-gray-200 text-sm">
-            Upload a clear photo of yourself to get started with virtual try-on
-          </p>
-        </div>
-
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
           <div className="space-y-6">
             {/* AI Clothes text above the model image */}
