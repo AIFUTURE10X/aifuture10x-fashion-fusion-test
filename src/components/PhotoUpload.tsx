@@ -62,13 +62,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-lg mx-auto -mt-20">
+    <div className="max-w-md mx-auto -mt-20">
       {/* AI Clothes text moved above the container */}
-      <h3 className="text-lg font-bold text-white text-center mb-4">AI Clothes</h3>
+      <h3 className="text-base font-bold text-white text-center mb-3">AI Clothes</h3>
       
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-2xl">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
@@ -85,8 +85,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
             <div className="bg-green-50 border border-green-200 rounded-lg p-2">
               <div className="flex items-center space-x-2 text-green-700">
-                <Check className="w-4 h-4" />
-                <span className="font-medium text-sm">Photo uploaded successfully!</span>
+                <Check className="w-3 h-3" />
+                <span className="font-medium text-xs">Photo uploaded successfully!</span>
               </div>
               <p className="text-green-600 text-xs mt-1">
                 Great! Now you can browse clothes and see how they look on you.
@@ -96,7 +96,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <Button
               onClick={handleContinue}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              size="lg"
+              size="sm"
             >
               Continue to Browse Clothes
             </Button>
@@ -106,7 +106,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-4 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-3 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
@@ -114,21 +114,21 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               <input {...getInputProps()} />
               
               <div className="mb-2">
-                <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-2">
                   {isProcessing ? (
                     <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-4 h-4 text-white" />
+                    <Upload className="w-3 h-3 text-white" />
                   )}
                 </div>
                 
                 {isProcessing ? (
-                  <p className="text-gray-200 text-sm">Uploading...</p>
+                  <p className="text-gray-200 text-xs">Uploading...</p>
                 ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium text-sm">Drop the image here</p>
+                  <p className="text-purple-300 font-medium text-xs">Drop the image here</p>
                 ) : (
                   <>
-                    <p className="text-white font-medium mb-1 text-sm">
+                    <p className="text-white font-medium mb-1 text-xs">
                       Click to upload or drag and drop
                     </p>
                     <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>
@@ -138,7 +138,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             </div>
 
             {error && (
-              <p className="text-red-300 text-sm mt-2 text-center">{error}</p>
+              <p className="text-red-300 text-xs mt-2 text-center">{error}</p>
             )}
           </div>
         )}
