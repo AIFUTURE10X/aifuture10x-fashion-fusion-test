@@ -157,8 +157,9 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Video Section - Takes 2/3 of container */}
-                <div className="lg:col-span-2 flex justify-center">
+                {/* AI Clothes text and Video Section - Takes 2/3 of container */}
+                <div className="lg:col-span-2 flex flex-col items-center">
+                  <h4 className="text-4xl font-bold text-white mb-6 text-center">AI Clothes</h4>
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
                     <div style={{position: 'relative', width: '100%', height: '0px', paddingBottom: '109.551%'}}>
                       <iframe 
