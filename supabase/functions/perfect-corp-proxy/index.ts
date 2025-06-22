@@ -20,7 +20,8 @@ serve(async (req) => {
       perfectCorpRefId
     }: TryOnRequest = await req.json();
     
-    const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
+    // Disable mock mode now that we have real API credentials
+    const mockMode = false;
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     
