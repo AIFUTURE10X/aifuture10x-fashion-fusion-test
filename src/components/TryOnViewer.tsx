@@ -58,12 +58,17 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
 
   const handleTryOn = async () => {
     if (!supabaseConfigured) {
+      console.log('❌ Cannot start try-on: Supabase not configured');
       return;
     }
 
+    console.log('🚀 Starting virtual try-on process...');
+    console.log('📸 User photo:', userPhoto);
+    console.log('👕 Selected clothing:', selectedClothing);
+    
     setIsProcessing(true);
     setError(null);
-    console.log('Starting virtual try-on process...');
+    const startTime = Date.now();
 
     try {
       // Check if this is custom clothing with Perfect Corp ref_id
@@ -79,54 +84,76 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         payload.isCustomClothing = true;
         payload.perfectCorpRefId = selectedClothing.perfect_corp_ref_id;
         payload.clothingImage = selectedClothing.image; // Still send for logging
-        console.log('Using custom clothing with ref_id:', selectedClothing.perfect_corp_ref_id);
+        console.log('🎨 Using custom clothing with ref_id:', selectedClothing.perfect_corp_ref_id);
       } else {
         // Use traditional style_id approach for predefined clothing
         payload.clothingImage = selectedClothing.image;
-        console.log('Using predefined clothing');
+        console.log('📦 Using predefined clothing');
       }
 
-      console.log('Sending payload:', payload);
+      console.log('📤 Sending try-on request payload:', JSON.stringify(payload, null, 2));
+      
+      // Start processing timer
       const response: TryOnResponse = await perfectCorpApi.tryOnClothing(payload);
-      console.log('Got response:', response);
+      const processingTimeMs = Date.now() - startTime;
+      const processingTimeSec = Math.round(processingTimeMs / 1000);
+      
+      console.log('📥 Received try-on response:', JSON.stringify(response, null, 2));
+      console.log('⏱️ Total processing time:', processingTimeSec, 'seconds');
 
-      if (response.success && response.resultImage) {
-        const resultImageUrl = `data:image/jpeg;base64,${response.resultImage}`;
-        console.log('Setting try-on result image with URL length:', resultImageUrl.length);
-        console.log('Image URL preview:', resultImageUrl.substring(0, 100) + '...');
-        setTryOnResultImage(resultImageUrl);
-        setProcessingTime(response.processingTime || null);
-        toast({
-          title: "Try-On Complete!",
-          description: isCustomClothing 
-            ? "Your custom clothing try-on has been generated successfully."
-            : "Your virtual try-on has been generated successfully."
-        });
-      } else {
-        // Enhance error message for fetch failures
-        const isFetchError = response.error?.toLowerCase().includes("fetch");
-        setError(
-          isFetchError
-            ? "Image fetch failed. Please double-check your uploaded photo and clothing image are public URLs (not local or protected links)."
-            : response.error || "Try-on failed"
-        );
-        toast({
-          title: "Try-On Failed",
-          description: isFetchError
-            ? "Image fetch failed. Only public image URLs (jpg/png on the internet) are supported for try-on."
-            : response.error || "An error occurred during processing",
-          variant: "destructive"
-        });
+      // Check for API errors or missing data
+      if (!response.success) {
+        const errorMsg = response.error || 'Unknown API error occurred';
+        console.error('❌ API returned error:', errorMsg);
+        throw new Error(errorMsg);
       }
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Unknown error occurred";
-      setError(errorMessage);
+
+      if (!response.resultImage) {
+        console.error('❌ No result image in successful response');
+        throw new Error('No result image returned from API');
+      }
+
+      // Validate the base64 image data
+      if (!response.resultImage.startsWith('data:image/')) {
+        console.log('🔧 Adding data URL prefix to base64 image');
+        response.resultImage = `data:image/jpeg;base64,${response.resultImage}`;
+      }
+
+      console.log('✅ Image validation passed');
+      console.log('📊 Result image length:', response.resultImage.length);
+      console.log('🖼️ Image preview:', response.resultImage.substring(0, 100) + '...');
+      
+      setTryOnResultImage(response.resultImage);
+      setProcessingTime(response.processingTime || processingTimeSec);
+      
       toast({
-        title: "Processing Error",
-        description: errorMessage,
+        title: "Try-On Complete!",
+        description: isCustomClothing 
+          ? "Your custom clothing try-on has been generated successfully."
+          : "Your virtual try-on has been generated successfully."
+      });
+
+    } catch (err) {
+      const processingTimeMs = Date.now() - startTime;
+      const processingTimeSec = Math.round(processingTimeMs / 1000);
+      
+      console.error('❌ Try-on error after', processingTimeSec, 'seconds:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      
+      // Enhanced error message for fetch failures
+      const isFetchError = errorMessage.toLowerCase().includes("fetch");
+      const enhancedError = isFetchError
+        ? "Image fetch failed. Please double-check your uploaded photo and clothing image are public URLs (not local or protected links)."
+        : errorMessage;
+      
+      setError(enhancedError);
+      
+      toast({
+        title: "Try-On Failed",
+        description: isFetchError
+          ? "Image fetch failed. Only public image URLs (jpg/png on the internet) are supported for try-on."
+          : errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -135,6 +162,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   };
 
   const handleRetry = () => {
+    console.log('🔄 Retrying try-on...');
     setTryOnResultImage(null);
     setError(null);
     handleTryOn();
@@ -142,12 +170,21 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
 
   // Debug effect to log when tryOnResultImage changes
   useEffect(() => {
-    console.log('tryOnResultImage changed:', tryOnResultImage ? 'Image set' : 'No image');
     if (tryOnResultImage) {
-      console.log('Image URL length:', tryOnResultImage.length);
-      console.log('Image starts with data URL:', tryOnResultImage.startsWith('data:'));
+      console.log('🖼️ Try-on result image updated:', {
+        length: tryOnResultImage.length,
+        isDataUrl: tryOnResultImage.startsWith('data:'),
+        preview: tryOnResultImage.substring(0, 100) + '...'
+      });
+    } else {
+      console.log('🗑️ Try-on result image cleared');
     }
   }, [tryOnResultImage]);
+
+  // Debug effect to log processing state changes
+  useEffect(() => {
+    console.log('⚙️ Processing state changed:', isProcessing ? 'PROCESSING' : 'IDLE');
+  }, [isProcessing]);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -183,9 +220,6 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
           )}
         </div>
       </div>
-
-      {/* Supabase Configuration Notice */}
-      {/* REMOVED: The configuration notice, because Supabase is detected as configured via Lovable */}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Original Photo */}
