@@ -63,25 +63,25 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
   return (
     <div className="max-w-md mx-auto -mt-20">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
-        <div className="text-center mb-6">
-          <Camera className="w-12 h-12 text-white mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Upload Your Photo</h2>
-          <p className="text-gray-200">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-2xl">
+        <div className="text-center mb-4">
+          <Camera className="w-10 h-10 text-white mx-auto mb-3" />
+          <h2 className="text-xl font-bold text-white mb-2">Upload Your Photo</h2>
+          <p className="text-gray-200 text-sm">
             Upload a clear photo of yourself to get started with virtual try-on
           </p>
         </div>
 
         {uploadedPhoto ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* AI Clothes text above the model image */}
-            <h3 className="text-2xl font-bold text-white text-center">AI Clothes</h3>
+            <h3 className="text-xl font-bold text-white text-center">AI Clothes</h3>
             
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
                 alt="Uploaded photo"
-                className="w-full max-h-96 object-contain rounded-lg border border-white/20 bg-gray-900/20"
+                className="w-full max-h-64 object-contain rounded-lg border border-white/20 bg-gray-900/20"
               />
               <button
                 onClick={handleRetake}
@@ -91,12 +91,12 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               </button>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="flex items-center space-x-2 text-green-700">
-                <Check className="w-5 h-5" />
-                <span className="font-medium">Photo uploaded successfully!</span>
+                <Check className="w-4 h-4" />
+                <span className="font-medium text-sm">Photo uploaded successfully!</span>
               </div>
-              <p className="text-green-600 text-sm mt-1">
+              <p className="text-green-600 text-xs mt-1">
                 Great! Now you can browse clothes and see how they look on you.
               </p>
             </div>
@@ -114,39 +114,39 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
             >
               <input {...getInputProps()} />
               
-              <div className="mb-4">
-                <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="mb-3">
+                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
                   {isProcessing ? (
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-8 h-8 text-white" />
+                    <Upload className="w-6 h-6 text-white" />
                   )}
                 </div>
                 
                 {isProcessing ? (
-                  <p className="text-gray-200">Uploading...</p>
+                  <p className="text-gray-200 text-sm">Uploading...</p>
                 ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium">Drop the image here</p>
+                  <p className="text-purple-300 font-medium text-sm">Drop the image here</p>
                 ) : (
                   <>
-                    <p className="text-white font-medium mb-2">
+                    <p className="text-white font-medium mb-1 text-sm">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-gray-300 text-sm">PNG, JPG, WebP up to 10MB</p>
+                    <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>
                   </>
                 )}
               </div>
             </div>
 
             {error && (
-              <p className="text-red-300 text-sm mt-4 text-center">{error}</p>
+              <p className="text-red-300 text-sm mt-3 text-center">{error}</p>
             )}
           </div>
         )}
