@@ -1,4 +1,3 @@
-
 import { AuthResult } from './types.ts';
 
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
@@ -179,7 +178,7 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     console.log('Mock mode: Simulating completed task');
     await new Promise(resolve => setTimeout(resolve, 2000));
     return {
-      status: 'success', // Changed from 'completed' to 'success'
+      status: 'success',
       result: {
         output_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
       },
@@ -187,13 +186,14 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     };
   }
   
-  // CORRECTED: Use the proper endpoint for clothes task status
   const statusUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes/${taskId}`;
   const maxAttempts = 60;
-  const pollingInterval = 1000; // 1 second as per docs
+  const pollingInterval = 1000;
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    await new Promise(resolve => setTimeout(resolve, pollingInterval));
+    if (attempt > 0) {
+      await new Promise(resolve => setTimeout(resolve, pollingInterval));
+    }
     
     try {
       const statusResponse = await fetch(statusUrl, {
@@ -207,22 +207,30 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
         const statusData = await statusResponse.json();
         console.log(`Status response:`, JSON.stringify(statusData));
         
-        // Check the actual status field location
         const status = statusData.result?.status || statusData.status;
         
         if (status === 'success') {
           console.log('Task completed successfully');
           return statusData;
         } else if (status === 'error' || status === 'failed') {
-          throw new Error(`Task failed: ${statusData.result?.error || statusData.error || 'Unknown error'}`);
+          const errorMsg = statusData.result?.error || statusData.error || 'Unknown error';
+          throw new Error(`Task failed: ${errorMsg}`);
+        } else if (status === 'running') {
+          console.log(`Attempt ${attempt + 1}/60, status: running`);
+        } else {
+          console.log(`Unknown status: ${status}`);
         }
-        
-        console.log(`Attempt ${attempt + 1}, status: ${status}`);
       } else {
-        console.log(`Status check failed: ${statusResponse.status}`);
+        const errorText = await statusResponse.text();
+        console.error(`Status check failed: ${statusResponse.status} - ${errorText}`);
+        
+        if (statusResponse.status === 404) {
+          throw new Error('Task not found - it may have timed out');
+        }
       }
     } catch (error) {
-      console.log(`Status check error:`, error.message);
+      console.error(`Status check error:`, error);
+      throw error;
     }
   }
 
