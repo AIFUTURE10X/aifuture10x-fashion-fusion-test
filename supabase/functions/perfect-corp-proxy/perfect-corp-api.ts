@@ -194,15 +194,15 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     
     console.log('Mock processing completed successfully');
     
-    // Use a simple, small, valid base64 image to avoid decoding errors
-    // This is a minimal 1x1 pixel PNG in base64
-    const mockImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    // Use a visible mock image - simple colored rectangle that represents a try-on result
+    // This is a 400x600 pixel colored image in base64 (JPEG format)
+    const mockImageBase64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAJYAZADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDVQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//9k=';
     
     return {
       status: 'success',
       result: {
-        output_url: `data:image/png;base64,${mockImageBase64}`,
-        result_image_url: `data:image/png;base64,${mockImageBase64}`
+        output_url: `data:image/jpeg;base64,${mockImageBase64}`,
+        result_image_url: `data:image/jpeg;base64,${mockImageBase64}`
       },
       processing_time: processingTime
     };
