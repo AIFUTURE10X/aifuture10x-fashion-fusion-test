@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -8,6 +9,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -15,14 +17,14 @@ const Index = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
   const [showUploadComponent, setShowUploadComponent] = useState(false);
-  const {
-    theme
-  } = useTheme();
+  const { theme } = useTheme();
+
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
     setShowUploadComponent(false);
   };
+
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -31,6 +33,7 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
+
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
@@ -38,6 +41,7 @@ const Index = () => {
     setCurrentStep('upload');
     setShowUploadComponent(false);
   };
+
   const handleGoToApp = () => {
     if (!userPhoto) {
       setShowUploadComponent(true);
@@ -45,10 +49,13 @@ const Index = () => {
       setCurrentStep('browse');
     }
   };
+
   const handleBackToHome = () => {
     setShowUploadComponent(false);
   };
-  return <div className="min-h-screen relative">
+
+  return (
+    <div className="min-h-screen relative">
       {/* Animated Silk Background */}
       <SilkTexture className="fixed inset-0 z-0" />
 
@@ -56,25 +63,38 @@ const Index = () => {
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
       {/* Go To App Button - Only show on home page when no photo exists */}
-      {!showUploadComponent && !userPhoto && <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
-        <Button onClick={handleGoToApp} size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg">
-          Go To App
-          <ArrowRight className="w-4 h-4 ml-1" />
-        </Button>
-        <ThemeToggle />
-      </div>}
+      {!showUploadComponent && !userPhoto && (
+        <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
+          <Button 
+            onClick={handleGoToApp} 
+            size="sm" 
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg"
+          >
+            Go To App
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+          <ThemeToggle />
+        </div>
+      )}
 
       {/* Theme Toggle - Always visible in top right when Go To App button is hidden */}
-      {(showUploadComponent || userPhoto) && <div className="fixed top-4 right-4 z-50">
-        <ThemeToggle />
-      </div>}
+      {(showUploadComponent || userPhoto) && (
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+      )}
 
       {/* Hero Section - Only show when not showing upload component and no photo */}
-      {!showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {!showUploadComponent && !userPhoto && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
-              <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto drop-shadow-lg" />
+              <img 
+                src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" 
+                alt="UnowUafter Logo" 
+                className="h-48 w-auto mx-auto drop-shadow-lg" 
+              />
               <p className="text-2xl text-white font-semibold drop-shadow-lg -mt-2">Your Fashion Reveal</p>
             </div>
             
@@ -125,8 +145,8 @@ const Index = () => {
                 AI Clothes Virtual Try-On: Hyper-Realistic Results
               </h3>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                {/* Features List - Takes 1/3 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+                {/* Features List - Takes 1/3 and aligned with video */}
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
                     <div className="w-2 h-2 bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
@@ -166,83 +186,131 @@ const Index = () => {
                   <h4 className="text-4xl font-bold text-white mb-6 text-center">AI Clothes</h4>
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
                     <div style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '0px',
-                  paddingBottom: '109.551%'
-                }}>
-                      <iframe allow="fullscreen;autoplay" allowFullScreen height="100%" src="https://streamable.com/e/lxxq3v?autoplay=1" width="100%" style={{
-                    border: 'none',
-                    width: '100%',
-                    height: '100%',
-                    position: 'absolute',
-                    left: '0px',
-                    top: '0px',
-                    overflow: 'hidden'
-                  }} className="rounded-xl" />
+                      position: 'relative',
+                      width: '100%',
+                      height: '0px',
+                      paddingBottom: '109.551%'
+                    }}>
+                      <iframe 
+                        allow="fullscreen;autoplay" 
+                        allowFullScreen 
+                        height="100%" 
+                        src="https://streamable.com/e/lxxq3v?autoplay=1" 
+                        width="100%" 
+                        style={{
+                          border: 'none',
+                          width: '100%',
+                          height: '100%',
+                          position: 'absolute',
+                          left: '0px',
+                          top: '0px',
+                          overflow: 'hidden'
+                        }} 
+                        className="rounded-xl" 
+                      />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
-      {showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {showUploadComponent && !userPhoto && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Back to Home Button */}
           <div className="mb-4 -ml-24">
-            <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg mx-0 my-[18px]">
+            <Button 
+              onClick={handleBackToHome} 
+              variant="outline" 
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg mx-0 my-[18px]"
+            >
               <Home className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
           </div>
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-        </div>}
+        </div>
+      )}
 
       {/* Navigation for other steps */}
-      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && (
+        <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
-                <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-12 w-auto" />
+                <img 
+                  src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" 
+                  alt="UnowUafter Logo" 
+                  className="h-12 w-auto" 
+                />
               </div>
               <div className="flex items-center space-x-4">
-                <Button variant="outline" onClick={resetApp} className="hidden sm:flex border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm">
+                <Button 
+                  variant="outline" 
+                  onClick={resetApp} 
+                  className="hidden sm:flex border-white/30 text-gray-200 hover:bg-white/10 hover:text-white backdrop-blur-sm"
+                >
                   Start Over
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-200 hover:text-white hover:bg-white/10 backdrop-blur-sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-200 hover:text-white hover:bg-white/10 backdrop-blur-sm"
+                >
                   <Users className="w-4 h-4 mr-2" />
                   Community
                 </Button>
               </div>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Clothing Catalog */}
-      {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'browse' && userPhoto && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
           <ClothingCatalog onClothingSelect={handleClothingSelect} />
-        </div>}
+        </div>
+      )}
 
       {/* Try-On Viewer */}
-      {currentStep === 'tryon' && userPhoto && selectedClothing && <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
-          <TryOnViewer userPhoto={userPhoto} selectedClothing={selectedClothing} tryOnResult={tryOnResult} onShare={() => setShowShareModal(true)} onBack={() => setCurrentStep('browse')} />
-        </div>}
+      {currentStep === 'tryon' && userPhoto && selectedClothing && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+          <TryOnViewer 
+            userPhoto={userPhoto} 
+            selectedClothing={selectedClothing} 
+            tryOnResult={tryOnResult} 
+            onShare={() => setShowShareModal(true)} 
+            onBack={() => setCurrentStep('browse')} 
+          />
+        </div>
+      )}
 
       {/* Share Modal */}
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tryOnResult={tryOnResult} selectedClothing={selectedClothing} />
+      <ShareModal 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+        tryOnResult={tryOnResult} 
+        selectedClothing={selectedClothing} 
+      />
 
       {/* Footer */}
       <footer className="border-t border-white/10 mt-20 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-16 w-auto" />
+              <img 
+                src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" 
+                alt="UnowUafter Logo" 
+                className="h-16 w-auto" 
+              />
             </div>
             <p className="text-gray-300 mb-4 drop-shadow-sm">Virtual clothing try-on powered by AI</p>
             <p className="text-sm text-gray-400">
@@ -251,6 +319,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
