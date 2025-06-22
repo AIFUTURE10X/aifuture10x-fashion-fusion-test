@@ -8,6 +8,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -159,7 +160,17 @@ const Index = () => {
                 {/* Video Section - Takes 2/3 of container */}
                 <div className="lg:col-span-2 flex justify-center">
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
-                    <iframe width="100%" height="480" src="https://www.youtube.com/embed/dfAFXzOczHk?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=dfAFXzOczHk&start=7&showinfo=0&disablekb=1&fs=0&iv_load_policy=3&cc_load_policy=0" title="YouTube video player" frameBorder="0" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="rounded-xl"></iframe>
+                    <div style={{position: 'relative', width: '100%', height: '0px', paddingBottom: '109.551%'}}>
+                      <iframe 
+                        allow="fullscreen;autoplay" 
+                        allowFullScreen 
+                        height="100%" 
+                        src="https://streamable.com/e/lxxq3v?autoplay=1" 
+                        width="100%" 
+                        style={{border: 'none', width: '100%', height: '100%', position: 'absolute', left: '0px', top: '0px', overflow: 'hidden'}}
+                        className="rounded-xl"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
