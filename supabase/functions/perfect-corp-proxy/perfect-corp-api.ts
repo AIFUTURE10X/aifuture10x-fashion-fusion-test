@@ -1,9 +1,8 @@
-
 import { AuthResult } from './types.ts';
 
 // At the top of perfect-corp-api.ts
 const API_ENDPOINTS = {
-  current: 'https://yce.perfectcorp.com',
+  current: 'https://yce-api-01.perfectcorp.com',
   option1: 'https://api.perfectcorp.com',
   option2: 'https://yce-api.perfectcorp.com',
   option3: 'https://yce.perfectcorp.com/api'
@@ -65,7 +64,7 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     return 'mock_file_id_12345';
   }
   
-  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/upload`;
+  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes`;
   
   try {
     const formData = new FormData();
@@ -115,7 +114,7 @@ export async function startTryOnTask(
     return 'mock_task_id_67890';
   }
   
-  const tryOnUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes-tryon`;
+  const tryOnUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
   
   let requestBody: any = {
     file_id: fileId,
