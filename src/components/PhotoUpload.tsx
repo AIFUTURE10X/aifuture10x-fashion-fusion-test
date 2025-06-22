@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -62,13 +61,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-sm mx-auto -mt-20">
+    <div className="max-w-md mx-auto -mt-20">
       {/* AI Clothes text moved above the container */}
-      <h3 className="text-sm font-bold text-white text-center mb-2">AI Clothes</h3>
+      <h3 className="text-lg font-bold text-white text-center mb-4">AI Clothes</h3>
       
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 shadow-2xl">
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
-          <div className="space-y-1.5">
+          <div className="space-y-4">
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
@@ -77,18 +76,18 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               />
               <button
                 onClick={handleRetake}
-                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-1.5">
-              <div className="flex items-center space-x-1.5 text-green-700">
-                <Check className="w-2.5 h-2.5" />
-                <span className="font-medium text-xs">Photo uploaded successfully!</span>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center space-x-2 text-green-700">
+                <Check className="w-4 h-4" />
+                <span className="font-medium text-sm">Photo uploaded successfully!</span>
               </div>
-              <p className="text-green-600 text-xs mt-0.5">
+              <p className="text-green-600 text-sm mt-1">
                 Great! Now you can browse clothes and see how they look on you.
               </p>
             </div>
@@ -96,7 +95,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <Button
               onClick={handleContinue}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              size="sm"
+              size="lg"
             >
               Continue to Browse Clothes
             </Button>
@@ -106,39 +105,39 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-2.5 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
             >
               <input {...getInputProps()} />
               
-              <div className="mb-1.5">
-                <div className="w-5 h-5 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-1.5">
+              <div className="mb-4">
+                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                   {isProcessing ? (
-                    <div className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-2.5 h-2.5 text-white" />
+                    <Upload className="w-6 h-6 text-white" />
                   )}
                 </div>
                 
                 {isProcessing ? (
-                  <p className="text-gray-200 text-xs">Uploading...</p>
+                  <p className="text-gray-200 text-sm">Uploading...</p>
                 ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium text-xs">Drop the image here</p>
+                  <p className="text-purple-300 font-medium text-sm">Drop the image here</p>
                 ) : (
                   <>
-                    <p className="text-white font-medium mb-0.5 text-xs">
+                    <p className="text-white font-medium mb-2 text-sm">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>
+                    <p className="text-gray-300 text-sm">PNG, JPG, WebP up to 10MB</p>
                   </>
                 )}
               </div>
             </div>
 
             {error && (
-              <p className="text-red-300 text-xs mt-1.5 text-center">{error}</p>
+              <p className="text-red-300 text-sm mt-3 text-center">{error}</p>
             )}
           </div>
         )}
