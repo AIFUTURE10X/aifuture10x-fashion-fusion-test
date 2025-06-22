@@ -62,17 +62,9 @@ const Index = () => {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
-      {/* Go To App Button - Only show on home page when no photo exists */}
+      {/* Theme Toggle - Only show on home page when no photo exists */}
       {!showUploadComponent && !userPhoto && (
-        <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
-          <Button 
-            onClick={handleGoToApp} 
-            size="sm" 
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg"
-          >
-            Go To App
-            <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
+        <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
       )}
@@ -178,6 +170,18 @@ const Index = () => {
                       <h4 className="text-white font-semibold mb-1">Upload your photo as style reference:</h4>
                       <p className="text-gray-200">Use your own photo to customize and explore various outfit options.</p>
                     </div>
+                  </div>
+                  
+                  {/* Go To App button positioned here */}
+                  <div className="pt-6">
+                    <Button 
+                      onClick={handleGoToApp} 
+                      size="lg" 
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg w-full"
+                    >
+                      Go To App
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
                   </div>
                 </div>
 
