@@ -72,7 +72,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               <img
                 src={filePreview || uploadedPhoto}
                 alt="Uploaded photo"
-                className="w-full h-96 object-contain rounded-lg border border-white/20 bg-gray-900/20"
+                className="w-full h-auto object-contain rounded-lg"
               />
               <button
                 onClick={handleRetake}
