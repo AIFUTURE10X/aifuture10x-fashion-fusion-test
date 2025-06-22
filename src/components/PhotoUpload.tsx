@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -63,12 +62,12 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
   return (
     <div className="max-w-2xl mx-auto -mt-20">
+      {/* AI Clothes text moved above the container */}
+      <h3 className="text-xl font-bold text-white text-center mb-6">AI Clothes</h3>
+      
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
           <div className="space-y-6">
-            {/* AI Clothes text above the model image */}
-            <h3 className="text-xl font-bold text-white text-center">AI Clothes</h3>
-            
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
