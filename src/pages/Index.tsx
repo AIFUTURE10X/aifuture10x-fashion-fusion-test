@@ -8,7 +8,6 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -166,16 +165,21 @@ const Index = () => {
                 <div className="lg:col-span-2 flex flex-col items-center">
                   <h4 className="text-4xl font-bold text-white mb-6 text-center">AI Clothes</h4>
                   <div className="w-full rounded-xl overflow-hidden shadow-2xl">
-                    <div style={{position: 'relative', width: '100%', height: '0px', paddingBottom: '109.551%'}}>
-                      <iframe 
-                        allow="fullscreen;autoplay" 
-                        allowFullScreen 
-                        height="100%" 
-                        src="https://streamable.com/e/lxxq3v?autoplay=1" 
-                        width="100%" 
-                        style={{border: 'none', width: '100%', height: '100%', position: 'absolute', left: '0px', top: '0px', overflow: 'hidden'}}
-                        className="rounded-xl"
-                      />
+                    <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '0px',
+                  paddingBottom: '109.551%'
+                }}>
+                      <iframe allow="fullscreen;autoplay" allowFullScreen height="100%" src="https://streamable.com/e/lxxq3v?autoplay=1" width="100%" style={{
+                    border: 'none',
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    left: '0px',
+                    top: '0px',
+                    overflow: 'hidden'
+                  }} className="rounded-xl" />
                     </div>
                   </div>
                 </div>
@@ -188,7 +192,7 @@ const Index = () => {
       {showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Back to Home Button */}
           <div className="mb-4 -ml-24">
-            <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg">
+            <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg mx-0 my-[18px]">
               <Home className="w-4 h-4 mr-2" />
               Back to Home
             </Button>
