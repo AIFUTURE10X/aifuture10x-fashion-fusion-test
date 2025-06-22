@@ -8,22 +8,24 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     return 'mock_file_id_12345';
   }
   
-  // Try the most likely correct upload endpoint
-  const primaryUploadUrl = 'https://openapi.perfectcorp.com/api/v1/files/upload';
+  // Primary upload endpoint
+  const uploadUrl = 'https://openapi.perfectcorp.com/v1/files/upload';
   
   try {
-    console.log(`Attempting primary file upload to: ${primaryUploadUrl}`);
+    console.log(`Attempting file upload to: ${uploadUrl}`);
     
     const formData = new FormData();
     formData.append('file', new Blob([userPhotoData], { type: 'image/jpeg' }), 'user_photo.jpg');
     
-    const uploadResponse = await fetch(primaryUploadUrl, {
+    const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
       body: formData,
     });
+
+    console.log(`Upload response status: ${uploadResponse.status}`);
 
     if (uploadResponse.ok) {
       const uploadData = await uploadResponse.json();
@@ -33,53 +35,15 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
         console.log('User photo uploaded successfully, file_id:', fileId);
         return fileId;
       }
+    } else {
+      const errorText = await uploadResponse.text();
+      console.log(`Upload failed:`, { status: uploadResponse.status, error: errorText });
     }
-
-    console.log(`Primary upload failed:`, uploadResponse.status);
   } catch (error) {
-    console.log(`Primary upload error:`, error.message);
-  }
-
-  // Try alternative upload approaches
-  const alternativeUploadUrls = [
-    'https://api.perfectcorp.com/v1/files/upload',
-    'https://openapi.perfectcorp.com/v1/files/upload'
-  ];
-  
-  for (const uploadUrl of alternativeUploadUrls) {
-    try {
-      console.log(`Attempting alternative file upload to: ${uploadUrl}`);
-      
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_data: Buffer.from(userPhotoData).toString('base64'),
-          file_type: 'image/jpeg',
-          file_name: 'user_photo.jpg'
-        }),
-      });
-
-      if (uploadResponse.ok) {
-        const uploadData = await uploadResponse.json();
-        const fileId = uploadData.file_id || uploadData.id;
-
-        if (fileId) {
-          console.log('User photo uploaded successfully with alternative method, file_id:', fileId);
-          return fileId;
-        }
-      }
-
-      console.log(`Alternative upload failed for ${uploadUrl}:`, uploadResponse.status);
-    } catch (error) {
-      console.log(`Alternative upload error for ${uploadUrl}:`, error.message);
-    }
+    console.log(`Upload error:`, error.message);
   }
   
-  throw new Error('All Perfect Corp file upload methods failed');
+  throw new Error('File upload to Perfect Corp failed');
 }
 
 export async function startTryOnTask(
@@ -89,7 +53,7 @@ export async function startTryOnTask(
   isCustomClothing?: boolean, 
   perfectCorpRefId?: string
 ): Promise<string> {
-  console.log('Step 3: Running clothes try-on task...');
+  console.log('Step 3: Starting try-on task...');
   
   // Check if we're in mock mode
   if (accessToken === 'mock_token_for_testing') {
@@ -97,7 +61,7 @@ export async function startTryOnTask(
     return 'mock_task_id_67890';
   }
   
-  // Build request body based on clothing type
+  // Build request body
   let tryOnRequestBody: any = {
     user_image_file_id: fileId,
     category: 'outfit'
@@ -111,13 +75,13 @@ export async function startTryOnTask(
     console.log('Using garment image URL:', clothingImage);
   }
 
-  // Try the most likely correct try-on endpoint
-  const primaryTryOnUrl = 'https://openapi.perfectcorp.com/api/v1/virtual-tryon';
+  // Primary try-on endpoint
+  const tryOnUrl = 'https://openapi.perfectcorp.com/v1/virtual-tryon';
   
   try {
-    console.log(`Attempting primary try-on request to: ${primaryTryOnUrl}`);
+    console.log(`Starting try-on request to: ${tryOnUrl}`);
     
-    const tryOnResponse = await fetch(primaryTryOnUrl, {
+    const tryOnResponse = await fetch(tryOnUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -127,58 +91,25 @@ export async function startTryOnTask(
       body: JSON.stringify(tryOnRequestBody),
     });
 
+    console.log(`Try-on response status: ${tryOnResponse.status}`);
+
     if (tryOnResponse.ok) {
       const tryOnData = await tryOnResponse.json();
       const taskId = tryOnData.task_id || tryOnData.id;
 
       if (taskId) {
-        console.log('Try-on task started with primary endpoint, task_id:', taskId);
+        console.log('Try-on task started successfully, task_id:', taskId);
         return taskId;
       }
+    } else {
+      const errorText = await tryOnResponse.text();
+      console.log(`Try-on failed:`, { status: tryOnResponse.status, error: errorText });
     }
-
-    console.log(`Primary try-on failed:`, tryOnResponse.status);
   } catch (error) {
-    console.log(`Primary try-on error:`, error.message);
-  }
-
-  // Try alternative try-on endpoints
-  const alternativeTryOnUrls = [
-    'https://api.perfectcorp.com/v1/virtual-tryon',
-    'https://openapi.perfectcorp.com/v1/virtual-tryon'
-  ];
-  
-  for (const tryOnUrl of alternativeTryOnUrls) {
-    try {
-      console.log(`Attempting alternative try-on request to: ${tryOnUrl}`);
-      
-      const tryOnResponse = await fetch(tryOnUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(tryOnRequestBody),
-      });
-
-      if (tryOnResponse.ok) {
-        const tryOnData = await tryOnResponse.json();
-        const taskId = tryOnData.task_id || tryOnData.id;
-
-        if (taskId) {
-          console.log('Try-on task started with alternative endpoint, task_id:', taskId);
-          return taskId;
-        }
-      }
-
-      console.log(`Alternative try-on failed for ${tryOnUrl}:`, tryOnResponse.status);
-    } catch (error) {
-      console.log(`Alternative try-on error for ${tryOnUrl}:`, error.message);
-    }
+    console.log(`Try-on error:`, error.message);
   }
   
-  throw new Error('All Perfect Corp try-on endpoints failed');
+  throw new Error('Virtual try-on task initiation failed');
 }
 
 export async function pollTaskCompletion(accessToken: string, taskId: string): Promise<any> {
@@ -196,58 +127,44 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     };
   }
   
-  let result;
+  const statusUrl = `https://openapi.perfectcorp.com/v1/virtual-tryon/${taskId}`;
   let attempts = 0;
   const maxAttempts = 60;
-  
-  // Try multiple status endpoints
-  const statusUrls = [
-    `https://openapi.perfectcorp.com/api/v1/virtual-tryon/${taskId}`,
-    `https://api.perfectcorp.com/v1/virtual-tryon/${taskId}`,
-    `https://openapi.perfectcorp.com/v1/virtual-tryon/${taskId}`
-  ];
   
   while (attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    for (const statusUrl of statusUrls) {
-      try {
-        const statusResponse = await fetch(statusUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          },
-        });
+    try {
+      const statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        },
+      });
 
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          
-          if (statusData.status === 'completed') {
-            result = statusData;
-            break;
-          } else if (statusData.status === 'failed') {
-            throw new Error(`Try-on task failed: ${statusData.error || 'Unknown error'}`);
-          }
-          
-          console.log(`Polling attempt ${attempts}, status: ${statusData.status}`);
-          break; // Found working endpoint, exit inner loop
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        
+        if (statusData.status === 'completed') {
+          console.log('Task completed successfully');
+          return statusData;
+        } else if (statusData.status === 'failed') {
+          throw new Error(`Try-on task failed: ${statusData.error || 'Unknown error'}`);
         }
-      } catch (error) {
-        console.log(`Status check error for ${statusUrl}:`, error.message);
-        continue;
+        
+        console.log(`Polling attempt ${attempts}, status: ${statusData.status}`);
+      } else {
+        console.log(`Status check failed: ${statusResponse.status}`);
       }
+    } catch (error) {
+      console.log(`Status check error:`, error.message);
     }
     
-    if (result) break;
     attempts++;
   }
 
-  if (!result) {
-    throw new Error('Try-on task timed out');
-  }
-
-  return result;
+  throw new Error('Try-on task timed out');
 }
 
 export async function downloadResultImage(resultImageUrl: string): Promise<ArrayBuffer> {

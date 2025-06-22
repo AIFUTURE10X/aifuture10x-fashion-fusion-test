@@ -37,7 +37,7 @@ serve(async (req) => {
         apiKey: apiKey ? 'present' : 'missing',
         apiSecret: apiSecret ? 'present' : 'missing'
       });
-      throw new Error('Perfect Corp API credentials not configured. Either provide valid credentials or enable mock mode by setting PERFECTCORP_MOCK_MODE=true');
+      throw new Error('Perfect Corp API credentials not configured. Please provide valid credentials or enable mock mode by setting PERFECTCORP_MOCK_MODE=true');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -46,7 +46,7 @@ serve(async (req) => {
       throw new Error('Supabase URL or Service Role Key missing in edge function env');
     }
 
-    console.log('Perfect Corp clothes try-on request:', {
+    console.log('Perfect Corp virtual try-on request:', {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
@@ -77,7 +77,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Virtual try-on error:', error);
     
-    // Handle specific Perfect Corp error codes
+    // Handle specific Perfect Corp error codes and provide user-friendly messages
     let errorMessage = error.message || 'Unknown error occurred';
     
     if (errorMessage.includes('exceed_max_filesize')) {
@@ -94,6 +94,8 @@ serve(async (req) => {
       errorMessage = 'Invalid parameter provided to the API';
     } else if (errorMessage.includes('Authentication failed')) {
       errorMessage = 'API authentication failed. Please check your Perfect Corp credentials or enable mock mode for testing';
+    } else if (errorMessage.includes('error sending request') || errorMessage.includes('network')) {
+      errorMessage = 'Network connectivity issue. Please try again in a moment or enable mock mode for testing';
     }
     
     return new Response(

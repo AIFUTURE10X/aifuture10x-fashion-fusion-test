@@ -8,8 +8,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     clientSecretLength: apiSecret?.length
   });
   
-  // For testing purposes, if Perfect Corp API is not accessible, 
-  // we'll use a mock token to allow the system to work
+  // Check for mock mode first
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
   
   if (mockMode) {
@@ -17,11 +16,16 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
   
-  // Try the most likely correct Perfect Corp API endpoint first
-  const primaryEndpoint = 'https://openapi.perfectcorp.com/api/v1/oauth/token';
+  // Primary OAuth 2.0 endpoint with form data
+  const primaryEndpoint = 'https://openapi.perfectcorp.com/v1/oauth/token';
   
   try {
-    console.log(`Attempting primary Perfect Corp authentication: ${primaryEndpoint}`);
+    console.log(`Attempting OAuth authentication: ${primaryEndpoint}`);
+    
+    const formData = new URLSearchParams();
+    formData.append('grant_type', 'client_credentials');
+    formData.append('client_id', apiKey);
+    formData.append('client_secret', apiSecret);
     
     const authResponse = await fetch(primaryEndpoint, {
       method: 'POST',
@@ -30,103 +34,70 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         'Accept': 'application/json',
         'User-Agent': 'Supabase-Edge-Function/1.0'
       },
-      body: new URLSearchParams({
-        'grant_type': 'client_credentials',
-        'client_id': apiKey,
-        'client_secret': apiSecret
-      }),
+      body: formData.toString(),
     });
 
-    console.log(`Primary auth response status:`, authResponse.status);
+    console.log(`OAuth response status:`, authResponse.status);
     
     if (authResponse.ok) {
       const authData = await authResponse.json();
-      console.log('Primary auth response received:', { 
+      console.log('OAuth response received:', { 
         status: authResponse.status, 
         hasAccessToken: !!authData.access_token,
         tokenType: authData.token_type
       });
       
       if (authData.access_token) {
-        console.log('Authentication successful with primary endpoint');
+        console.log('Authentication successful');
         return { accessToken: authData.access_token };
       }
     } else {
       const authError = await authResponse.text();
-      console.log(`Primary auth failed:`, {
+      console.log(`OAuth failed:`, {
         status: authResponse.status,
         error: authError
       });
     }
   } catch (error) {
-    console.log(`Primary endpoint error:`, error.message);
+    console.log(`OAuth endpoint error:`, error.message);
   }
 
-  // Try alternative endpoint formats
-  const alternativeEndpoints = [
-    'https://api.perfectcorp.com/v1/oauth/token',
-    'https://openapi.perfectcorp.com/v1/oauth/token',
-    'https://api.perfectcorp.com/oauth/token'
-  ];
-  
-  for (const authUrl of alternativeEndpoints) {
-    try {
-      console.log(`Attempting alternative Perfect Corp authentication: ${authUrl}`);
-      
-      const authResponse = await fetch(authUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
-          'User-Agent': 'Supabase-Edge-Function/1.0'
-        },
-        body: JSON.stringify({
-          grant_type: 'client_credentials'
-        }),
-      });
+  // Try basic auth method as fallback
+  try {
+    console.log('Trying basic authentication method...');
+    
+    const authResponse = await fetch(primaryEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
+        'User-Agent': 'Supabase-Edge-Function/1.0'
+      },
+      body: JSON.stringify({
+        grant_type: 'client_credentials'
+      }),
+    });
 
-      console.log(`Alternative auth response status for ${authUrl}:`, authResponse.status);
-      
-      if (authResponse.ok) {
-        const authData = await authResponse.json();
-        console.log('Alternative auth response received:', { 
-          endpoint: authUrl,
-          status: authResponse.status, 
-          hasAccessToken: !!(authData.access_token || authData.token),
-          tokenType: authData.token_type
-        });
-        
-        const accessToken = authData.access_token || authData.token;
+    if (authResponse.ok) {
+      const authData = await authResponse.json();
+      const accessToken = authData.access_token || authData.token;
 
-        if (accessToken) {
-          console.log('Authentication successful with alternative endpoint:', authUrl);
-          return { accessToken };
-        }
-      } else {
-        const authError = await authResponse.text();
-        console.log(`Alternative auth failed for ${authUrl}:`, {
-          status: authResponse.status,
-          error: authError
-        });
+      if (accessToken) {
+        console.log('Basic authentication successful');
+        return { accessToken };
       }
-    } catch (error) {
-      console.log(`Alternative endpoint error for ${authUrl}:`, error.message);
     }
+  } catch (error) {
+    console.log(`Basic auth error:`, error.message);
   }
   
-  // If all real endpoints fail, provide more detailed error information
-  console.log('All Perfect Corp authentication endpoints failed.');
-  console.log('This could indicate:');
+  // If all methods fail, provide detailed error
+  console.log('All Perfect Corp authentication methods failed.');
+  console.log('This indicates either:');
   console.log('1. Invalid API credentials');
-  console.log('2. Perfect Corp API is not accessible from this environment');
-  console.log('3. API endpoint URLs have changed');
-  console.log('4. Network connectivity issues');
+  console.log('2. Perfect Corp API connectivity issues');
+  console.log('3. API endpoint changes');
   
-  throw new Error(`Perfect Corp API authentication failed. Please verify:
-1. Your API credentials are correct and active
-2. Perfect Corp API is accessible from your deployment environment
-3. Your Perfect Corp account has the necessary permissions for virtual try-on API
-
-If you need to test the system, you can set PERFECTCORP_MOCK_MODE=true in your environment variables.`);
+  throw new Error(`Perfect Corp API authentication failed. Please verify your API credentials are correct and active. If you need to test the system, you can set PERFECTCORP_MOCK_MODE=true in your environment variables.`);
 }
