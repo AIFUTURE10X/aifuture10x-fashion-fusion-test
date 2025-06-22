@@ -20,7 +20,6 @@ serve(async (req) => {
       perfectCorpRefId
     }: TryOnRequest = await req.json();
     
-    // Get Perfect Corp API credentials from environment variables
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW') || Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
@@ -33,10 +32,6 @@ serve(async (req) => {
     });
     
     if (!mockMode && (!apiKey || !apiSecret)) {
-      console.error('Missing credentials:', {
-        apiKey: apiKey ? 'present' : 'missing',
-        apiSecret: apiSecret ? 'present' : 'missing'
-      });
       throw new Error('Perfect Corp API credentials not configured. Please provide valid credentials or enable mock mode by setting PERFECTCORP_MOCK_MODE=true');
     }
 
@@ -56,13 +51,11 @@ serve(async (req) => {
       mockMode
     });
 
-    // Authenticate with Perfect Corp (or use mock token)
     const { accessToken } = await authenticateWithPerfectCorp(
       apiKey || 'mock_key', 
       apiSecret || 'mock_secret'
     );
 
-    // Process the try-on request
     return await processWithAccessToken(accessToken, {
       userPhoto,
       userPhotoStoragePath,
@@ -77,7 +70,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Virtual try-on error:', error);
     
-    // Handle specific Perfect Corp error codes and provide user-friendly messages
     let errorMessage = error.message || 'Unknown error occurred';
     
     if (errorMessage.includes('exceed_max_filesize')) {
