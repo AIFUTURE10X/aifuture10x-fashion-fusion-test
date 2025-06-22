@@ -13,8 +13,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
   
-  // According to docs, authentication uses API key directly as Bearer token
-  // The API key from https://yce.perfectcorp.com/account/apikey is used directly
+  // Use API key directly as Bearer token
   console.log('Using API key as access token');
   return { accessToken: apiKey };
 }
@@ -134,7 +133,7 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     await new Promise(resolve => setTimeout(resolve, 2000));
     return {
       status: 'completed',
-      result_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      result_image_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
       processing_time: 2
     };
   }

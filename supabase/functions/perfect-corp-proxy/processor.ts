@@ -41,7 +41,7 @@ export async function processWithAccessToken(accessToken: string, params: Proces
   const result = await pollTaskCompletion(accessToken, taskId);
 
   // Step 6: Download and convert result image
-  const resultImageUrl = result.result_url || result.output_url;
+  const resultImageUrl = result.result_image_url || result.result_url || result.output_url;
   const resultImageData = await downloadResultImage(resultImageUrl);
   const resultImageBase64 = arrayBufferToBase64(resultImageData);
 
