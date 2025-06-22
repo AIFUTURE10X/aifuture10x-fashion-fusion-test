@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -61,13 +62,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto -mt-20">
+    <div className="max-w-xl mx-auto -mt-20">
       {/* AI Clothes text moved above the container */}
       <h3 className="text-xl font-bold text-white text-center mb-6">AI Clothes</h3>
       
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-2xl">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
@@ -82,7 +83,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               </button>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="flex items-center space-x-2 text-green-700">
                 <Check className="w-4 h-4" />
                 <span className="font-medium text-sm">Photo uploaded successfully!</span>
@@ -105,19 +106,19 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
             >
               <input {...getInputProps()} />
               
-              <div className="mb-4">
-                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div className="mb-3">
+                <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
                   {isProcessing ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-6 h-6 text-white" />
+                    <Upload className="w-5 h-5 text-white" />
                   )}
                 </div>
                 
@@ -137,7 +138,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             </div>
 
             {error && (
-              <p className="text-red-300 text-sm mt-4 text-center">{error}</p>
+              <p className="text-red-300 text-sm mt-3 text-center">{error}</p>
             )}
           </div>
         )}
