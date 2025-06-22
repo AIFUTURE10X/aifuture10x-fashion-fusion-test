@@ -62,13 +62,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-sm mx-auto -mt-20">
-      {/* AI Clothes text moved above the container */}
-      <h3 className="text-base font-bold text-white text-center mb-3">AI Clothes</h3>
+    <div className="max-w-sm mx-auto ml-40">
+      {/* AI Clothes text moved higher and larger font */}
+      <h3 className="text-xl font-bold text-white text-center mb-8 -mt-8">AI Clothes</h3>
       
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 shadow-2xl">
+      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
@@ -77,15 +77,15 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               />
               <button
                 onClick={handleRetake}
-                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors"
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
               >
-                <X className="w-3 h-3" />
+                <X className="w-2 h-2" />
               </button>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
               <div className="flex items-center space-x-2 text-green-700">
-                <Check className="w-3 h-3" />
+                <Check className="w-2 h-2" />
                 <span className="font-medium text-xs">Photo uploaded successfully!</span>
               </div>
               <p className="text-green-600 text-xs mt-1">
@@ -106,19 +106,19 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-4 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-3 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
             >
               <input {...getInputProps()} />
               
-              <div className="mb-3">
-                <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <div className="mb-2">
+                <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-2">
                   {isProcessing ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-4 h-4 text-white" />
+                    <Upload className="w-3 h-3 text-white" />
                   )}
                 </div>
                 
@@ -128,7 +128,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
                   <p className="text-purple-300 font-medium text-xs">Drop the image here</p>
                 ) : (
                   <>
-                    <p className="text-white font-medium mb-1.5 text-sm">
+                    <p className="text-white font-medium mb-1 text-xs">
                       Click to upload or drag and drop
                     </p>
                     <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>

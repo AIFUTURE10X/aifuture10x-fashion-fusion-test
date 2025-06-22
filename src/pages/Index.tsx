@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -224,12 +223,12 @@ const Index = () => {
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
       {showUploadComponent && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
-          {/* Back to Home Button */}
-          <div className="mb-4 -ml-24">
+          {/* Back to Home Button with larger font */}
+          <div className="mb-4">
             <Button 
               onClick={handleBackToHome} 
               variant="outline" 
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg mx-0 my-[18px]"
+              className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg text-base font-medium"
             >
               <Home className="w-4 h-4 mr-2" />
               Back to Home
