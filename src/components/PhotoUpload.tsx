@@ -64,8 +64,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   return (
     <div className="max-w-lg mx-auto">
       {/* AI Clothes text positioned above the image container */}
-      <div className="text-center mb-6">
-        <h3 className="text-3xl font-bold text-white">AI Clothes</h3>
+      <div className="text-center mb-8">
+        <h3 className="text-4xl font-bold text-white">AI Clothes</h3>
       </div>
 
       {/* Main image container */}
@@ -76,7 +76,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               <img
                 src={filePreview || uploadedPhoto}
                 alt="Uploaded photo"
-                className="w-full h-80 object-cover rounded-lg"
+                className="w-full h-96 object-cover rounded-lg"
               />
               <button
                 onClick={handleRetake}
@@ -109,7 +109,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-12 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
