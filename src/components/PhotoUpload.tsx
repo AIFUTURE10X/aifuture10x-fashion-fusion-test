@@ -62,8 +62,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto -mt-20">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 border border-white/20 shadow-2xl">
+    <div className="max-w-2xl mx-auto -mt-20">
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-12 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
           <div className="space-y-6">
             {/* AI Clothes text above the model image */}
@@ -73,7 +73,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               <img
                 src={filePreview || uploadedPhoto}
                 alt="Uploaded photo"
-                className="w-full h-80 object-cover rounded-lg border border-white/20 bg-gray-900/20"
+                className="w-full h-96 object-contain rounded-lg border border-white/20 bg-gray-900/20"
               />
               <button
                 onClick={handleRetake}
