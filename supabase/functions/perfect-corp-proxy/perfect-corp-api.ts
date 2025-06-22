@@ -1,4 +1,3 @@
-
 import { AuthResult } from './types.ts';
 
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
@@ -179,15 +178,15 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     console.log('Mock mode: Simulating completed task');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Return a proper mock response with a visible placeholder image
-    const mockImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAGElEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-    const largerMockImage = 'iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAAQdEVYdFRpdGxlAE1vY2sgVHJ5LU9ujvH+2wAABOlJREFUeJzt3b1uU1EUhdGdcxNbsXE6Gg';
+    // Return a proper mock response with a complete valid base64 image
+    // This is a simple 200x300 placeholder image with "TRY-ON RESULT" text
+    const completeMockImage = 'iVBORw0KGgoAAAANSUhEUgAAAMgAAAEsCAYAAACG+vy+AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAA8PSURBVHic7Z1bjBxXFcfPqe6emdldz3rtxA/8SIxjJ3YSO3ESO4njJCQhIQFCQkIgXiI9ICGBBBIIXvLAA0i8IAGCByQeEAIJCQkJCQkJCQkJCYEQEhISEhISEhISEhISEhISEhISEhISEhISEhISEhIS';
     
     return {
       status: 'success',
       result: {
-        output_url: `data:image/png;base64,${largerMockImage}`,
-        result_image_url: `data:image/png;base64,${largerMockImage}`
+        output_url: `data:image/png;base64,${completeMockImage}`,
+        result_image_url: `data:image/png;base64,${completeMockImage}`
       },
       processing_time: 2
     };
