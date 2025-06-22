@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { TryOnRequest } from './types.ts';
-import { authenticateWithPerfectCorp } from './perfectcorp-api.ts';
+import { authenticateWithPerfectCorp } from './auth.ts';
 import { processWithAccessToken } from './processor.ts';
 
 serve(async (req) => {
