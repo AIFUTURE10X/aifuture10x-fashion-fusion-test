@@ -182,7 +182,7 @@ const Index = () => {
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
       {showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Back to Home Button */}
-          <div className="mb-6">
+          <div className="mb-6 ml-0">
             <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg">
               <Home className="w-4 h-4 mr-2" />
               Back to Home
