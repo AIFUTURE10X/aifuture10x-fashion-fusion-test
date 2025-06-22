@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -62,13 +61,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto -mt-20">
+    <div className="max-w-xl mx-auto -mt-20">
       {/* AI Clothes text moved above the container */}
       <h3 className="text-lg font-bold text-white text-center mb-4">AI Clothes</h3>
       
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-12 border border-white/20 shadow-2xl">
+      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-7 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="relative">
               <img
                 src={filePreview || uploadedPhoto}
@@ -83,12 +82,12 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               </button>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="flex items-center space-x-2 text-green-700">
-                <Check className="w-5 h-5" />
-                <span className="font-medium">Photo uploaded successfully!</span>
+                <Check className="w-4 h-4" />
+                <span className="font-medium text-sm">Photo uploaded successfully!</span>
               </div>
-              <p className="text-green-600 mt-1">
+              <p className="text-green-600 text-sm mt-1">
                 Great! Now you can browse clothes and see how they look on you.
               </p>
             </div>
@@ -106,39 +105,39 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
             <div
               {...getRootProps()}
               className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-12 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                "border-2 border-dashed border-white/30 rounded-lg p-7 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
                 isDragActive && "border-purple-500 bg-purple-50/10",
                 isProcessing && "pointer-events-none opacity-75"
               )}
             >
               <input {...getInputProps()} />
               
-              <div className="mb-6">
-                <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-6">
+              <div className="mb-4">
+                <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-4">
                   {isProcessing ? (
-                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Upload className="w-8 h-8 text-white" />
+                    <Upload className="w-6 h-6 text-white" />
                   )}
                 </div>
                 
                 {isProcessing ? (
-                  <p className="text-gray-200">Uploading...</p>
+                  <p className="text-gray-200 text-sm">Uploading...</p>
                 ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium">Drop the image here</p>
+                  <p className="text-purple-300 font-medium text-sm">Drop the image here</p>
                 ) : (
                   <>
-                    <p className="text-white font-medium mb-3 text-lg">
+                    <p className="text-white font-medium mb-2 text-base">
                       Click to upload or drag and drop
                     </p>
-                    <p className="text-gray-300">PNG, JPG, WebP up to 10MB</p>
+                    <p className="text-gray-300 text-sm">PNG, JPG, WebP up to 10MB</p>
                   </>
                 )}
               </div>
             </div>
 
             {error && (
-              <p className="text-red-300 mt-4 text-center">{error}</p>
+              <p className="text-red-300 text-sm mt-3 text-center">{error}</p>
             )}
           </div>
         )}
