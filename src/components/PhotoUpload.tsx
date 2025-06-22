@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -76,7 +75,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
               <img
                 src={filePreview || uploadedPhoto}
                 alt="Uploaded photo"
-                className="w-full h-96 object-cover rounded-lg"
+                className="w-full h-[500px] object-cover rounded-lg"
               />
               <button
                 onClick={handleRetake}
