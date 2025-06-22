@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,10 +86,14 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         console.log('Using predefined clothing');
       }
 
+      console.log('Sending payload:', payload);
       const response: TryOnResponse = await perfectCorpApi.tryOnClothing(payload);
+      console.log('Got response:', response);
 
       if (response.success && response.resultImage) {
         const resultImageUrl = `data:image/jpeg;base64,${response.resultImage}`;
+        console.log('Setting try-on result image with URL length:', resultImageUrl.length);
+        console.log('Image URL preview:', resultImageUrl.substring(0, 100) + '...');
         setTryOnResultImage(resultImageUrl);
         setProcessingTime(response.processingTime || null);
         toast({
@@ -134,6 +139,15 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
     setError(null);
     handleTryOn();
   };
+
+  // Debug effect to log when tryOnResultImage changes
+  useEffect(() => {
+    console.log('tryOnResultImage changed:', tryOnResultImage ? 'Image set' : 'No image');
+    if (tryOnResultImage) {
+      console.log('Image URL length:', tryOnResultImage.length);
+      console.log('Image starts with data URL:', tryOnResultImage.startsWith('data:'));
+    }
+  }, [tryOnResultImage]);
 
   return (
     <div className="max-w-6xl mx-auto">

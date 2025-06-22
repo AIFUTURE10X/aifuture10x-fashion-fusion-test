@@ -61,11 +61,13 @@ class PerfectCorpApiService {
       }
 
       const data = await response.json();
-      console.log('Proxy response data keys:', Object.keys(data));
+      console.log('Proxy response data:', data);
+      console.log('Response keys:', Object.keys(data));
 
       // Handle the response based on Perfect Corp's API format
       if (data && data.result_img) {
         console.log('Success! Result image received from proxy');
+        console.log('Image data length:', data.result_img.length);
         return {
           success: true,
           resultImage: data.result_img,
