@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -61,7 +62,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto -mt-6">
+    <div className="max-w-md mx-auto -mt-12">
       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
         <div className="text-center mb-6">
           <Camera className="w-12 h-12 text-white mx-auto mb-4" />
