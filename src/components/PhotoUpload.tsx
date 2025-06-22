@@ -1,7 +1,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Camera, Upload, X, Check } from 'lucide-react';
+import { Upload, X, Check, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
@@ -15,35 +15,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preparing, setPreparing] = useState(false);
-  const [isReady, setIsReady] = useState(false); // <-- tracks image validated and ready for confirmation
-
-  // Helper to check if the uploaded photo is accessible over the public internet
-  async function isImagePubliclyAvailable(url: string): Promise<boolean> {
-    try {
-      // Use a HEAD request so we don't download the image content
-      const resp = await fetch(url, { method: "HEAD" });
-      return resp.ok;
-    } catch {
-      return false;
-    }
-  }
-
-  // Try multiple times to verify image accessibility, with delay between checks
-  async function waitForImageAvailability(url: string, retries = 3, delayMs = 1500): Promise<boolean> {
-    for (let i = 0; i < retries; i++) {
-      if (await isImagePubliclyAvailable(url)) {
-        return true;
-      }
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-    return false;
-  }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
-    setPreparing(false);
-    setIsReady(false);
     const file = acceptedFiles[0];
     if (file) {
       setIsProcessing(true);
@@ -54,37 +28,17 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
         // Upload image to Supabase Storage
         const publicUrl = await uploadPhotoToSupabase(file);
         setUploadedPhoto(publicUrl);
-
-        // Begin preparing step
-        setPreparing(true);
-
-        // Wait for URL to be accessible (up to approx 4.5 seconds)
-        const available = await waitForImageAvailability(publicUrl, 3, 1500);
-
-        setPreparing(false);
-
-        if (available) {
-          setIsReady(true); // Don't call onPhotoUpload yet, wait for user click
-        } else {
-          setError(
-            "Your photo is uploading, but the public link is not accessible yet. Please try again in a few seconds."
-          );
-          setUploadedPhoto(null);
-          setFilePreview(null);
-        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Upload failed. Please try again."
         );
         setFilePreview(null);
         setUploadedPhoto(null);
-        setPreparing(false);
-        setIsReady(false);
       } finally {
         setIsProcessing(false);
       }
     }
-  }, [onPhotoUpload]);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -95,165 +49,107 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
     maxSize: 10 * 1024 * 1024 // 10MB
   });
 
-  const handleConfirm = () => {
+  const handleContinue = () => {
     if (uploadedPhoto) {
       onPhotoUpload(uploadedPhoto);
     }
   };
 
-  const handleRemove = () => {
+  const handleRetake = () => {
     setUploadedPhoto(null);
     setFilePreview(null);
     setError(null);
-    setIsReady(false);
   };
-
-  // Show feedback while we're checking for image availability
-  if (preparing) {
-    return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="aspect-[3/4] relative flex items-center justify-center">
-            <div className="flex flex-col items-center py-12 w-full">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4">
-                <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Preparing your photo…
-              </h3>
-              <p className="text-gray-600 text-sm mb-2">
-                Making sure your uploaded photo is available on the web.
-              </p>
-              <p className="text-xs text-gray-400">Hang tight, this may take a few seconds…</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show preview + confirmation button if we're ready
-  if (uploadedPhoto && isReady) {
-    return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="aspect-[3/4] relative">
-            <img
-              src={filePreview || uploadedPhoto}
-              alt="Uploaded photo"
-              className="w-full h-full object-cover"
-            />
-            <button
-              onClick={handleRemove}
-              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="p-6">
-            <div className="flex items-center text-green-600 mb-4">
-              <Check className="w-5 h-5 mr-2" />
-              <span className="font-medium">Photo uploaded successfully!</span>
-            </div>
-            <p className="text-gray-600 text-sm mb-6">
-              Great! Now you can browse our clothing catalog and see how different items look on you.
-            </p>
-            <Button 
-              onClick={handleConfirm}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              size="lg"
-            >
-              Continue to Catalog
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show preview if still uploading/validating or image is uploaded but not validated yet
-  if (uploadedPhoto && !isReady) {
-    // In practice, this normally only flashes for a moment, but could show if user tries to use slow link
-    return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="aspect-[3/4] relative">
-            <img
-              src={filePreview || uploadedPhoto}
-              alt="Uploaded photo"
-              className="w-full h-full object-cover"
-            />
-            <button
-              onClick={handleRemove}
-              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="p-6 flex items-center text-gray-600 justify-center">
-            Validating your photo link…
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-md mx-auto">
-      <div
-        {...getRootProps()}
-        className={cn(
-          "bg-white rounded-3xl shadow-lg border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400 hover:shadow-xl",
-          isDragActive && "border-purple-500 bg-purple-50",
-          isProcessing && "pointer-events-none opacity-75"
-        )}
-      >
-        <input {...getInputProps()} />
-        
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            {isProcessing ? (
-              <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <Camera className="w-8 h-8 text-purple-600" />
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-2xl">
+        <div className="text-center mb-6">
+          <Camera className="w-12 h-12 text-white mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Upload Your Photo</h2>
+          <p className="text-gray-200">
+            Upload a clear photo of yourself to get started with virtual try-on
+          </p>
+        </div>
+
+        {uploadedPhoto ? (
+          <div className="space-y-6">
+            {/* AI Clothes text above the model image */}
+            <h3 className="text-2xl font-bold text-white text-center">AI Clothes</h3>
+            
+            <div className="relative">
+              <img
+                src={filePreview || uploadedPhoto}
+                alt="Uploaded photo"
+                className="w-full h-80 object-cover rounded-lg border border-white/20"
+              />
+              <button
+                onClick={handleRetake}
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 text-green-700">
+                <Check className="w-5 h-5" />
+                <span className="font-medium">Photo uploaded successfully!</span>
+              </div>
+              <p className="text-green-600 text-sm mt-1">
+                Great! Now you can browse clothes and see how they look on you.
+              </p>
+            </div>
+
+            <Button
+              onClick={handleContinue}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              size="lg"
+            >
+              Continue to Browse Clothes
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <div
+              {...getRootProps()}
+              className={cn(
+                "border-2 border-dashed border-white/30 rounded-lg p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                isDragActive && "border-purple-500 bg-purple-50/10",
+                isProcessing && "pointer-events-none opacity-75"
+              )}
+            >
+              <input {...getInputProps()} />
+              
+              <div className="mb-4">
+                <div className="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  {isProcessing ? (
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Upload className="w-8 h-8 text-white" />
+                  )}
+                </div>
+                
+                {isProcessing ? (
+                  <p className="text-gray-200">Uploading...</p>
+                ) : isDragActive ? (
+                  <p className="text-purple-300 font-medium">Drop the image here</p>
+                ) : (
+                  <>
+                    <p className="text-white font-medium mb-2">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-gray-300 text-sm">PNG, JPG, WebP up to 10MB</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-red-300 text-sm mt-4 text-center">{error}</p>
             )}
           </div>
-          
-          {isProcessing ? (
-            <p className="text-gray-600">Uploading your photo...</p>
-          ) : isDragActive ? (
-            <p className="text-purple-600 font-medium">Drop your photo here</p>
-          ) : (
-            <>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Upload Your Photo
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Drag and drop your photo here, or click to select
-              </p>
-              <Button variant="outline" className="mx-auto">
-                <Upload className="w-4 h-4 mr-2" />
-                Choose Photo
-              </Button>
-            </>
-          )}
-        </div>
-
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>• Supported formats: JPEG, PNG, WebP</p>
-          <p>• Maximum file size: 10MB</p>
-          <p>• For best results, use a clear photo with good lighting</p>
-        </div>
-        {error && (
-          <div className="mt-4 text-sm text-red-600">{error}</div>
         )}
-      </div>
-
-      {/* Privacy notice */}
-      <div className="mt-6 text-center">
-        <p className="text-xs text-gray-500">
-          🔒 Your photos are processed securely and never stored permanently
-        </p>
       </div>
     </div>
   );
