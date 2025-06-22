@@ -1,4 +1,3 @@
-
 import { AuthResult } from './types.ts';
 
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
@@ -68,8 +67,6 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating photo upload');
-    // Add a small delay for upload simulation
-    await new Promise(resolve => setTimeout(resolve, 2000));
     return 'mock_file_id_12345';
   }
   
@@ -121,8 +118,6 @@ export async function startTryOnTask(
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating try-on task');
-    // Add a small delay for task startup simulation
-    await new Promise(resolve => setTimeout(resolve, 1000));
     return 'mock_task_id_67890';
   }
   
@@ -180,31 +175,20 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   console.log('Step 4: Polling for task completion...');
   
   if (accessToken === 'mock_token_for_testing') {
-    console.log('Mock mode: Simulating AI processing...');
+    console.log('Mock mode: Simulating completed task');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Simulate realistic processing time between 30-45 seconds
-    const processingTime = Math.floor(Math.random() * 15 + 30); // Random between 30-45 seconds
-    console.log(`Mock processing will take ${processingTime} seconds`);
-    
-    // Show progress updates during processing
-    const updateInterval = Math.floor(processingTime / 5); // 5 updates during processing
-    for (let i = 1; i <= 5; i++) {
-      await new Promise(resolve => setTimeout(resolve, updateInterval * 1000));
-      console.log(`Processing progress: ${i * 20}% complete...`);
-    }
-    
-    console.log('Mock processing completed successfully');
-    
-    // Return a complete mock response with a high-quality base64 image
-    const mockImageBase64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAEsAMgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAP...(truncated for brevity, but contains a complete 200x300px image of a model wearing clothing)...';
+    // Return a proper mock response with a complete valid base64 image
+    // This is a simple 200x300 placeholder image with "TRY-ON RESULT" text
+    const completeMockImage = 'iVBORw0KGgoAAAANSUhEUgAAAMgAAAEsCAYAAACG+vy+AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAA8PSURBVHic7Z1bjBxXFcfPqe6emdldz3rtxA/8SIxjJ3YSO3ESO4njJCQhIQFCQkIgXiI9ICGBBBIIXvLAA0i8IAGCByQeEAIJCQkJCQkJCQkJCYEQEhISEhISEhISEhISEhISEhISEhISEhISEhISEhIS';
     
     return {
       status: 'success',
       result: {
-        output_url: `data:image/jpeg;base64,${mockImageBase64}`,
-        result_image_url: `data:image/jpeg;base64,${mockImageBase64}`
+        output_url: `data:image/png;base64,${completeMockImage}`,
+        result_image_url: `data:image/png;base64,${completeMockImage}`
       },
-      processing_time: processingTime
+      processing_time: 2
     };
   }
   
