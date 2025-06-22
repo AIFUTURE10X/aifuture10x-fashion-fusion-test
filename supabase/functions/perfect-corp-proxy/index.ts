@@ -23,19 +23,21 @@ serve(async (req) => {
     // Get Perfect Corp API credentials from environment variables
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY_NEW') || Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+    const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
     
     console.log('Environment check:', {
       hasApiKey: !!apiKey,
       hasApiSecret: !!apiSecret,
+      mockMode: mockMode,
       keySource: Deno.env.get('PERFECTCORP_API_KEY_NEW') ? 'PERFECTCORP_API_KEY_NEW' : 'PERFECTCORP_API_KEY'
     });
     
-    if (!apiKey || !apiSecret) {
+    if (!mockMode && (!apiKey || !apiSecret)) {
       console.error('Missing credentials:', {
         apiKey: apiKey ? 'present' : 'missing',
         apiSecret: apiSecret ? 'present' : 'missing'
       });
-      throw new Error('Perfect Corp API credentials not configured');
+      throw new Error('Perfect Corp API credentials not configured. Either provide valid credentials or enable mock mode by setting PERFECTCORP_MOCK_MODE=true');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -50,11 +52,15 @@ serve(async (req) => {
       userPhotoLength: userPhoto?.length,
       isCustomClothing,
       perfectCorpRefId,
-      styleId: isCustomClothing ? undefined : clothingImage
+      styleId: isCustomClothing ? undefined : clothingImage,
+      mockMode
     });
 
-    // Authenticate with Perfect Corp
-    const { accessToken } = await authenticateWithPerfectCorp(apiKey, apiSecret);
+    // Authenticate with Perfect Corp (or use mock token)
+    const { accessToken } = await authenticateWithPerfectCorp(
+      apiKey || 'mock_key', 
+      apiSecret || 'mock_secret'
+    );
 
     // Process the try-on request
     return await processWithAccessToken(accessToken, {
@@ -87,7 +93,7 @@ serve(async (req) => {
     } else if (errorMessage.includes('invalid_parameter')) {
       errorMessage = 'Invalid parameter provided to the API';
     } else if (errorMessage.includes('Authentication failed')) {
-      errorMessage = 'API authentication failed. Please check your Perfect Corp credentials';
+      errorMessage = 'API authentication failed. Please check your Perfect Corp credentials or enable mock mode for testing';
     }
     
     return new Response(
