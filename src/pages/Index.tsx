@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -56,14 +57,19 @@ const Index = () => {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
-      {/* Go To App Button - Always visible in top right */}
-      <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
+      {/* Go To App Button - Only show on home page when no photo exists */}
+      {!showUploadComponent && !userPhoto && <div className="fixed top-4 right-4 z-50 flex items-center space-x-3">
         <Button onClick={handleGoToApp} size="sm" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0 shadow-lg">
           Go To App
           <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
         <ThemeToggle />
-      </div>
+      </div>}
+
+      {/* Theme Toggle - Always visible in top right when Go To App button is hidden */}
+      {(showUploadComponent || userPhoto) && <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>}
 
       {/* Hero Section - Only show when not showing upload component and no photo */}
       {!showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
