@@ -62,9 +62,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   };
 
   return (
-    <div className="max-w-sm mx-auto ml-40">
-      {/* AI Clothes text moved higher and larger font */}
-      <h3 className="text-xl font-bold text-white text-center mb-8 -mt-8">AI Clothes</h3>
+    <div className="max-w-sm mx-auto">
+      {/* AI Clothes text aligned with container */}
+      <h3 className="text-xl font-bold text-white text-left mb-6">AI Clothes</h3>
       
       <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-2xl">
         {uploadedPhoto ? (

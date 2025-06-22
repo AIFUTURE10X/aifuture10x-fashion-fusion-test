@@ -223,8 +223,8 @@ const Index = () => {
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
       {showUploadComponent && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
-          {/* Back to Home Button with larger font */}
-          <div className="mb-4">
+          {/* Back to Home Button aligned with PhotoUpload container */}
+          <div className="max-w-sm mx-auto mb-6">
             <Button 
               onClick={handleBackToHome} 
               variant="outline" 
