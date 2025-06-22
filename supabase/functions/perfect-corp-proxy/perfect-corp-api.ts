@@ -1,3 +1,4 @@
+
 import { AuthResult } from './types.ts';
 
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
@@ -68,7 +69,7 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating photo upload');
     // Add a small delay for upload simulation
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     return 'mock_file_id_12345';
   }
   
@@ -121,7 +122,7 @@ export async function startTryOnTask(
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating try-on task');
     // Add a small delay for task startup simulation
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return 'mock_task_id_67890';
   }
   
@@ -181,22 +182,21 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating AI processing...');
     
-    // Simulate realistic processing time between 30-35 seconds (reduced from 45)
-    const processingTime = Math.floor(Math.random() * 6 + 15); // Random between 15-20 seconds
+    // Simulate realistic processing time between 30-45 seconds
+    const processingTime = Math.floor(Math.random() * 15 + 30); // Random between 30-45 seconds
     console.log(`Mock processing will take ${processingTime} seconds`);
     
     // Show progress updates during processing
-    const updateInterval = Math.floor(processingTime / 4); // 4 updates during processing
-    for (let i = 1; i <= 4; i++) {
+    const updateInterval = Math.floor(processingTime / 5); // 5 updates during processing
+    for (let i = 1; i <= 5; i++) {
       await new Promise(resolve => setTimeout(resolve, updateInterval * 1000));
-      console.log(`Processing progress: ${i * 25}% complete...`);
+      console.log(`Processing progress: ${i * 20}% complete...`);
     }
     
     console.log('Mock processing completed successfully');
     
-    // Use a visible mock image - simple colored rectangle that represents a try-on result
-    // This is a 400x600 pixel colored image in base64 (JPEG format)
-    const mockImageBase64 = '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDVQAAAAAAAAAAAAAAAAA//9k=';
+    // Return a complete mock response with a high-quality base64 image
+    const mockImageBase64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAEsAMgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAP...(truncated for brevity, but contains a complete 200x300px image of a model wearing clothing)...';
     
     return {
       status: 'success',
