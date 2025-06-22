@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Camera } from 'lucide-react';
@@ -63,85 +62,86 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
 
   return (
     <div className="max-w-sm mx-auto">
-      {/* AI Clothes text aligned with container */}
-      <h3 className="text-xl font-bold text-white text-left mb-6">AI Clothes</h3>
-      
-      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-2xl">
-        {uploadedPhoto ? (
-          <div className="space-y-2">
-            <div className="relative">
-              <img
-                src={filePreview || uploadedPhoto}
-                alt="Uploaded photo"
-                className="w-full h-auto object-contain rounded-lg"
-              />
-              <button
-                onClick={handleRetake}
-                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
-              >
-                <X className="w-2 h-2" />
-              </button>
-            </div>
-
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-              <div className="flex items-center space-x-2 text-green-700">
-                <Check className="w-2 h-2" />
-                <span className="font-medium text-xs">Photo uploaded successfully!</span>
+      {/* AI Clothes text positioned to the left of image container and aligned with top */}
+      <div className="flex items-start gap-4 mb-6">
+        <h3 className="text-xl font-bold text-white whitespace-nowrap mt-0">AI Clothes</h3>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shadow-2xl flex-1">
+          {uploadedPhoto ? (
+            <div className="space-y-2">
+              <div className="relative">
+                <img
+                  src={filePreview || uploadedPhoto}
+                  alt="Uploaded photo"
+                  className="w-full h-auto object-contain rounded-lg"
+                />
+                <button
+                  onClick={handleRetake}
+                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+                >
+                  <X className="w-2 h-2" />
+                </button>
               </div>
-              <p className="text-green-600 text-xs mt-1">
-                Great! Now you can browse clothes and see how they look on you.
-              </p>
-            </div>
 
-            <Button
-              onClick={handleContinue}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm"
-              size="sm"
-            >
-              Continue to Browse Clothes
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <div
-              {...getRootProps()}
-              className={cn(
-                "border-2 border-dashed border-white/30 rounded-lg p-3 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
-                isDragActive && "border-purple-500 bg-purple-50/10",
-                isProcessing && "pointer-events-none opacity-75"
-              )}
-            >
-              <input {...getInputProps()} />
-              
-              <div className="mb-2">
-                <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                <div className="flex items-center space-x-2 text-green-700">
+                  <Check className="w-2 h-2" />
+                  <span className="font-medium text-xs">Photo uploaded successfully!</span>
+                </div>
+                <p className="text-green-600 text-xs mt-1">
+                  Great! Now you can browse clothes and see how they look on you.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleContinue}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm"
+                size="sm"
+              >
+                Continue to Browse Clothes
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <div
+                {...getRootProps()}
+                className={cn(
+                  "border-2 border-dashed border-white/30 rounded-lg p-3 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
+                  isDragActive && "border-purple-500 bg-purple-50/10",
+                  isProcessing && "pointer-events-none opacity-75"
+                )}
+              >
+                <input {...getInputProps()} />
+                
+                <div className="mb-2">
+                  <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    {isProcessing ? (
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Upload className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  
                   {isProcessing ? (
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-gray-200 text-xs">Uploading...</p>
+                  ) : isDragActive ? (
+                    <p className="text-purple-300 font-medium text-xs">Drop the image here</p>
                   ) : (
-                    <Upload className="w-3 h-3 text-white" />
+                    <>
+                      <p className="text-white font-medium mb-1 text-xs">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>
+                    </>
                   )}
                 </div>
-                
-                {isProcessing ? (
-                  <p className="text-gray-200 text-xs">Uploading...</p>
-                ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium text-xs">Drop the image here</p>
-                ) : (
-                  <>
-                    <p className="text-white font-medium mb-1 text-xs">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-gray-300 text-xs">PNG, JPG, WebP up to 10MB</p>
-                  </>
-                )}
               </div>
-            </div>
 
-            {error && (
-              <p className="text-red-300 text-xs mt-2 text-center">{error}</p>
-            )}
-          </div>
-        )}
+              {error && (
+                <p className="text-red-300 text-xs mt-2 text-center">{error}</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
