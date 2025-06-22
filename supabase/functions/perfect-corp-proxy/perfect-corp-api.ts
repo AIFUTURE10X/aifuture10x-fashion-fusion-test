@@ -1,7 +1,16 @@
 
 import { AuthResult } from './types.ts';
 
-const PERFECTCORP_BASE_URL = 'https://yce.perfectcorp.com';
+// At the top of perfect-corp-api.ts
+const API_ENDPOINTS = {
+  current: 'https://yce.perfectcorp.com',
+  option1: 'https://api.perfectcorp.com',
+  option2: 'https://yce-api.perfectcorp.com',
+  option3: 'https://yce.perfectcorp.com/api'
+};
+
+// Use environment variable to switch
+const PERFECTCORP_BASE_URL = Deno.env.get('PERFECTCORP_API_URL') || API_ENDPOINTS.current;
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string): Promise<AuthResult> {
   console.log('Step 1: Authenticating with Perfect Corp...');
@@ -13,9 +22,39 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
   
-  // Use API key directly as Bearer token
-  console.log('Using API key as access token');
-  return { accessToken: apiKey };
+  const authEndpoint = 'https://openapi.perfectcorp.com/v1/oauth/token';
+  
+  try {
+    const formData = new URLSearchParams();
+    formData.append('grant_type', 'client_credentials');
+    formData.append('client_id', apiKey);
+    formData.append('client_secret', apiSecret);
+    
+    const authResponse = await fetch(authEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: formData.toString(),
+    });
+
+    if (authResponse.ok) {
+      const authData = await authResponse.json();
+      if (authData.access_token) {
+        console.log('Authentication successful');
+        return { accessToken: authData.access_token };
+      }
+    }
+    
+    const errorText = await authResponse.text();
+    console.error('Auth failed:', authResponse.status, errorText);
+    throw new Error('Authentication failed');
+    
+  } catch (error) {
+    console.error('Auth error:', error);
+    throw new Error(`Perfect Corp API authentication failed: ${error.message}`);
+  }
 }
 
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
