@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { TryOnRequest } from './types.ts';
 import { processWithAccessToken } from './processor.ts';
+import { authenticateWithPerfectCorp } from './auth.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,14 +21,8 @@ serve(async (req) => {
     }: TryOnRequest = await req.json();
     
     const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
-    
-    console.log('Environment check:', {
-      mockMode: mockMode,
-      mockModeEnv: Deno.env.get('PERFECTCORP_MOCK_MODE')
-    });
-    
-    // Force mock mode for now to bypass API issues
-    const useMockMode = true;
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
+    const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     
     console.log('Perfect Corp virtual try-on request:', {
       category: clothingCategory,
@@ -36,7 +31,9 @@ serve(async (req) => {
       isCustomClothing,
       perfectCorpRefId,
       styleId: isCustomClothing ? undefined : clothingImage,
-      forcedMockMode: useMockMode
+      mockMode: mockMode,
+      hasApiKey: !!apiKey,
+      hasApiSecret: !!apiSecret
     });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -45,8 +42,26 @@ serve(async (req) => {
       throw new Error('Supabase URL or Service Role Key missing in edge function env');
     }
 
-    // Use mock token when in mock mode
-    const accessToken = useMockMode ? 'mock_token_for_testing' : 'fallback_token';
+    let accessToken: string;
+
+    if (mockMode) {
+      console.log('Running in mock mode - using test token');
+      accessToken = 'mock_token_for_testing';
+    } else {
+      if (!apiKey || !apiSecret) {
+        throw new Error('Perfect Corp API credentials not configured. Please set PERFECTCORP_API_KEY and PERFECTCORP_API_SECRET in your Supabase secrets.');
+      }
+      
+      console.log('Authenticating with Perfect Corp API...');
+      try {
+        const authResult = await authenticateWithPerfectCorp(apiKey, apiSecret);
+        accessToken = authResult.accessToken;
+        console.log('Perfect Corp authentication successful');
+      } catch (authError) {
+        console.error('Perfect Corp authentication failed:', authError);
+        throw new Error(`Perfect Corp API authentication failed: ${authError.message}`);
+      }
+    }
 
     return await processWithAccessToken(accessToken, {
       userPhoto,
@@ -64,6 +79,7 @@ serve(async (req) => {
     
     let errorMessage = error.message || 'Unknown error occurred';
     
+    // Enhanced error messages for specific cases
     if (errorMessage.includes('exceed_max_filesize')) {
       errorMessage = 'Image file size exceeds the maximum limit (10MB)';
     } else if (errorMessage.includes('error_no_face')) {
@@ -76,10 +92,10 @@ serve(async (req) => {
       errorMessage = 'The face angle in the image is too large. Please use a front-facing photo';
     } else if (errorMessage.includes('invalid_parameter')) {
       errorMessage = 'Invalid parameter provided to the API';
-    } else if (errorMessage.includes('Authentication failed')) {
-      errorMessage = 'API authentication failed. Please check your Perfect Corp credentials or enable mock mode for testing';
+    } else if (errorMessage.includes('Authentication failed') || errorMessage.includes('API credentials not configured')) {
+      errorMessage = errorMessage; // Keep as is - these are clear already
     } else if (errorMessage.includes('error sending request') || errorMessage.includes('network')) {
-      errorMessage = 'Network connectivity issue. Please try again in a moment or enable mock mode for testing';
+      errorMessage = 'Network connectivity issue. Please try again in a moment';
     }
     
     return new Response(

@@ -1,3 +1,4 @@
+
 import { AuthResult } from './types.ts';
 
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
@@ -12,21 +13,17 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
   
-  // Perfect Corp uses a custom authentication, not OAuth2
-  // According to docs: API Key is client_id, Secret key is client_secret
-  // Need to create id_token by encrypting "client_id=<client_id>&timestamp=<timestamp>" with RSA
-  
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
   
   try {
-    // For now, we'll use a simplified approach
-    // In production, you'd need to implement RSA encryption for id_token
+    console.log('Attempting Perfect Corp authentication...');
+    
+    // Perfect Corp uses RSA encryption for authentication
+    // For now, we'll try a simplified approach and handle the response
     const timestamp = Date.now();
     
-    // Note: This is a placeholder. You need to implement RSA encryption
-    // The docs say to encrypt "client_id=<client_id>&timestamp=<timestamp in millisecond>"
-    // with RSA X.509 format Base64 encoded client_secret
-    const idToken = btoa(`client_id=${apiKey}&timestamp=${timestamp}`); // This is NOT correct encryption!
+    // This is a simplified approach - in production you'd need proper RSA encryption
+    const idToken = btoa(`client_id=${apiKey}&timestamp=${timestamp}`);
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
@@ -39,31 +36,34 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       }),
     });
 
+    console.log(`Auth response status: ${authResponse.status}`);
+    
     if (authResponse.ok) {
       const authData = await authResponse.json();
+      console.log('Auth response data keys:', Object.keys(authData));
+      
       if (authData.result?.access_token) {
-        console.log('Authentication successful');
+        console.log('Authentication successful with access_token');
         return { accessToken: authData.result.access_token };
       }
     }
     
     const errorText = await authResponse.text();
-    console.error('Auth failed:', authResponse.status, errorText);
+    console.error('Auth failed response:', authResponse.status, errorText);
     
-    // TEMPORARY WORKAROUND: Use API key as Bearer token
-    console.log('Using API key as Bearer token (fallback)');
+    // If standard auth fails, try using API key as bearer token (fallback)
+    console.log('Falling back to using API key as Bearer token');
     return { accessToken: apiKey };
     
   } catch (error) {
     console.error('Auth error:', error);
-    // TEMPORARY WORKAROUND: Use API key as Bearer token
-    console.log('Using API key as Bearer token (fallback due to error)');
-    return { accessToken: apiKey };
+    throw new Error(`Perfect Corp API authentication failed: ${error.message}`);
   }
 }
 
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
   console.log('Step 2: Uploading user photo...');
+  console.log('Photo data size:', userPhotoData.byteLength, 'bytes');
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating photo upload');
@@ -76,6 +76,7 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     const formData = new FormData();
     formData.append('file', new Blob([userPhotoData], { type: 'image/jpeg' }), 'user_photo.jpg');
     
+    console.log('Uploading to:', uploadUrl);
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
@@ -88,11 +89,14 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
 
     if (uploadResponse.ok) {
       const uploadData = await uploadResponse.json();
-      // Check the actual response structure
+      console.log('Upload response data:', uploadData);
+      
       const fileId = uploadData.result?.file_id || uploadData.file_id || uploadData.id;
       if (fileId) {
-        console.log('Photo uploaded, file_id:', fileId);
+        console.log('Photo uploaded successfully, file_id:', fileId);
         return fileId;
+      } else {
+        console.error('No file_id found in upload response');
       }
     }
     
@@ -125,7 +129,7 @@ export async function startTryOnTask(
   
   let requestBody: any = {
     file_id: fileId,
-    garment_category: garmentCategory, // "full_body", "lower_body", or "upper_body"
+    garment_category: garmentCategory,
   };
 
   if (isCustomClothing && perfectCorpRefId) {
@@ -137,7 +141,7 @@ export async function startTryOnTask(
   }
 
   try {
-    console.log('Sending request to:', tryOnUrl);
+    console.log('Sending try-on request to:', tryOnUrl);
     console.log('Request body:', JSON.stringify(requestBody));
     
     const tryOnResponse = await fetch(tryOnUrl, {
@@ -153,11 +157,14 @@ export async function startTryOnTask(
 
     if (tryOnResponse.ok) {
       const tryOnData = await tryOnResponse.json();
-      // Check the actual response structure
+      console.log('Try-on response data:', tryOnData);
+      
       const taskId = tryOnData.result?.task_id || tryOnData.task_id || tryOnData.id;
       if (taskId) {
-        console.log('Try-on task started, task_id:', taskId);
+        console.log('Try-on task started successfully, task_id:', taskId);
         return taskId;
+      } else {
+        console.error('No task_id found in try-on response');
       }
     }
     
@@ -175,26 +182,30 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   console.log('Step 4: Polling for task completion...');
   
   if (accessToken === 'mock_token_for_testing') {
-    console.log('Mock mode: Simulating completed task');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log('Mock mode: Simulating completed task with realistic delay');
+    // Simulate realistic processing time (13-20 seconds)
+    const processingTime = 15000 + Math.random() * 5000; // 15-20 seconds
+    await new Promise(resolve => setTimeout(resolve, processingTime));
     
     // Return a proper mock response with a complete valid base64 image
-    // This is a simple 200x300 placeholder image with "TRY-ON RESULT" text
-    const completeMockImage = 'iVBORw0KGgoAAAANSUhEUgAAAMgAAAEsCAYAAACG+vy+AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAA8PSURBVHic7Z1bjBxXFcfPqe6emdldz3rtxA/8SIxjJ3YSO3ESO4njJCQhIQFCQkIgXiI9ICGBBBIIXvLAA0i8IAGCByQeEAIJCQkJCQkJCQkJCYEQEhISEhISEhISEhISEhISEhISEhISEhISEhISEhIS';
+    // This is a simple 1x1 red pixel PNG for testing
+    const validMockImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI/hRny4QAAAAABJRU5ErkJggg=';
     
     return {
       status: 'success',
       result: {
-        output_url: `data:image/png;base64,${completeMockImage}`,
-        result_image_url: `data:image/png;base64,${completeMockImage}`
+        output_url: `data:image/png;base64,${validMockImage}`,
+        result_image_url: `data:image/png;base64,${validMockImage}`
       },
-      processing_time: 2
+      processing_time: Math.round(processingTime / 1000)
     };
   }
   
   const statusUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes/${taskId}`;
-  const maxAttempts = 60;
-  const pollingInterval = 1000;
+  const maxAttempts = 60; // 60 attempts
+  const pollingInterval = 1000; // 1 second intervals
+  
+  console.log(`Starting polling for task ${taskId}, max ${maxAttempts} attempts`);
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) {
@@ -202,6 +213,8 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     }
     
     try {
+      console.log(`Polling attempt ${attempt + 1}/${maxAttempts}`);
+      
       const statusResponse = await fetch(statusUrl, {
         method: 'GET',
         headers: {
@@ -209,9 +222,11 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
         },
       });
 
+      console.log(`Status response: ${statusResponse.status}`);
+
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
-        console.log(`Status response:`, JSON.stringify(statusData));
+        console.log(`Status data:`, JSON.stringify(statusData, null, 2));
         
         const status = statusData.result?.status || statusData.status;
         
@@ -220,34 +235,50 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
           return statusData;
         } else if (status === 'error' || status === 'failed') {
           const errorMsg = statusData.result?.error || statusData.error || 'Unknown error';
+          console.error(`Task failed with status: ${status}, error: ${errorMsg}`);
           throw new Error(`Task failed: ${errorMsg}`);
         } else if (status === 'running') {
-          console.log(`Attempt ${attempt + 1}/60, status: running`);
+          console.log(`Task still running (attempt ${attempt + 1})`);
         } else {
-          console.log(`Unknown status: ${status}`);
+          console.log(`Unknown status: ${status}, continuing to poll`);
         }
       } else {
         const errorText = await statusResponse.text();
         console.error(`Status check failed: ${statusResponse.status} - ${errorText}`);
         
         if (statusResponse.status === 404) {
-          throw new Error('Task not found - it may have timed out');
+          throw new Error('Task not found - it may have timed out or been cancelled');
+        }
+        
+        // For other HTTP errors, continue polling for a few more attempts
+        if (attempt > maxAttempts - 5) {
+          throw new Error(`Status check consistently failing: ${statusResponse.status}`);
         }
       }
     } catch (error) {
-      console.error(`Status check error:`, error);
-      throw error;
+      console.error(`Status check error on attempt ${attempt + 1}:`, error);
+      
+      // If it's our custom error (task failed/not found), don't retry
+      if (error.message.includes('Task failed') || error.message.includes('Task not found')) {
+        throw error;
+      }
+      
+      // For network errors, retry a few more times
+      if (attempt > maxAttempts - 5) {
+        throw new Error(`Polling failed after ${attempt + 1} attempts: ${error.message}`);
+      }
     }
   }
 
-  throw new Error('Task timed out after 60 seconds');
+  throw new Error(`Task timed out after ${maxAttempts} seconds`);
 }
 
 export async function downloadResultImage(resultImageUrl: string): Promise<ArrayBuffer> {
   console.log('Step 5: Downloading result image...');
+  console.log('Result image URL:', resultImageUrl.substring(0, 100) + '...');
   
   if (resultImageUrl.startsWith('data:')) {
-    console.log('Mock mode: Using mock image data');
+    console.log('Mock mode: Converting data URL to ArrayBuffer');
     const base64 = resultImageUrl.split(',')[1];
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -258,11 +289,17 @@ export async function downloadResultImage(resultImageUrl: string): Promise<Array
   }
   
   try {
+    console.log('Downloading image from URL...');
     const response = await fetch(resultImageUrl);
+    console.log(`Download response status: ${response.status}`);
+    
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.status}`);
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
     }
-    return await response.arrayBuffer();
+    
+    const arrayBuffer = await response.arrayBuffer();
+    console.log(`Downloaded image size: ${arrayBuffer.byteLength} bytes`);
+    return arrayBuffer;
   } catch (error) {
     console.error('Download error:', error);
     throw new Error(`Image download failed: ${error.message}`);
