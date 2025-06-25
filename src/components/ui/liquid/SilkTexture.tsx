@@ -41,12 +41,12 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       const { width, height } = canvas;
       const tOffset = speed * time;
       
-      // Create gradient background
+      // Create gradient background with black tones
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#0a0a0f');
-      gradient.addColorStop(0.3, '#151520');
-      gradient.addColorStop(0.6, '#1a1a2e');
-      gradient.addColorStop(1, '#0f3460');
+      gradient.addColorStop(0, '#000000');
+      gradient.addColorStop(0.3, '#0a0a0a');
+      gradient.addColorStop(0.6, '#151515');
+      gradient.addColorStop(1, '#202020');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -87,28 +87,28 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const combinedPattern = (basePattern * 0.75 + shimmer * 0.25);
           const intensity = Math.max(0, combinedPattern - rnd / 6.0 * noiseIntensity);
           
-          // Smooth color transitions
+          // Black color transitions with varying intensities
           let r, g, b;
           if (intensity < 0.2) {
             const factor = intensity * 5;
-            r = Math.floor(25 + (50 - 25) * factor);
-            g = Math.floor(30 + (55 - 30) * factor);
-            b = Math.floor(40 + (70 - 40) * factor);
+            r = Math.floor(0 + (15 - 0) * factor);
+            g = Math.floor(0 + (15 - 0) * factor);
+            b = Math.floor(0 + (15 - 0) * factor);
           } else if (intensity < 0.5) {
             const factor = (intensity - 0.2) * 3.33;
-            r = Math.floor(50 + (75 - 50) * factor);
-            g = Math.floor(55 + (75 - 55) * factor);
-            b = Math.floor(70 + (95 - 70) * factor);
+            r = Math.floor(15 + (30 - 15) * factor);
+            g = Math.floor(15 + (30 - 15) * factor);
+            b = Math.floor(15 + (30 - 15) * factor);
           } else if (intensity < 0.8) {
             const factor = (intensity - 0.5) * 3.33;
-            r = Math.floor(75 + (100 - 75) * factor);
-            g = Math.floor(75 + (95 - 75) * factor);
-            b = Math.floor(95 + (115 - 95) * factor);
+            r = Math.floor(30 + (45 - 30) * factor);
+            g = Math.floor(30 + (45 - 30) * factor);
+            b = Math.floor(30 + (45 - 30) * factor);
           } else {
             const factor = (intensity - 0.8) * 5;
-            r = Math.floor(100 + (125 - 100) * factor);
-            g = Math.floor(95 + (115 - 95) * factor);
-            b = Math.floor(115 + (135 - 115) * factor);
+            r = Math.floor(45 + (60 - 45) * factor);
+            g = Math.floor(45 + (60 - 45) * factor);
+            b = Math.floor(45 + (60 - 45) * factor);
           }
           
           const a = 255;
@@ -130,28 +130,28 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Subtle overlay for depth
+      // Subtle overlay for depth with black tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(15, 25, 45, 0.1)');
-      overlayGradient.addColorStop(0.7, 'rgba(8, 18, 35, 0.2)');
-      overlayGradient.addColorStop(1, 'rgba(5, 12, 28, 0.4)');
+      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+      overlayGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Smooth moving light effect
+      // Smooth moving light effect with black/gray tones
       const lightX = width / 2 + 150 * Math.sin(tOffset * 0.015);
       const lightY = height / 2 + 150 * Math.cos(tOffset * 0.012);
       
       const lightGradient = ctx.createLinearGradient(
         0, 0, lightX, lightY
       );
-      lightGradient.addColorStop(0, 'rgba(100, 120, 160, 0.02)');
-      lightGradient.addColorStop(0.5, 'rgba(70, 90, 130, 0.04)');
-      lightGradient.addColorStop(1, 'rgba(50, 70, 110, 0.02)');
+      lightGradient.addColorStop(0, 'rgba(20, 20, 20, 0.02)');
+      lightGradient.addColorStop(0.5, 'rgba(15, 15, 15, 0.04)');
+      lightGradient.addColorStop(1, 'rgba(10, 10, 10, 0.02)');
       
       ctx.fillStyle = lightGradient;
       ctx.fillRect(0, 0, width, height);
