@@ -73,16 +73,18 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes`;
   
   try {
-    const formData = new FormData();
-    formData.append('file', new Blob([userPhotoData], { type: 'image/jpeg' }), 'user_photo.jpg');
-    
     console.log('Uploading to S2S endpoint:', uploadUrl);
+    console.log('Using binary data upload instead of multipart/form-data');
+    
+    // Send the image data directly as binary with proper content type
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'image/jpeg',
+        'Content-Length': userPhotoData.byteLength.toString(),
       },
-      body: formData,
+      body: userPhotoData,
     });
 
     console.log(`S2S Upload response status: ${uploadResponse.status}`);
