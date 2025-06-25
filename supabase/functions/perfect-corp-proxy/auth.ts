@@ -1,7 +1,6 @@
 
 import { AuthResult } from './types.ts';
-
-const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
+import { PERFECTCORP_BASE_URL } from './constants.ts';
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string): Promise<AuthResult> {
   console.log('Step 1: Authenticating with Perfect Corp S2S API...');
@@ -19,11 +18,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('Attempting Perfect Corp S2S authentication...');
     console.log('Auth URL:', authUrl);
     
-    // Perfect Corp S2S authentication with client credentials
     const timestamp = Date.now();
-    
-    // Create a basic id_token for S2S authentication
-    // In production, this should use proper RSA encryption
     const idToken = btoa(`client_id=${apiKey}&timestamp=${timestamp}`);
     
     const authResponse = await fetch(authUrl, {
@@ -56,7 +51,6 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     const errorText = await authResponse.text();
     console.error('S2S Auth failed response:', authResponse.status, errorText);
     
-    // If S2S auth fails, try using API key as bearer token (fallback)
     console.log('Falling back to using API key as Bearer token');
     return { accessToken: apiKey };
     

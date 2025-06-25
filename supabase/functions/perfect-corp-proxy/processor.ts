@@ -1,7 +1,10 @@
 
 import { ProcessParams } from './types.ts';
 import { getUserPhotoData, arrayBufferToBase64 } from './image-utils.ts';
-import { uploadUserPhoto, startTryOnTask, pollTaskCompletion, downloadResultImage } from './perfect-corp-api.ts';
+import { uploadUserPhoto } from './file-upload.ts';
+import { startTryOnTask } from './try-on.ts';
+import { pollTaskCompletion } from './polling.ts';
+import { downloadResultImage } from './download.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 export async function processWithAccessToken(accessToken: string, params: ProcessParams): Promise<Response> {
