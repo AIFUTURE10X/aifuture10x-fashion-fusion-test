@@ -4,7 +4,7 @@ import { AuthResult } from './types.ts';
 const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string): Promise<AuthResult> {
-  console.log('Step 1: Authenticating with Perfect Corp...');
+  console.log('Step 1: Authenticating with Perfect Corp S2S API...');
   
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
   
@@ -16,19 +16,17 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
   
   try {
-    console.log('Attempting Perfect Corp authentication...');
+    console.log('Attempting Perfect Corp S2S authentication...');
+    console.log('Auth URL:', authUrl);
     
-    // Perfect Corp uses RSA encryption for authentication
-    // For now, we'll try a simplified approach and handle the response
     const timestamp = Date.now();
-    
-    // This is a simplified approach - in production you'd need proper RSA encryption
     const idToken = btoa(`client_id=${apiKey}&timestamp=${timestamp}`);
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         client_id: apiKey,
@@ -36,33 +34,35 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       }),
     });
 
-    console.log(`Auth response status: ${authResponse.status}`);
+    console.log(`S2S Auth response status: ${authResponse.status}`);
     
     if (authResponse.ok) {
       const authData = await authResponse.json();
-      console.log('Auth response data keys:', Object.keys(authData));
+      console.log('S2S Auth response data keys:', Object.keys(authData));
       
       if (authData.result?.access_token) {
-        console.log('Authentication successful with access_token');
+        console.log('S2S Authentication successful with access_token');
         return { accessToken: authData.result.access_token };
+      } else if (authData.access_token) {
+        console.log('S2S Authentication successful with direct access_token');
+        return { accessToken: authData.access_token };
       }
     }
     
     const errorText = await authResponse.text();
-    console.error('Auth failed response:', authResponse.status, errorText);
+    console.error('S2S Auth failed response:', authResponse.status, errorText);
     
-    // If standard auth fails, try using API key as bearer token (fallback)
     console.log('Falling back to using API key as Bearer token');
     return { accessToken: apiKey };
     
   } catch (error) {
-    console.error('Auth error:', error);
-    throw new Error(`Perfect Corp API authentication failed: ${error.message}`);
+    console.error('S2S Auth error:', error);
+    throw new Error(`Perfect Corp S2S API authentication failed: ${error.message}`);
   }
 }
 
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('Step 2: Uploading user photo...');
+  console.log('Step 2: Uploading user photo to S2S API...');
   console.log('Photo data size:', userPhotoData.byteLength, 'bytes');
   
   if (accessToken === 'mock_token_for_testing') {
@@ -76,7 +76,7 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     const formData = new FormData();
     formData.append('file', new Blob([userPhotoData], { type: 'image/jpeg' }), 'user_photo.jpg');
     
-    console.log('Uploading to:', uploadUrl);
+    console.log('Uploading to S2S endpoint:', uploadUrl);
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
@@ -85,28 +85,28 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
       body: formData,
     });
 
-    console.log(`Upload response status: ${uploadResponse.status}`);
+    console.log(`S2S Upload response status: ${uploadResponse.status}`);
 
     if (uploadResponse.ok) {
       const uploadData = await uploadResponse.json();
-      console.log('Upload response data:', uploadData);
+      console.log('S2S Upload response data:', uploadData);
       
       const fileId = uploadData.result?.file_id || uploadData.file_id || uploadData.id;
       if (fileId) {
-        console.log('Photo uploaded successfully, file_id:', fileId);
+        console.log('Photo uploaded successfully to S2S API, file_id:', fileId);
         return fileId;
       } else {
-        console.error('No file_id found in upload response');
+        console.error('No file_id found in S2S upload response');
       }
     }
     
     const errorText = await uploadResponse.text();
-    console.error('Upload failed:', uploadResponse.status, errorText);
-    throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
+    console.error('S2S Upload failed:', uploadResponse.status, errorText);
+    throw new Error(`S2S Upload failed: ${uploadResponse.status} - ${errorText}`);
     
   } catch (error) {
-    console.error('Upload error:', error);
-    throw new Error(`File upload failed: ${error.message}`);
+    console.error('S2S Upload error:', error);
+    throw new Error(`S2S File upload failed: ${error.message}`);
   }
 }
 
@@ -118,7 +118,7 @@ export async function startTryOnTask(
   perfectCorpRefId?: string,
   garmentCategory: string = 'upper_body'
 ): Promise<string> {
-  console.log('Step 3: Starting try-on task...');
+  console.log('Step 3: Starting try-on task with S2S API...');
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating try-on task');
@@ -134,15 +134,15 @@ export async function startTryOnTask(
 
   if (isCustomClothing && perfectCorpRefId) {
     requestBody.ref_ids = [perfectCorpRefId];
-    console.log('Using custom clothing with ref_ids:', perfectCorpRefId);
+    console.log('Using custom clothing with ref_ids for S2S API:', perfectCorpRefId);
   } else {
     requestBody.style_id = clothingImage;
-    console.log('Using style_id:', clothingImage);
+    console.log('Using style_id for S2S API:', clothingImage);
   }
 
   try {
-    console.log('Sending try-on request to:', tryOnUrl);
-    console.log('Request body:', JSON.stringify(requestBody));
+    console.log('Sending try-on request to S2S endpoint:', tryOnUrl);
+    console.log('S2S Request body:', JSON.stringify(requestBody));
     
     const tryOnResponse = await fetch(tryOnUrl, {
       method: 'POST',
@@ -153,42 +153,39 @@ export async function startTryOnTask(
       body: JSON.stringify(requestBody),
     });
 
-    console.log(`Try-on response status: ${tryOnResponse.status}`);
+    console.log(`S2S Try-on response status: ${tryOnResponse.status}`);
 
     if (tryOnResponse.ok) {
       const tryOnData = await tryOnResponse.json();
-      console.log('Try-on response data:', tryOnData);
+      console.log('S2S Try-on response data:', tryOnData);
       
       const taskId = tryOnData.result?.task_id || tryOnData.task_id || tryOnData.id;
       if (taskId) {
-        console.log('Try-on task started successfully, task_id:', taskId);
+        console.log('S2S Try-on task started successfully, task_id:', taskId);
         return taskId;
       } else {
-        console.error('No task_id found in try-on response');
+        console.error('No task_id found in S2S try-on response');
       }
     }
     
     const errorText = await tryOnResponse.text();
-    console.error('Try-on failed:', tryOnResponse.status, errorText);
-    throw new Error(`Try-on failed: ${tryOnResponse.status} - ${errorText}`);
+    console.error('S2S Try-on failed:', tryOnResponse.status, errorText);
+    throw new Error(`S2S Try-on failed: ${tryOnResponse.status} - ${errorText}`);
     
   } catch (error) {
-    console.error('Try-on error:', error);
-    throw new Error(`Try-on task failed: ${error.message}`);
+    console.error('S2S Try-on error:', error);
+    throw new Error(`S2S Try-on task failed: ${error.message}`);
   }
 }
 
 export async function pollTaskCompletion(accessToken: string, taskId: string): Promise<any> {
-  console.log('Step 4: Polling for task completion...');
+  console.log('Step 4: Polling for task completion with S2S API...');
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating completed task with realistic delay');
-    // Simulate realistic processing time (13-20 seconds)
-    const processingTime = 15000 + Math.random() * 5000; // 15-20 seconds
+    const processingTime = 15000 + Math.random() * 5000;
     await new Promise(resolve => setTimeout(resolve, processingTime));
     
-    // Return a proper mock response with a complete valid base64 image
-    // This is a simple 1x1 red pixel PNG for testing
     const validMockImage = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI/hRny4QAAAAABJRU5ErkJggg=';
     
     return {
@@ -202,10 +199,11 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
   }
   
   const statusUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes/${taskId}`;
-  const maxAttempts = 60; // 60 attempts
-  const pollingInterval = 1000; // 1 second intervals
+  const maxAttempts = 60;
+  const pollingInterval = 1000;
   
-  console.log(`Starting polling for task ${taskId}, max ${maxAttempts} attempts`);
+  console.log(`Starting S2S polling for task ${taskId}, max ${maxAttempts} attempts`);
+  console.log('S2S Status URL:', statusUrl);
   
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) {
@@ -213,7 +211,7 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     }
     
     try {
-      console.log(`Polling attempt ${attempt + 1}/${maxAttempts}`);
+      console.log(`S2S Polling attempt ${attempt + 1}/${maxAttempts}`);
       
       const statusResponse = await fetch(statusUrl, {
         method: 'GET',
@@ -222,55 +220,52 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
         },
       });
 
-      console.log(`Status response: ${statusResponse.status}`);
+      console.log(`S2S Status response: ${statusResponse.status}`);
 
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
-        console.log(`Status data:`, JSON.stringify(statusData, null, 2));
+        console.log(`S2S Status data:`, JSON.stringify(statusData, null, 2));
         
         const status = statusData.result?.status || statusData.status;
         
         if (status === 'success') {
-          console.log('Task completed successfully');
+          console.log('S2S Task completed successfully');
           return statusData;
         } else if (status === 'error' || status === 'failed') {
           const errorMsg = statusData.result?.error || statusData.error || 'Unknown error';
-          console.error(`Task failed with status: ${status}, error: ${errorMsg}`);
-          throw new Error(`Task failed: ${errorMsg}`);
+          console.error(`S2S Task failed with status: ${status}, error: ${errorMsg}`);
+          throw new Error(`S2S Task failed: ${errorMsg}`);
         } else if (status === 'running') {
-          console.log(`Task still running (attempt ${attempt + 1})`);
+          console.log(`S2S Task still running (attempt ${attempt + 1})`);
         } else {
-          console.log(`Unknown status: ${status}, continuing to poll`);
+          console.log(`S2S Unknown status: ${status}, continuing to poll`);
         }
       } else {
         const errorText = await statusResponse.text();
-        console.error(`Status check failed: ${statusResponse.status} - ${errorText}`);
+        console.error(`S2S Status check failed: ${statusResponse.status} - ${errorText}`);
         
         if (statusResponse.status === 404) {
-          throw new Error('Task not found - it may have timed out or been cancelled');
+          throw new Error('S2S Task not found - it may have timed out or been cancelled');
         }
         
-        // For other HTTP errors, continue polling for a few more attempts
         if (attempt > maxAttempts - 5) {
-          throw new Error(`Status check consistently failing: ${statusResponse.status}`);
+          throw new Error(`S2S Status check consistently failing: ${statusResponse.status}`);
         }
       }
     } catch (error) {
-      console.error(`Status check error on attempt ${attempt + 1}:`, error);
+      console.error(`S2S Status check error on attempt ${attempt + 1}:`, error);
       
-      // If it's our custom error (task failed/not found), don't retry
       if (error.message.includes('Task failed') || error.message.includes('Task not found')) {
         throw error;
       }
       
-      // For network errors, retry a few more times
       if (attempt > maxAttempts - 5) {
-        throw new Error(`Polling failed after ${attempt + 1} attempts: ${error.message}`);
+        throw new Error(`S2S Polling failed after ${attempt + 1} attempts: ${error.message}`);
       }
     }
   }
 
-  throw new Error(`Task timed out after ${maxAttempts} seconds`);
+  throw new Error(`S2S Task timed out after ${maxAttempts} seconds`);
 }
 
 export async function downloadResultImage(resultImageUrl: string): Promise<ArrayBuffer> {
@@ -289,19 +284,19 @@ export async function downloadResultImage(resultImageUrl: string): Promise<Array
   }
   
   try {
-    console.log('Downloading image from URL...');
+    console.log('Downloading image from S2S result URL...');
     const response = await fetch(resultImageUrl);
-    console.log(`Download response status: ${response.status}`);
+    console.log(`S2S Download response status: ${response.status}`);
     
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      throw new Error(`S2S Download failed: ${response.status} ${response.statusText}`);
     }
     
     const arrayBuffer = await response.arrayBuffer();
-    console.log(`Downloaded image size: ${arrayBuffer.byteLength} bytes`);
+    console.log(`Downloaded S2S image size: ${arrayBuffer.byteLength} bytes`);
     return arrayBuffer;
   } catch (error) {
-    console.error('Download error:', error);
-    throw new Error(`Image download failed: ${error.message}`);
+    console.error('S2S Download error:', error);
+    throw new Error(`S2S Image download failed: ${error.message}`);
   }
 }

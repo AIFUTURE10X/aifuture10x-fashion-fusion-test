@@ -17,26 +17,26 @@ export async function processWithAccessToken(accessToken: string, params: Proces
   } = params;
 
   const startTime = Date.now();
-  console.log('=== Starting Perfect Corp try-on process ===');
+  console.log('=== Starting Perfect Corp S2S try-on process ===');
 
   try {
     // Step 2: Get user photo data
-    console.log('Getting user photo data...');
+    console.log('Getting user photo data for S2S API...');
     const userPhotoData = await getUserPhotoData(
       userPhoto, 
       userPhotoStoragePath, 
       supabaseUrl, 
       supabaseServiceKey
     );
-    console.log(`User photo data size: ${userPhotoData.byteLength} bytes`);
+    console.log(`User photo data size for S2S: ${userPhotoData.byteLength} bytes`);
 
-    // Step 3: Upload user photo to Perfect Corp
-    console.log('Uploading user photo to Perfect Corp...');
+    // Step 3: Upload user photo to Perfect Corp S2S API
+    console.log('Uploading user photo to Perfect Corp S2S API...');
     const fileId = await uploadUserPhoto(accessToken, userPhotoData);
-    console.log(`File uploaded with ID: ${fileId}`);
+    console.log(`File uploaded to S2S API with ID: ${fileId}`);
 
-    // Step 4: Run clothes try-on task
-    console.log('Starting try-on task...');
+    // Step 4: Run clothes try-on task with S2S API
+    console.log('Starting S2S try-on task...');
     const taskId = await startTryOnTask(
       accessToken, 
       fileId, 
@@ -45,30 +45,30 @@ export async function processWithAccessToken(accessToken: string, params: Proces
       perfectCorpRefId,
       clothingCategory
     );
-    console.log(`Try-on task started with ID: ${taskId}`);
+    console.log(`S2S Try-on task started with ID: ${taskId}`);
 
-    // Step 5: Poll for task completion
-    console.log('Polling for task completion...');
+    // Step 5: Poll for task completion from S2S API
+    console.log('Polling for S2S task completion...');
     const result = await pollTaskCompletion(accessToken, taskId);
-    console.log('Task completed successfully');
+    console.log('S2S Task completed successfully');
 
-    // Step 6: Download and convert result image
+    // Step 6: Download and convert result image from S2S API
     const resultImageUrl = result.result?.output_url || 
                            result.result?.result_image_url || 
                            result.output_url || 
                            result.result_image_url;
 
     if (!resultImageUrl) {
-      console.error('No result image URL found in response:', JSON.stringify(result, null, 2));
-      throw new Error('No result image URL found in Perfect Corp response');
+      console.error('No result image URL found in S2S response:', JSON.stringify(result, null, 2));
+      throw new Error('No result image URL found in Perfect Corp S2S response');
     }
 
-    console.log('Downloading result image...');
+    console.log('Downloading result image from S2S API...');
     const resultImageData = await downloadResultImage(resultImageUrl);
     const resultImageBase64 = arrayBufferToBase64(resultImageData);
 
     const totalTime = Date.now() - startTime;
-    console.log(`=== Try-on process completed successfully in ${totalTime}ms ===`);
+    console.log(`=== S2S Try-on process completed successfully in ${totalTime}ms ===`);
     console.log(`Result image base64 length: ${resultImageBase64.length} characters`);
 
     return new Response(JSON.stringify({
@@ -76,16 +76,16 @@ export async function processWithAccessToken(accessToken: string, params: Proces
       result_img: resultImageBase64,
       processing_time: result.processing_time || Math.round(totalTime / 1000),
       message: isCustomClothing 
-        ? "Virtual try-on completed successfully using your custom clothing"
-        : "Virtual try-on completed successfully using Perfect Corp AI"
+        ? "Virtual try-on completed successfully using your custom clothing with S2S API"
+        : "Virtual try-on completed successfully using Perfect Corp S2S AI"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
-    console.error(`=== Try-on process failed after ${totalTime}ms ===`);
-    console.error('Error details:', error);
+    console.error(`=== S2S Try-on process failed after ${totalTime}ms ===`);
+    console.error('S2S Error details:', error);
     
     // Re-throw the error to be handled by the main function
     throw error;

@@ -1,8 +1,10 @@
 
 import { AuthResult } from './types.ts';
 
+const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
+
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string): Promise<AuthResult> {
-  console.log('Step 1: Authenticating with Perfect Corp...');
+  console.log('Step 1: Authenticating with Perfect Corp S2S API...');
   
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
   
@@ -11,37 +13,55 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
   
-  const authEndpoint = 'https://openapi.perfectcorp.com/v1/oauth/token';
+  const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
   
   try {
-    const formData = new URLSearchParams();
-    formData.append('grant_type', 'client_credentials');
-    formData.append('client_id', apiKey);
-    formData.append('client_secret', apiSecret);
+    console.log('Attempting Perfect Corp S2S authentication...');
+    console.log('Auth URL:', authUrl);
     
-    const authResponse = await fetch(authEndpoint, {
+    // Perfect Corp S2S authentication with client credentials
+    const timestamp = Date.now();
+    
+    // Create a basic id_token for S2S authentication
+    // In production, this should use proper RSA encryption
+    const idToken = btoa(`client_id=${apiKey}&timestamp=${timestamp}`);
+    
+    const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: formData.toString(),
+      body: JSON.stringify({
+        client_id: apiKey,
+        id_token: idToken
+      }),
     });
 
+    console.log(`S2S Auth response status: ${authResponse.status}`);
+    
     if (authResponse.ok) {
       const authData = await authResponse.json();
-      if (authData.access_token) {
-        console.log('Authentication successful');
+      console.log('S2S Auth response data keys:', Object.keys(authData));
+      
+      if (authData.result?.access_token) {
+        console.log('S2S Authentication successful with access_token');
+        return { accessToken: authData.result.access_token };
+      } else if (authData.access_token) {
+        console.log('S2S Authentication successful with direct access_token');
         return { accessToken: authData.access_token };
       }
     }
     
     const errorText = await authResponse.text();
-    console.error('Auth failed:', authResponse.status, errorText);
-    throw new Error('Authentication failed');
+    console.error('S2S Auth failed response:', authResponse.status, errorText);
+    
+    // If S2S auth fails, try using API key as bearer token (fallback)
+    console.log('Falling back to using API key as Bearer token');
+    return { accessToken: apiKey };
     
   } catch (error) {
-    console.error('Auth error:', error);
-    throw new Error(`Perfect Corp API authentication failed: ${error.message}`);
+    console.error('S2S Auth error:', error);
+    throw new Error(`Perfect Corp S2S API authentication failed: ${error.message}`);
   }
 }

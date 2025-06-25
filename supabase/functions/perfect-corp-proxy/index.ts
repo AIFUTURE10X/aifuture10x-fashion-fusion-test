@@ -20,12 +20,12 @@ serve(async (req) => {
       perfectCorpRefId
     }: TryOnRequest = await req.json();
     
-    // Disable mock mode now that we have real API credentials
+    // Use real API with S2S endpoints
     const mockMode = false;
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     
-    console.log('Perfect Corp virtual try-on request:', {
+    console.log('Perfect Corp S2S virtual try-on request:', {
       category: clothingCategory,
       userPhotoStoragePath,
       userPhotoLength: userPhoto?.length,
@@ -53,14 +53,14 @@ serve(async (req) => {
         throw new Error('Perfect Corp API credentials not configured. Please set PERFECTCORP_API_KEY and PERFECTCORP_API_SECRET in your Supabase secrets.');
       }
       
-      console.log('Authenticating with Perfect Corp API...');
+      console.log('Authenticating with Perfect Corp S2S API...');
       try {
         const authResult = await authenticateWithPerfectCorp(apiKey, apiSecret);
         accessToken = authResult.accessToken;
-        console.log('Perfect Corp authentication successful');
+        console.log('Perfect Corp S2S authentication successful');
       } catch (authError) {
-        console.error('Perfect Corp authentication failed:', authError);
-        throw new Error(`Perfect Corp API authentication failed: ${authError.message}`);
+        console.error('Perfect Corp S2S authentication failed:', authError);
+        throw new Error(`Perfect Corp S2S API authentication failed: ${authError.message}`);
       }
     }
 
@@ -76,11 +76,11 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Virtual try-on error:', error);
+    console.error('Perfect Corp S2S virtual try-on error:', error);
     
     let errorMessage = error.message || 'Unknown error occurred';
     
-    // Enhanced error messages for specific cases
+    // Enhanced error messages for S2S API specific cases
     if (errorMessage.includes('exceed_max_filesize')) {
       errorMessage = 'Image file size exceeds the maximum limit (10MB)';
     } else if (errorMessage.includes('error_no_face')) {
@@ -92,11 +92,11 @@ serve(async (req) => {
     } else if (errorMessage.includes('error_large_face_angle')) {
       errorMessage = 'The face angle in the image is too large. Please use a front-facing photo';
     } else if (errorMessage.includes('invalid_parameter')) {
-      errorMessage = 'Invalid parameter provided to the API';
+      errorMessage = 'Invalid parameter provided to the S2S API';
     } else if (errorMessage.includes('Authentication failed') || errorMessage.includes('API credentials not configured')) {
-      errorMessage = errorMessage; // Keep as is - these are clear already
+      errorMessage = errorMessage; // Keep S2S auth errors as-is
     } else if (errorMessage.includes('error sending request') || errorMessage.includes('network')) {
-      errorMessage = 'Network connectivity issue. Please try again in a moment';
+      errorMessage = 'Network connectivity issue with S2S API. Please try again in a moment';
     }
     
     return new Response(
