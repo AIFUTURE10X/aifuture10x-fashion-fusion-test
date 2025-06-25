@@ -17,9 +17,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     if (!ctx) return;
 
     let time = 0;
-    const speed = 0.03; // Reduced from 0.08 for smoother motion
-    const scale = 1.5; // Slightly reduced for better performance
-    const noiseIntensity = 1.8; // Reduced for smoother texture
+    const speed = 0.02; // Reduced from 0.03 for gentler motion
+    const scale = 1.2; // Reduced for subtler patterns
+    const noiseIntensity = 1.2; // Reduced from 1.8 for smoother texture
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -31,9 +31,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
     // Optimized noise function
     const noise = (x: number, y: number, t: number = 0) => {
-      const G = 2.5; // Reduced complexity
-      const rx = G * Math.sin(G * x + t * 0.08);
-      const ry = G * Math.sin(G * y + t * 0.12);
+      const G = 2.0; // Reduced complexity
+      const rx = G * Math.sin(G * x + t * 0.06);
+      const ry = G * Math.sin(G * y + t * 0.08);
       return (rx * ry) % 1;
     };
 
@@ -51,69 +51,69 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Create silk pattern with optimized sampling
+      // Create silk pattern with better quality sampling
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
-      // Sample every 2 pixels for better performance
-      const step = 2;
+      // Reduced step size for better quality
+      const step = 1;
       for (let x = 0; x < width; x += step) {
         for (let y = 0; y < height; y += step) {
           const u = (x / width) * scale;
           const v = (y / height) * scale;
           
-          // Simplified wave effects for smoother motion
-          const wave1 = 0.06 * Math.sin(12.0 * v - tOffset * 3.0);
-          const wave2 = 0.04 * Math.sin(18.0 * u + tOffset * 2.0);
-          const wave3 = 0.08 * Math.sin(10.0 * (u + v) - tOffset * 2.5);
+          // Gentler wave effects
+          const wave1 = 0.03 * Math.sin(10.0 * v - tOffset * 2.5); // Reduced amplitude
+          const wave2 = 0.02 * Math.sin(14.0 * u + tOffset * 1.8); // Reduced amplitude
+          const wave3 = 0.04 * Math.sin(8.0 * (u + v) - tOffset * 2.0); // Reduced amplitude
           
           let tex_x = u + wave1 + wave2;
-          let tex_y = v + wave3 + 0.05 * Math.sin(15.0 * tex_x + tOffset * 1.8);
+          let tex_y = v + wave3 + 0.03 * Math.sin(12.0 * tex_x + tOffset * 1.5); // Reduced amplitude
 
-          // Simplified silk pattern calculation
+          // Subtler silk pattern calculation
           const basePattern = 0.5 + 0.5 * Math.sin(
-            6.0 * (tex_x + tex_y + 
-              0.8 * Math.cos(8.0 * tex_x + 6.0 * tex_y + tOffset * 2.0) + 
-              0.5 * Math.cos(12.0 * tex_x - 8.0 * tex_y + tOffset * 1.5) +
-              0.05 * tOffset)
+            5.0 * (tex_x + tex_y + 
+              0.6 * Math.cos(6.0 * tex_x + 5.0 * tex_y + tOffset * 1.8) + 
+              0.3 * Math.cos(10.0 * tex_x - 6.0 * tex_y + tOffset * 1.2) +
+              0.03 * tOffset)
           );
 
-          // Simplified shimmer layer
-          const shimmer = 0.4 + 0.6 * Math.sin(
-            20.0 * (tex_x + tex_y - 0.15 * tOffset)
+          // Gentler shimmer layer
+          const shimmer = 0.5 + 0.5 * Math.sin(
+            15.0 * (tex_x + tex_y - 0.1 * tOffset)
           );
 
-          const rnd = noise(x * 0.5 + time * 0.1, y * 0.5 + time * 0.12, time);
-          const combinedPattern = (basePattern * 0.75 + shimmer * 0.25);
-          const intensity = Math.max(0, combinedPattern - rnd / 6.0 * noiseIntensity);
+          const rnd = noise(x * 0.3 + time * 0.08, y * 0.3 + time * 0.1, time);
+          const combinedPattern = (basePattern * 0.8 + shimmer * 0.2);
+          const intensity = Math.max(0, combinedPattern - rnd / 8.0 * noiseIntensity); // Reduced noise impact
           
-          // Black color transitions with varying intensities
+          // Subtler black color transitions
           let r, g, b;
-          if (intensity < 0.2) {
-            const factor = intensity * 5;
-            r = Math.floor(0 + (15 - 0) * factor);
-            g = Math.floor(0 + (15 - 0) * factor);
-            b = Math.floor(0 + (15 - 0) * factor);
-          } else if (intensity < 0.5) {
-            const factor = (intensity - 0.2) * 3.33;
-            r = Math.floor(15 + (30 - 15) * factor);
-            g = Math.floor(15 + (30 - 15) * factor);
-            b = Math.floor(15 + (30 - 15) * factor);
+          if (intensity < 0.25) {
+            const factor = intensity * 4;
+            r = Math.floor(0 + (10 - 0) * factor);
+            g = Math.floor(0 + (10 - 0) * factor);
+            b = Math.floor(0 + (10 - 0) * factor);
+          } else if (intensity < 0.55) {
+            const factor = (intensity - 0.25) * 3.33;
+            r = Math.floor(10 + (20 - 10) * factor);
+            g = Math.floor(10 + (20 - 10) * factor);
+            b = Math.floor(10 + (20 - 10) * factor);
           } else if (intensity < 0.8) {
-            const factor = (intensity - 0.5) * 3.33;
-            r = Math.floor(30 + (45 - 30) * factor);
-            g = Math.floor(30 + (45 - 30) * factor);
-            b = Math.floor(30 + (45 - 30) * factor);
+            const factor = (intensity - 0.55) * 4;
+            r = Math.floor(20 + (30 - 20) * factor);
+            g = Math.floor(20 + (30 - 20) * factor);
+            b = Math.floor(20 + (30 - 20) * factor);
           } else {
             const factor = (intensity - 0.8) * 5;
-            r = Math.floor(45 + (60 - 45) * factor);
-            g = Math.floor(45 + (60 - 45) * factor);
-            b = Math.floor(45 + (60 - 45) * factor);
+            r = Math.floor(30 + (40 - 30) * factor);
+            g = Math.floor(30 + (40 - 30) * factor);
+            b = Math.floor(30 + (40 - 30) * factor);
           }
           
           const a = 255;
 
-          // Fill multiple pixels for the step size
+          // Fill pixels for the step size
           for (let dx = 0; dx < step && x + dx < width; dx++) {
             for (let dy = 0; dy < step && y + dy < height; dy++) {
               const index = ((y + dy) * width + (x + dx)) * 4;
@@ -135,23 +135,23 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.05)'); // Reduced opacity
+      overlayGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)'); // Reduced opacity
+      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)'); // Reduced opacity
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Smooth moving light effect with black/gray tones
-      const lightX = width / 2 + 150 * Math.sin(tOffset * 0.015);
-      const lightY = height / 2 + 150 * Math.cos(tOffset * 0.012);
+      // Gentler moving light effect
+      const lightX = width / 2 + 100 * Math.sin(tOffset * 0.012); // Reduced amplitude
+      const lightY = height / 2 + 100 * Math.cos(tOffset * 0.01); // Reduced amplitude
       
       const lightGradient = ctx.createLinearGradient(
         0, 0, lightX, lightY
       );
-      lightGradient.addColorStop(0, 'rgba(20, 20, 20, 0.02)');
-      lightGradient.addColorStop(0.5, 'rgba(15, 15, 15, 0.04)');
-      lightGradient.addColorStop(1, 'rgba(10, 10, 10, 0.02)');
+      lightGradient.addColorStop(0, 'rgba(15, 15, 15, 0.015)'); // Reduced opacity
+      lightGradient.addColorStop(0.5, 'rgba(10, 10, 10, 0.025)'); // Reduced opacity
+      lightGradient.addColorStop(1, 'rgba(5, 5, 5, 0.015)'); // Reduced opacity
       
       ctx.fillStyle = lightGradient;
       ctx.fillRect(0, 0, width, height);
