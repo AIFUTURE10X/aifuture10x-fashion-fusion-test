@@ -18,15 +18,10 @@ interface AuthResponse {
   error?: string;
 }
 
-// Perfect Corp's RSA public key - replace with actual key from their documentation
+// Perfect Corp's RSA public key - REPLACE THIS WITH THE ACTUAL PUBLIC KEY FROM PERFECT CORP
+// Get this from Perfect Corp's developer documentation or API documentation
 const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwjw7/oJ+6tYO0qHlvY8d
-7HqZzJcK3JtR6xOH7hBzPwQvkAKxK7cO4n8rZfXlFaXxPxYbzJQrKzXQNzRvMJHj
-5YQmRbZwVfV0LF3kOFz5M7yXQOzCz2HtNV0wGbLbYxHKxQxGvTf4KzJzRxVfF8R
-8XKJ5fLtV3xGxMzNwCzLzBwQvYxKzQ8FzRvXK3hNzVfLwHcOFzKxJfP7xYxQxGV
-jZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHcOFzKxJfP
-7xYxQxGVjZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHc
-QIDAQAB
+REPLACE_WITH_ACTUAL_PERFECTCORP_RSA_PUBLIC_KEY_FROM_THEIR_DOCUMENTATION
 -----END PUBLIC KEY-----`;
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
@@ -96,6 +91,23 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     }
 
     console.log('Generating new Perfect Corp access token...');
+    console.log('Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
+    
+    // Validate that we have real credentials
+    if (!apiKey || apiKey === 'your_api_key_here' || apiKey.includes('placeholder')) {
+      return {
+        success: false,
+        error: 'Real Perfect Corp API key not configured. Please update your API credentials.'
+      };
+    }
+    
+    // Check if RSA public key is still placeholder
+    if (PERFECTCORP_PUBLIC_KEY.includes('REPLACE_WITH_ACTUAL')) {
+      return {
+        success: false,
+        error: 'Perfect Corp RSA public key is still a placeholder. Please replace with the actual public key from Perfect Corp documentation.'
+      };
+    }
     
     // Generate unique identifier for id_token
     const timestamp = Date.now();
@@ -112,7 +124,7 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
       console.error('Failed to encrypt id_token:', encryptError);
       return {
         success: false,
-        error: 'Failed to encrypt authentication token'
+        error: 'Failed to encrypt authentication token. Please verify the RSA public key is correct.'
       };
     }
 
@@ -145,10 +157,13 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
         
         switch (authResponse.status) {
           case 400:
-            errorMessage = 'Bad Request: Malformed authentication request or invalid client_id/id_token';
+            errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue';
             break;
           case 401:
-            errorMessage = 'Unauthorized: Invalid API key or client_id';
+            errorMessage = 'Unauthorized: Invalid API credentials. Please verify your Perfect Corp API key';
+            break;
+          case 403:
+            errorMessage = 'Forbidden: API key does not have required permissions';
             break;
           case 500:
             errorMessage = 'Internal Server Error: Perfect Corp service unavailable';

@@ -2,15 +2,10 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-// Perfect Corp's RSA public key - this is a placeholder, replace with actual key from documentation
+// Perfect Corp's RSA public key - REPLACE THIS WITH THE ACTUAL PUBLIC KEY FROM PERFECT CORP
+// Get this from Perfect Corp's developer documentation or API documentation
 const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwjw7/oJ+6tYO0qHlvY8d
-7HqZzJcK3JtR6xOH7hBzPwQvkAKxK7cO4n8rZfXlFaXxPxYbzJQrKzXQNzRvMJHj
-5YQmRbZwVfV0LF3kOFz5M7yXQOzCz2HtNV0wGbLbYxHKxQxGvTf4KzJzRxVfF8R
-8XKJ5fLtV3xGxMzNwCzLzBwQvYxKzQ8FzRvXK3hNzVfLwHcOFzKxJfP7xYxQxGV
-jZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHcOFzKxJfP
-7xYxQxGVjZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHc
-QIDAQAB
+REPLACE_WITH_ACTUAL_PERFECTCORP_RSA_PUBLIC_KEY_FROM_THEIR_DOCUMENTATION
 -----END PUBLIC KEY-----`;
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
@@ -76,6 +71,22 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   try {
     console.log('Attempting Perfect Corp S2S authentication with RSA encryption...');
     console.log('Auth URL:', authUrl);
+    console.log('Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
+    console.log('Using API Secret:', apiSecret ? 'PROVIDED' : 'NOT PROVIDED');
+    
+    // Validate that we have real credentials
+    if (!apiKey || apiKey === 'your_api_key_here' || apiKey.includes('placeholder')) {
+      throw new Error('Real Perfect Corp API key not configured. Please update PERFECTCORP_API_KEY in Supabase secrets.');
+    }
+    
+    if (!apiSecret || apiSecret === 'your_api_secret_here' || apiSecret.includes('placeholder')) {
+      throw new Error('Real Perfect Corp API secret not configured. Please update PERFECTCORP_API_SECRET in Supabase secrets.');
+    }
+    
+    // Check if RSA public key is still placeholder
+    if (PERFECTCORP_PUBLIC_KEY.includes('REPLACE_WITH_ACTUAL')) {
+      throw new Error('Perfect Corp RSA public key is still a placeholder. Please replace with the actual public key from Perfect Corp documentation.');
+    }
     
     // Generate unique identifier for id_token
     const timestamp = Date.now();
@@ -129,10 +140,13 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     let errorMessage = 'Perfect Corp S2S API authentication failed';
     switch (authResponse.status) {
       case 400:
-        errorMessage = 'Bad Request: Malformed authentication request or invalid RSA encryption';
+        errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue';
         break;
       case 401:
-        errorMessage = 'Unauthorized: Invalid API key or client_id';
+        errorMessage = 'Unauthorized: Invalid API credentials. Please verify your Perfect Corp API key and secret';
+        break;
+      case 403:
+        errorMessage = 'Forbidden: API key does not have required permissions';
         break;
       case 500:
         errorMessage = 'Internal Server Error: Perfect Corp service unavailable';
