@@ -18,9 +18,15 @@ interface AuthResponse {
   error?: string;
 }
 
-// Perfect Corp's RSA public key (this should be retrieved from their documentation)
+// Perfect Corp's RSA public key - replace with actual key from their documentation
 const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2mF8DWKBBxMZgPrjgNB1
+xKgJ4RzTm9GGF6QK8wFCfGHp3nQ5vLJYUGZE4zFqVrWaG9pN2X8cE7KhR9TgWz7j
+lKpQhUFJGHJGKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMN
+VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVcSD
+FGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGhJ
+KLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLmN
+VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCsD
 -----END PUBLIC KEY-----`;
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
@@ -30,12 +36,13 @@ const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    // Import the RSA public key
+    // Clean the public key
     const keyData = publicKey
       .replace('-----BEGIN PUBLIC KEY-----', '')
       .replace('-----END PUBLIC KEY-----', '')
-      .replace(/\s/g, '');
+      .replace(/\s+/g, '');
     
+    // Decode base64
     const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
     
     const cryptoKey = await crypto.subtle.importKey(
@@ -100,20 +107,22 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
       };
     }
 
-    // Make authentication request to Perfect Corp
+    // Make authentication request to Perfect Corp using correct format
     console.log('Sending authentication request to Perfect Corp...');
     console.log('Auth URL:', PERFECTCORP_AUTH_URL);
+
+    const requestBody = {
+      client_id: apiKey,
+      id_token: encryptedToken
+    };
 
     const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-API-Key': apiKey, // Include API key in header
       },
-      body: JSON.stringify({
-        id_token: encryptedToken
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log(`Perfect Corp auth response status: ${authResponse.status}`);
@@ -127,10 +136,10 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
         
         switch (authResponse.status) {
           case 400:
-            errorMessage = 'Bad Request: Malformed authentication request';
+            errorMessage = 'Bad Request: Malformed authentication request or invalid client_id/id_token';
             break;
           case 401:
-            errorMessage = 'Unauthorized: Invalid API key or expired token';
+            errorMessage = 'Unauthorized: Invalid API key or client_id';
             break;
           case 500:
             errorMessage = 'Internal Server Error: Perfect Corp service unavailable';

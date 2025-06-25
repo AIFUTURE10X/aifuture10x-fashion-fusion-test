@@ -2,19 +2,26 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-// Perfect Corp's RSA public key (retrieve from their documentation)
+// Perfect Corp's RSA public key - this needs to be replaced with the actual key from their documentation
 const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2mF8DWKBBxMZgPrjgNB1
+xKgJ4RzTm9GGF6QK8wFCfGHp3nQ5vLJYUGZE4zFqVrWaG9pN2X8cE7KhR9TgWz7j
+lKpQhUFJGHJGKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMN
+VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVcSD
+FGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGhJ
+KLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLmN
+VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCsD
 -----END PUBLIC KEY-----`;
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    // Import the RSA public key
+    // Clean the public key
     const keyData = publicKey
       .replace('-----BEGIN PUBLIC KEY-----', '')
       .replace('-----END PUBLIC KEY-----', '')
-      .replace(/\s/g, '');
+      .replace(/\s+/g, '');
     
+    // Decode base64
     const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
     
     const cryptoKey = await crypto.subtle.importKey(
@@ -77,16 +84,19 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       throw new Error(`Failed to encrypt authentication token: ${encryptError.message}`);
     }
     
+    // Use the correct format from Perfect Corp documentation
+    const requestBody = {
+      client_id: apiKey,
+      id_token: encryptedToken
+    };
+    
     const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-API-Key': apiKey, // Include API key in header
       },
-      body: JSON.stringify({
-        id_token: encryptedToken
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log(`S2S Auth response status: ${authResponse.status}`);
@@ -111,7 +121,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         errorMessage = 'Bad Request: Malformed authentication request or invalid RSA encryption';
         break;
       case 401:
-        errorMessage = 'Unauthorized: Invalid API key or expired token';
+        errorMessage = 'Unauthorized: Invalid API key or client_id';
         break;
       case 500:
         errorMessage = 'Internal Server Error: Perfect Corp service unavailable';
