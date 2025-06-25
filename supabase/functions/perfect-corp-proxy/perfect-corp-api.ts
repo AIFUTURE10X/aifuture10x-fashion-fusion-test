@@ -74,17 +74,44 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   try {
     console.log('Uploading to S2S endpoint:', uploadUrl);
-    console.log('Using binary data upload instead of multipart/form-data');
+    console.log('Creating multipart form data for S2S API');
     
-    // Send the image data directly as binary with proper content type
+    // Create proper multipart/form-data with boundary
+    const boundary = `----formdata-lovable-${Date.now()}`;
+    const formDataParts = [];
+    
+    // Add form field header
+    formDataParts.push(`--${boundary}`);
+    formDataParts.push('Content-Disposition: form-data; name="file"; filename="user_photo.jpg"');
+    formDataParts.push('Content-Type: image/jpeg');
+    formDataParts.push('');
+    
+    // Convert ArrayBuffer to Uint8Array for proper handling
+    const imageBytes = new Uint8Array(userPhotoData);
+    
+    // Create the complete form data
+    const textEncoder = new TextEncoder();
+    const headerBytes = textEncoder.encode(formDataParts.join('\r\n') + '\r\n');
+    const footerBytes = textEncoder.encode(`\r\n--${boundary}--\r\n`);
+    
+    // Combine all parts
+    const totalLength = headerBytes.length + imageBytes.length + footerBytes.length;
+    const formDataBuffer = new Uint8Array(totalLength);
+    
+    let offset = 0;
+    formDataBuffer.set(headerBytes, offset);
+    offset += headerBytes.length;
+    formDataBuffer.set(imageBytes, offset);
+    offset += imageBytes.length;
+    formDataBuffer.set(footerBytes, offset);
+
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'image/jpeg',
-        'Content-Length': userPhotoData.byteLength.toString(),
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
-      body: userPhotoData,
+      body: formDataBuffer,
     });
 
     console.log(`S2S Upload response status: ${uploadResponse.status}`);
