@@ -20,13 +20,13 @@ interface AuthResponse {
 
 // Perfect Corp's RSA public key - replace with actual key from their documentation
 const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2mF8DWKBBxMZgPrjgNB1
-xKgJ4RzTm9GGF6QK8wFCfGHp3nQ5vLJYUGZE4zFqVrWaG9pN2X8cE7KhR9TgWz7j
-lKpQhUFJGHJGKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMN
-VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVcSD
-FGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGhJ
-KLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLmN
-VCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCSDFGHJKLMNVCsD
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwjw7/oJ+6tYO0qHlvY8d
+7HqZzJcK3JtR6xOH7hBzPwQvkAKxK7cO4n8rZfXlFaXxPxYbzJQrKzXQNzRvMJHj
+5YQmRbZwVfV0LF3kOFz5M7yXQOzCz2HtNV0wGbLbYxHKxQxGvTf4KzJzRxVfF8R
+8XKJ5fLtV3xGxMzNwCzLzBwQvYxKzQ8FzRvXK3hNzVfLwHcOFzKxJfP7xYxQxGV
+jZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHcOFzKxJfP
+7xYxQxGVjZFrZzPzHtKxJzRfVwKfGzCzYxQxGV0LFzKzJjGzVwKzJ5hNzVfLwHc
+QIDAQAB
 -----END PUBLIC KEY-----`;
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
@@ -36,15 +36,18 @@ const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    // Clean the public key
+    // Clean the public key - remove headers and whitespace
     const keyData = publicKey
-      .replace('-----BEGIN PUBLIC KEY-----', '')
-      .replace('-----END PUBLIC KEY-----', '')
+      .replace(/-----BEGIN PUBLIC KEY-----/g, '')
+      .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/\s+/g, '');
     
-    // Decode base64
+    // Decode base64 to binary
     const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
     
+    console.log('Importing RSA public key...');
+    
+    // Import the public key
     const cryptoKey = await crypto.subtle.importKey(
       'spki',
       binaryKey,
@@ -56,6 +59,8 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
       ['encrypt']
     );
 
+    console.log('RSA public key imported successfully');
+
     // Encrypt the data
     const encodedData = new TextEncoder().encode(data);
     const encryptedData = await crypto.subtle.encrypt(
@@ -66,7 +71,11 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
 
     // Convert to base64
     const encryptedArray = new Uint8Array(encryptedData);
-    return btoa(String.fromCharCode(...encryptedArray));
+    const base64Result = btoa(String.fromCharCode(...encryptedArray));
+    
+    console.log('Data encrypted successfully');
+    return base64Result;
+    
   } catch (error) {
     console.error('RSA encryption failed:', error);
     throw new Error(`RSA encryption failed: ${error.message}`);
