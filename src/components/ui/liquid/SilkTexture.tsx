@@ -39,6 +39,7 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
     const animate = () => {
       const { width, height } = canvas;
+      const tOffset = speed * time; // Define tOffset here in the proper scope
       
       // Create enhanced gradient background with more depth
       const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -60,8 +61,6 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
         for (let y = 0; y < height; y += 1) {
           const u = (x / width) * scale;
           const v = (y / height) * scale;
-          
-          const tOffset = speed * time;
           
           // Enhanced multi-layered wave effects for silk-like motion
           let tex_x = u + 0.08 * Math.sin(15.0 * v - tOffset * 2.0) + 
