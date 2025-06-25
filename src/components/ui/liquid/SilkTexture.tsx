@@ -17,9 +17,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     if (!ctx) return;
 
     let time = 0;
-    const speed = 0.08; // Increased from 0.05 for more noticeable movement
-    const scale = 1.8;
-    const noiseIntensity = 2.5; // Increased for more texture variation
+    const speed = 0.03; // Reduced from 0.08 for smoother motion
+    const scale = 1.5; // Slightly reduced for better performance
+    const noiseIntensity = 1.8; // Reduced for smoother texture
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -29,128 +29,129 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Enhanced noise function for better pattern generation
+    // Optimized noise function
     const noise = (x: number, y: number, t: number = 0) => {
-      const G = 2.71828;
-      const rx = G * Math.sin(G * x + t * 0.1);
-      const ry = G * Math.sin(G * y + t * 0.15);
-      return (rx * ry * (1 + x + Math.sin(t * 0.05))) % 1;
+      const G = 2.5; // Reduced complexity
+      const rx = G * Math.sin(G * x + t * 0.08);
+      const ry = G * Math.sin(G * y + t * 0.12);
+      return (rx * ry) % 1;
     };
 
     const animate = () => {
       const { width, height } = canvas;
-      const tOffset = speed * time; // Define tOffset here in the proper scope
+      const tOffset = speed * time;
       
-      // Create enhanced gradient background with more depth
+      // Create gradient background
       const gradient = ctx.createLinearGradient(0, 0, width, height);
       gradient.addColorStop(0, '#0a0a0f');
-      gradient.addColorStop(0.2, '#151520');
-      gradient.addColorStop(0.4, '#1a1a2e');
-      gradient.addColorStop(0.6, '#16213e');
-      gradient.addColorStop(0.8, '#0f3460');
-      gradient.addColorStop(1, '#0a1932');
+      gradient.addColorStop(0.3, '#151520');
+      gradient.addColorStop(0.6, '#1a1a2e');
+      gradient.addColorStop(1, '#0f3460');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Create much more visible silk-like pattern
+      // Create silk pattern with optimized sampling
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
-      for (let x = 0; x < width; x += 1) { // Reduced sampling for smoother rendering
-        for (let y = 0; y < height; y += 1) {
+      // Sample every 2 pixels for better performance
+      const step = 2;
+      for (let x = 0; x < width; x += step) {
+        for (let y = 0; y < height; y += step) {
           const u = (x / width) * scale;
           const v = (y / height) * scale;
           
-          // Enhanced multi-layered wave effects for silk-like motion
-          let tex_x = u + 0.08 * Math.sin(15.0 * v - tOffset * 2.0) + 
-                         0.04 * Math.sin(25.0 * u + tOffset * 1.5);
-          let tex_y = v + 0.12 * Math.sin(12.0 * tex_x - tOffset * 1.8) + 
-                         0.06 * Math.sin(20.0 * u + tOffset * 2.2) +
-                         0.03 * Math.sin(30.0 * (u + v) + tOffset * 1.2);
-
-          // Complex silk pattern with multiple harmonics for realistic texture
-          const basePattern = 0.5 + 0.5 * Math.sin(
-            8.0 * (tex_x + tex_y + 
-              Math.cos(6.0 * tex_x + 8.0 * tex_y + tOffset * 1.5) + 
-              0.7 * Math.cos(12.0 * tex_x - 10.0 * tex_y + tOffset * 2.0) +
-              0.4 * Math.cos(18.0 * tex_x + 6.0 * tex_y - tOffset * 1.8) +
-              0.08 * tOffset)
-          );
-
-          // Additional shimmer layer for silk-like highlights
-          const shimmer = 0.3 + 0.7 * Math.sin(
-            25.0 * (tex_x + tex_y - 0.2 * tOffset) +
-            0.5 * Math.sin(40.0 * (tex_x - tex_y + 0.15 * tOffset))
-          );
-
-          const rnd = noise(x + time * 0.2, y + time * 0.25, time);
-          const combinedPattern = (basePattern * 0.7 + shimmer * 0.3);
-          const intensity = Math.max(0, combinedPattern - rnd / 8.0 * noiseIntensity);
+          // Simplified wave effects for smoother motion
+          const wave1 = 0.06 * Math.sin(12.0 * v - tOffset * 3.0);
+          const wave2 = 0.04 * Math.sin(18.0 * u + tOffset * 2.0);
+          const wave3 = 0.08 * Math.sin(10.0 * (u + v) - tOffset * 2.5);
           
-          // Much more visible color range (20-120 instead of 0-45)
+          let tex_x = u + wave1 + wave2;
+          let tex_y = v + wave3 + 0.05 * Math.sin(15.0 * tex_x + tOffset * 1.8);
+
+          // Simplified silk pattern calculation
+          const basePattern = 0.5 + 0.5 * Math.sin(
+            6.0 * (tex_x + tex_y + 
+              0.8 * Math.cos(8.0 * tex_x + 6.0 * tex_y + tOffset * 2.0) + 
+              0.5 * Math.cos(12.0 * tex_x - 8.0 * tex_y + tOffset * 1.5) +
+              0.05 * tOffset)
+          );
+
+          // Simplified shimmer layer
+          const shimmer = 0.4 + 0.6 * Math.sin(
+            20.0 * (tex_x + tex_y - 0.15 * tOffset)
+          );
+
+          const rnd = noise(x * 0.5 + time * 0.1, y * 0.5 + time * 0.12, time);
+          const combinedPattern = (basePattern * 0.75 + shimmer * 0.25);
+          const intensity = Math.max(0, combinedPattern - rnd / 6.0 * noiseIntensity);
+          
+          // Smooth color transitions
           let r, g, b;
-          if (intensity < 0.15) {
-            // Deep silk shadows with subtle blue tint
-            const factor = intensity * 6.67;
-            r = Math.floor(20 + (40 - 20) * factor);
-            g = Math.floor(25 + (45 - 25) * factor);
-            b = Math.floor(35 + (60 - 35) * factor);
-          } else if (intensity < 0.35) {
-            // Mid-tone silk with purple undertones
-            const factor = (intensity - 0.15) * 5;
-            r = Math.floor(40 + (65 - 40) * factor);
-            g = Math.floor(45 + (60 - 45) * factor);
-            b = Math.floor(60 + (85 - 60) * factor);
-          } else if (intensity < 0.65) {
-            // Silk highlights with warm tones
-            const factor = (intensity - 0.35) * 3.33;
-            r = Math.floor(65 + (90 - 65) * factor);
-            g = Math.floor(60 + (80 - 60) * factor);
-            b = Math.floor(85 + (100 - 85) * factor);
+          if (intensity < 0.2) {
+            const factor = intensity * 5;
+            r = Math.floor(25 + (50 - 25) * factor);
+            g = Math.floor(30 + (55 - 30) * factor);
+            b = Math.floor(40 + (70 - 40) * factor);
+          } else if (intensity < 0.5) {
+            const factor = (intensity - 0.2) * 3.33;
+            r = Math.floor(50 + (75 - 50) * factor);
+            g = Math.floor(55 + (75 - 55) * factor);
+            b = Math.floor(70 + (95 - 70) * factor);
+          } else if (intensity < 0.8) {
+            const factor = (intensity - 0.5) * 3.33;
+            r = Math.floor(75 + (100 - 75) * factor);
+            g = Math.floor(75 + (95 - 75) * factor);
+            b = Math.floor(95 + (115 - 95) * factor);
           } else {
-            // Silk shine with bright highlights
-            const factor = (intensity - 0.65) * 2.86;
-            r = Math.floor(90 + (120 - 90) * factor);
-            g = Math.floor(80 + (110 - 80) * factor);
-            b = Math.floor(100 + (130 - 100) * factor);
+            const factor = (intensity - 0.8) * 5;
+            r = Math.floor(100 + (125 - 100) * factor);
+            g = Math.floor(95 + (115 - 95) * factor);
+            b = Math.floor(115 + (135 - 115) * factor);
           }
           
           const a = 255;
 
-          const index = (y * width + x) * 4;
-          if (index < data.length) {
-            data[index] = Math.min(255, r);
-            data[index + 1] = Math.min(255, g);
-            data[index + 2] = Math.min(255, b);
-            data[index + 3] = a;
+          // Fill multiple pixels for the step size
+          for (let dx = 0; dx < step && x + dx < width; dx++) {
+            for (let dy = 0; dy < step && y + dy < height; dy++) {
+              const index = ((y + dy) * width + (x + dx)) * 4;
+              if (index < data.length) {
+                data[index] = Math.min(255, r);
+                data[index + 1] = Math.min(255, g);
+                data[index + 2] = Math.min(255, b);
+                data[index + 3] = a;
+              }
+            }
           }
         }
       }
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Enhanced overlay for better depth with more visible gradients
+      // Subtle overlay for depth
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(10, 20, 40, 0.1)'); // Subtle blue tint center
-      overlayGradient.addColorStop(0.6, 'rgba(5, 15, 30, 0.3)'); // Mid transition
-      overlayGradient.addColorStop(1, 'rgba(0, 10, 25, 0.6)'); // Darker edges
+      overlayGradient.addColorStop(0, 'rgba(15, 25, 45, 0.1)');
+      overlayGradient.addColorStop(0.7, 'rgba(8, 18, 35, 0.2)');
+      overlayGradient.addColorStop(1, 'rgba(5, 12, 28, 0.4)');
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
 
-      // Add subtle moving light effect for silk shimmer
+      // Smooth moving light effect
+      const lightX = width / 2 + 150 * Math.sin(tOffset * 0.015);
+      const lightY = height / 2 + 150 * Math.cos(tOffset * 0.012);
+      
       const lightGradient = ctx.createLinearGradient(
-        0, 0, 
-        width + 200 * Math.sin(tOffset * 0.02), 
-        height + 200 * Math.cos(tOffset * 0.015)
+        0, 0, lightX, lightY
       );
-      lightGradient.addColorStop(0, 'rgba(120, 140, 180, 0.02)');
-      lightGradient.addColorStop(0.5, 'rgba(80, 100, 140, 0.05)');
-      lightGradient.addColorStop(1, 'rgba(40, 60, 100, 0.02)');
+      lightGradient.addColorStop(0, 'rgba(100, 120, 160, 0.02)');
+      lightGradient.addColorStop(0.5, 'rgba(70, 90, 130, 0.04)');
+      lightGradient.addColorStop(1, 'rgba(50, 70, 110, 0.02)');
       
       ctx.fillStyle = lightGradient;
       ctx.fillRect(0, 0, width, height);
