@@ -71,7 +71,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_perfect_corp_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          deleted_count: number
+          cleanup_timestamp: string
+        }[]
+      }
+      force_refresh_perfect_corp_token: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          invalidated_tokens: number
+          action_timestamp: string
+        }[]
+      }
+      get_token_expiry_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          has_valid_token: boolean
+          token_count: number
+          next_expiry: string
+          seconds_until_expiry: number
+          expired_token_count: number
+        }[]
+      }
+      get_valid_perfect_corp_token: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          token_id: string
+          access_token: string
+          expires_at: string
+          seconds_until_expiry: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

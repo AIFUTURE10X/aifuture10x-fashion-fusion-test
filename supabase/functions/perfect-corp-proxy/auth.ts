@@ -56,7 +56,7 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
   }
 }
 
-export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string): Promise<AuthResult> {
+export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
   console.log('Step 1: Authenticating with Perfect Corp S2S API using RSA encryption...');
   
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
@@ -64,6 +64,24 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   if (mockMode) {
     console.log('Running in mock mode - using test token');
     return { accessToken: 'mock_token_for_testing' };
+  }
+
+  // Check for existing valid token using the new database function
+  try {
+    console.log('Checking for existing valid token...');
+    const { data: tokenData, error: tokenError } = await supabase.rpc('get_valid_perfect_corp_token');
+    
+    if (tokenError) {
+      console.warn('Error checking for existing token:', tokenError);
+    } else if (tokenData && tokenData.length > 0) {
+      const token = tokenData[0];
+      console.log(`Found valid token, expires in ${token.seconds_until_expiry} seconds`);
+      return { accessToken: token.access_token };
+    } else {
+      console.log('No valid token found, proceeding with authentication...');
+    }
+  } catch (error) {
+    console.warn('Failed to check existing token, proceeding with authentication:', error);
   }
   
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
@@ -129,15 +147,43 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       
       // Handle different response formats
       let accessToken: string | null = null;
+      let expiresIn: number = 3600; // Default 1 hour
       
       if (authData.result?.access_token) {
         accessToken = authData.result.access_token;
+        expiresIn = authData.result.expires_in || 3600;
       } else if (authData.access_token) {
         accessToken = authData.access_token;
+        expiresIn = authData.expires_in || 3600;
       }
       
       if (accessToken) {
         console.log('S2S Authentication successful with RSA encryption');
+        
+        // Store the new token in the database
+        try {
+          const expiresAt = new Date(Date.now() + (expiresIn * 1000)).toISOString();
+          
+          // Clean up expired tokens first
+          await supabase.rpc('cleanup_expired_perfect_corp_tokens');
+          
+          // Store the new token
+          const { error: insertError } = await supabase
+            .from('perfect_corp_tokens')
+            .insert({
+              access_token: accessToken,
+              expires_at: expiresAt
+            });
+            
+          if (insertError) {
+            console.warn('Failed to store token in database:', insertError);
+          } else {
+            console.log('Token stored successfully, expires at:', expiresAt);
+          }
+        } catch (storeError) {
+          console.warn('Error storing token:', storeError);
+        }
+        
         return { accessToken };
       } else {
         console.error('No access token found in response:', authData);
