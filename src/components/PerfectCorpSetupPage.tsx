@@ -32,7 +32,11 @@ export default function PerfectCorpSetupPage() {
   
   const testConfiguration = async () => {
     try {
-      const response = await fetch('/api/test-perfect-corp')
+      const response = await fetch('https://bpjlxtjbrunzibehbyrk.supabase.co/functions/v1/perfectcorp-auth/test', {
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwamx4dGpicnVuemliZWhieXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjE1NTcsImV4cCI6MjA2NTUzNzU1N30.w3_oTurN_UesG_DpwNU67f216flzYmOnDo-lrEMLYDw`
+        }
+      })
       const data = await response.json()
       setTestResult(data)
     } catch (error) {
@@ -49,21 +53,30 @@ export default function PerfectCorpSetupPage() {
     
     setSaving(true)
     try {
-      const response = await fetch('/api/admin/update-perfect-corp-keys', {
+      const response = await fetch('https://bpjlxtjbrunzibehbyrk.supabase.co/functions/v1/update-perfect-corp-keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwamx4dGpicnVuemliZWhieXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjE1NTcsImV4cCI6MjA2NTUzNzU1N30.w3_oTurN_UesG_DpwNU67f216flzYmOnDo-lrEMLYDw`
+        },
         body: JSON.stringify({
           apiKey: apiKey.trim(),
           rsaKey: rsaKey.trim()
         })
       })
       
+      const result = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Failed to update keys')
+        throw new Error(result.error || 'Failed to update keys')
       }
       
-      alert('Keys updated successfully! Please redeploy your Edge Functions.')
+      alert('Keys validated successfully! Please follow the instructions to update your Supabase secrets.')
       
+      // Show the result which includes instructions
+      setTestResult(result)
+      
+      // Test the current configuration
       await testConfiguration()
     } catch (error) {
       alert('Error saving keys: ' + (error as Error).message)
