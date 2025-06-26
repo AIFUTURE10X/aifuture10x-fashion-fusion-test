@@ -7,18 +7,7 @@ import { pollTaskCompletion } from './polling.ts';
 import { downloadResultImage } from './download.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
-export async function processWithAccessToken(accessToken: string, params: ProcessParams): Promise<Response> {
-  const {
-    userPhoto,
-    userPhotoStoragePath,
-    clothingImage,
-    clothingCategory,
-    isCustomClothing,
-    perfectCorpRefId,
-    supabaseUrl,
-    supabaseServiceKey
-  } = params;
-
+export async function processTryOnRequest(requestData: any, accessToken: string): Promise<any> {
   const startTime = Date.now();
   console.log('=== Starting Perfect Corp S2S try-on process ===');
 
@@ -26,10 +15,10 @@ export async function processWithAccessToken(accessToken: string, params: Proces
     // Step 2: Get user photo data
     console.log('Getting user photo data for S2S API...');
     const userPhotoData = await getUserPhotoData(
-      userPhoto, 
-      userPhotoStoragePath, 
-      supabaseUrl, 
-      supabaseServiceKey
+      requestData.userPhoto, 
+      requestData.userPhotoStoragePath, 
+      Deno.env.get('SUPABASE_URL')!, 
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     console.log(`User photo data size for S2S: ${userPhotoData.byteLength} bytes`);
 
@@ -43,10 +32,10 @@ export async function processWithAccessToken(accessToken: string, params: Proces
     const taskId = await startTryOnTask(
       accessToken, 
       fileId, 
-      clothingImage, 
-      isCustomClothing, 
-      perfectCorpRefId,
-      clothingCategory
+      requestData.clothingImage, 
+      requestData.isCustomClothing, 
+      requestData.perfectCorpRefId,
+      requestData.clothingCategory
     );
     console.log(`S2S Try-on task started with ID: ${taskId}`);
 
@@ -74,16 +63,14 @@ export async function processWithAccessToken(accessToken: string, params: Proces
     console.log(`=== S2S Try-on process completed successfully in ${totalTime}ms ===`);
     console.log(`Result image base64 length: ${resultImageBase64.length} characters`);
 
-    return new Response(JSON.stringify({
+    return {
       success: true,
       result_img: resultImageBase64,
       processing_time: result.processing_time || Math.round(totalTime / 1000),
-      message: isCustomClothing 
+      message: requestData.isCustomClothing 
         ? "Virtual try-on completed successfully using your custom clothing with S2S API"
         : "Virtual try-on completed successfully using Perfect Corp S2S AI"
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    };
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
