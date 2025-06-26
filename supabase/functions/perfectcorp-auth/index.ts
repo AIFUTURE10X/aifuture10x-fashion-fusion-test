@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from '../_shared/cors.ts';
@@ -102,6 +103,17 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
 
     console.log('Generating new Perfect Corp access token...');
     console.log('Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
+    
+    // Add debug logging before authentication attempt
+    const clientId = Deno.env.get('PERFECTCORP_API_KEY');
+    const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+    
+    console.log('Perfect Corp Auth Debug:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      secretHasCorrectFormat: clientSecret?.includes('BEGIN PUBLIC KEY') || false,
+      timestamp: new Date().toISOString()
+    });
     
     // Validate that we have real credentials
     if (!apiKey || apiKey === 'your_api_key_here' || apiKey.includes('placeholder')) {
@@ -249,6 +261,41 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  // Test endpoint for configuration validation
+  if (req.url.endsWith('/test')) {
+    const clientId = Deno.env.get('PERFECTCORP_API_KEY');
+    const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+    
+    const validation = {
+      status: 'Configuration Test',
+      timestamp: new Date().toISOString(),
+      checks: {
+        hasClientId: !!clientId,
+        clientIdLength: clientId?.length || 0,
+        clientIdValid: (clientId?.length || 0) > 10,
+        hasClientSecret: !!clientSecret,
+        secretStartsWith: clientSecret?.substring(0, 20) + '...' || 'NOT SET',
+        secretContainsPEMHeader: clientSecret?.includes('-----BEGIN PUBLIC KEY-----') || false,
+        secretContainsPEMFooter: clientSecret?.includes('-----END PUBLIC KEY-----') || false,
+        secretLength: clientSecret?.length || 0,
+        secretLengthValid: (clientSecret?.length || 0) > 400,
+        isLikelyValid: (clientSecret?.length || 0) > 400 && 
+                       clientSecret?.includes('-----BEGIN PUBLIC KEY-----') && 
+                       clientSecret?.includes('-----END PUBLIC KEY-----')
+      },
+      recommendation: ((clientSecret?.length || 0) > 400 && 
+                      clientSecret?.includes('-----BEGIN PUBLIC KEY-----') && 
+                      clientSecret?.includes('-----END PUBLIC KEY-----'))
+                      ? '✅ Configuration appears valid'
+                      : '❌ Secret key may be incorrectly formatted - should be RSA public key in PEM format'
+    };
+    
+    return new Response(
+      JSON.stringify(validation, null, 2),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   if (req.method !== 'POST') {
