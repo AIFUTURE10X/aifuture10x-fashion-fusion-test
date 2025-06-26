@@ -170,10 +170,14 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890abcdef...
               value={rsaKey}
               onChange={(e) => setRsaKey(e.target.value)}
               placeholder={exampleKey}
-              className="font-mono text-xs"
+              className={`font-mono text-xs ${!showKey ? 'text-transparent bg-gray-100' : ''}`}
               rows={15}
-              style={{ WebkitTextSecurity: showKey ? 'none' : 'disc' }}
             />
+            {!showKey && rsaKey && (
+              <div className="text-xs text-muted-foreground">
+                RSA Key is hidden. Click the eye icon to show it.
+              </div>
+            )}
             <div className="flex gap-2">
               <Button 
                 onClick={formatRSAKey} 
