@@ -64,7 +64,7 @@ const Index = () => {
       const result = await perfectCorpTest.testConfiguration();
       
       // Show detailed results in toast
-      const configStatus = result.configTest.checks.isLikelyValid ? '✅ Valid' : '❌ Invalid';
+      const configStatus = result.configTest.credentials.clientIdValid && result.configTest.credentials.secretValid ? '✅ Valid' : '❌ Invalid';
       const authStatus = result.authTest.status === 'success' ? '✅ Success' : '❌ Failed';
       
       toast({
