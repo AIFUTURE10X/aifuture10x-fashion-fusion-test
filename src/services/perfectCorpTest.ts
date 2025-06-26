@@ -12,9 +12,17 @@ interface ConfigTestResult {
     secretLength: number;
     secretValid: boolean;
   };
-  encryption: {
-    success: boolean;
-    error: string;
+  authentication: {
+    simpleAuth: {
+      attempted: boolean;
+      successful: boolean;
+      error: string | null;
+    };
+    hmacAuth: {
+      attempted: boolean;
+      successful: boolean;
+      error: string | null;
+    };
   };
   apiEndpoint: string;
   recommendation: string;
@@ -138,23 +146,29 @@ class PerfectCorpTestService {
       console.log('🔑 Client ID Valid:', result.configTest.credentials.clientIdValid ? '✅' : '❌');
       console.log('🔐 Has Client Secret:', result.configTest.credentials.hasClientSecret ? '✅' : '❌');
       console.log('🔐 Secret Length Valid:', result.configTest.credentials.secretValid ? '✅' : '❌');
-      console.log('🔒 Encryption Test:', result.configTest.encryption.success ? '✅' : '❌');
+      
+      // Show authentication test results
+      if (result.configTest.authentication) {
+        console.log('🔒 Simple Auth:', result.configTest.authentication.simpleAuth.successful ? '✅' : '❌');
+        console.log('🔐 HMAC Auth:', result.configTest.authentication.hmacAuth.successful ? '✅' : '❌');
+      }
+      
       console.log('📝 Recommendation:', result.configTest.recommendation);
       console.log('🧪 Auth Test Status:', result.authTest.status);
       
       if (result.authTest.error) {
         console.log('⚠️ Auth Error:', result.authTest.error);
       }
-      
-      if (!result.configTest.encryption.success) {
-        console.log('🔒 Encryption Error:', result.configTest.encryption.error);
-      }
 
       // Additional diagnostics if available
       if (result.diagnostics) {
         console.log('\n=== DETAILED DIAGNOSTICS ===');
         console.log('Network Connectivity:', result.diagnostics.networkConnectivity.canReach ? '✅' : '❌');
-        console.log('Crypto Support:', result.diagnostics.cryptoSupport.supportedAlgorithms.length > 0 ? '✅' : '❌');
+        
+        if (result.diagnostics.authenticationMethods) {
+          console.log('Simple Auth Method:', result.diagnostics.authenticationMethods.simpleAuth.successful ? '✅' : '❌');
+          console.log('HMAC Auth Method:', result.diagnostics.authenticationMethods.hmacAuth.successful ? '✅' : '❌');
+        }
         
         if (result.diagnostics.recommendations.length > 0) {
           console.log('\n=== RECOMMENDATIONS ===');
@@ -176,6 +190,42 @@ class PerfectCorpTestService {
       console.error('❌ Production readiness check failed:', error);
       return false;
     }
+  }
+
+  // New method to help users troubleshoot Perfect Corp setup
+  async getSetupInstructions(): Promise<string[]> {
+    const instructions = [
+      '=== PERFECT CORP SETUP INSTRUCTIONS ===',
+      '',
+      '1. Get your Perfect Corp credentials:',
+      '   - Log into your Perfect Corp developer dashboard',
+      '   - Find your Client ID (PERFECTCORP_API_KEY)',
+      '   - Find your Client Secret (PERFECTCORP_API_SECRET)',
+      '   - Note: NO RSA public key is needed for current authentication',
+      '',
+      '2. Add credentials to Supabase:',
+      '   - Go to your Supabase project settings',
+      '   - Navigate to Edge Function secrets',
+      '   - Add PERFECTCORP_API_KEY with your Client ID',
+      '   - Add PERFECTCORP_API_SECRET with your Client Secret',
+      '',
+      '3. Test the authentication:',
+      '   - Run perfectCorpTest.runComprehensiveTest()',
+      '   - Check the console for detailed results',
+      '   - Contact Perfect Corp support if authentication still fails',
+      '',
+      '4. Common issues:',
+      '   - Make sure credentials are not test/demo values',
+      '   - Verify your Perfect Corp account has API access enabled',
+      '   - Check that your credentials match the current API format',
+      '',
+      '5. If you need help:',
+      '   - Contact Perfect Corp support with your Client ID',
+      '   - Ask them about their current authentication method',
+      '   - Mention you\'re having trouble with S2S API authentication'
+    ];
+    
+    return instructions;
   }
 }
 

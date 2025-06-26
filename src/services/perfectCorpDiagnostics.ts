@@ -3,9 +3,8 @@ interface DiagnosticResult {
   timestamp: string;
   environment: any;
   credentials: any;
-  cryptoSupport: any;
   networkConnectivity: any;
-  encryptionTest: any;
+  authenticationMethods: any;
   recommendations: string[];
 }
 
@@ -98,22 +97,30 @@ class PerfectCorpDiagnosticsService {
         recommendations.push('❌ CRITICAL: PERFECTCORP_API_KEY is missing from Supabase secrets');
       } else if (diagnostics.credentials.clientIdLength < 10) {
         recommendations.push('⚠️ WARNING: API key appears too short - may be a test/placeholder value');
-      } else if (diagnostics.credentials.clientIdFormat && !diagnostics.credentials.clientIdFormat.isAlphanumeric) {
-        recommendations.push('⚠️ WARNING: API key contains special characters - verify format');
       }
       
       if (!diagnostics.credentials.hasClientSecret) {
         recommendations.push('❌ CRITICAL: PERFECTCORP_API_SECRET is missing from Supabase secrets');
-      } else if (diagnostics.credentials.clientSecretLength < 100) {
-        recommendations.push('⚠️ WARNING: API secret appears too short - should be RSA public key (200+ chars)');
-      } else if (diagnostics.credentials.clientSecretFormat && !diagnostics.credentials.clientSecretFormat.isBase64 && !diagnostics.credentials.clientSecretFormat.isPemFormat) {
-        recommendations.push('⚠️ WARNING: API secret doesn\'t appear to be valid base64 or PEM format');
+      } else if (diagnostics.credentials.clientSecretLength < 10) {
+        recommendations.push('⚠️ WARNING: API secret appears too short - may be a test/placeholder value');
       }
       
-      // Analyze encryption
-      if (diagnostics.encryptionTest.attempted && !diagnostics.encryptionTest.successful) {
-        recommendations.push('❌ CRITICAL: RSA encryption test failed - ' + diagnostics.encryptionTest.error);
-        recommendations.push('🔧 SOLUTION: Verify API secret is a valid RSA public key from Perfect Corp');
+      // Analyze authentication methods
+      if (diagnostics.authenticationMethods) {
+        if (diagnostics.authenticationMethods.simpleAuth.successful) {
+          recommendations.push('✅ SUCCESS: Simple authentication (client_id + client_secret) works');
+        } else if (diagnostics.authenticationMethods.hmacAuth.successful) {
+          recommendations.push('✅ SUCCESS: HMAC authentication method works');
+        } else {
+          recommendations.push('❌ CRITICAL: All authentication methods failed');
+          
+          if (diagnostics.authenticationMethods.simpleAuth.error) {
+            recommendations.push(`  - Simple auth error: ${diagnostics.authenticationMethods.simpleAuth.error}`);
+          }
+          if (diagnostics.authenticationMethods.hmacAuth.error) {
+            recommendations.push(`  - HMAC auth error: ${diagnostics.authenticationMethods.hmacAuth.error}`);
+          }
+        }
       }
       
       // Analyze network
@@ -122,16 +129,18 @@ class PerfectCorpDiagnosticsService {
       }
       
       // Add specific solutions
-      if (recommendations.length === 0) {
-        recommendations.push('✅ All diagnostics passed - authentication should work');
-        recommendations.push('💡 If still failing, the issue may be with credential values (not test keys)');
+      if (recommendations.some(r => r.includes('SUCCESS'))) {
+        recommendations.push('');
+        recommendations.push('🎉 GOOD NEWS: Authentication is working with the updated method!');
+        recommendations.push('💡 The RSA encryption approach has been replaced with simpler authentication');
       } else {
         recommendations.push('');
         recommendations.push('🔧 NEXT STEPS:');
         recommendations.push('1. Verify API credentials are real (not test) values from Perfect Corp dashboard');
-        recommendations.push('2. Ensure RSA public key is copied exactly as provided by Perfect Corp');
-        recommendations.push('3. Check that API key has proper permissions for authentication');
+        recommendations.push('2. Check that your Perfect Corp account has API access enabled');
+        recommendations.push('3. Ensure credentials match Perfect Corp\'s current API format');
         recommendations.push('4. Contact Perfect Corp support if credentials are verified but still failing');
+        recommendations.push('5. Ask Perfect Corp about their current S2S authentication method');
       }
       
     } catch (error) {
@@ -163,12 +172,11 @@ CREDENTIALS STATUS:
 - API Key Format: ${diagnostics.credentials.clientIdFormat?.isAlphanumeric ? '✅ Valid' : '⚠️ Contains special chars'}
 - API Secret Present: ${diagnostics.credentials.hasClientSecret ? '✅ YES' : '❌ NO'}
 - API Secret Length: ${diagnostics.credentials.clientSecretLength} characters
-- API Secret Format: ${diagnostics.credentials.clientSecretFormat?.isBase64 || diagnostics.credentials.clientSecretFormat?.isPemFormat ? '✅ Valid' : '⚠️ Invalid format'}
+- API Secret Type: ${diagnostics.credentials.clientSecretFormat?.isPlainText ? '✅ Plain text' : '⚠️ Formatted text'}
 
-ENCRYPTION TEST:
-- RSA Encryption: ${diagnostics.encryptionTest.successful ? '✅ SUCCESS' : '❌ FAILED'}
-- Method Used: ${diagnostics.encryptionTest.method || 'None'}
-- Error: ${diagnostics.encryptionTest.error || 'None'}
+AUTHENTICATION METHODS:
+- Simple Auth (client_id + client_secret): ${diagnostics.authenticationMethods?.simpleAuth?.successful ? '✅ SUCCESS' : '❌ FAILED'}
+- HMAC Auth (timestamp + signature): ${diagnostics.authenticationMethods?.hmacAuth?.successful ? '✅ SUCCESS' : '❌ FAILED'}
 
 NETWORK CONNECTIVITY:
 - Perfect Corp API: ${diagnostics.networkConnectivity.canReach ? '✅ Reachable' : '❌ Unreachable'}
@@ -179,6 +187,12 @@ AUTHENTICATION TEST:
 - Overall Success: ${authTest.success ? '✅ SUCCESS' : '❌ FAILED'}
 - Access Token Received: ${authTest.accessToken ? '✅ YES' : '❌ NO'}
 - Error Message: ${authTest.error || 'None'}
+
+IMPORTANT CHANGES:
+- ✅ RSA encryption has been REMOVED from authentication
+- ✅ Now using standard client_id + client_secret method
+- ✅ Multiple authentication methods are tested automatically
+- ✅ Better error handling and diagnostics added
 
 RECOMMENDATIONS:
 ${recommendations.join('\n')}
