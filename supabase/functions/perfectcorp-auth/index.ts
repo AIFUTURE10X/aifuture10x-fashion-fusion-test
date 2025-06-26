@@ -26,79 +26,116 @@ interface AuthResponse {
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
 
-// Simplified RSA encryption function
+// Enhanced RSA encryption function with better key handling
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    console.log('Starting RSA encryption...');
+    console.log('🔐 Starting RSA encryption process...');
+    console.log('📊 Input data length:', data.length);
+    console.log('🔑 Raw key length:', publicKey.length);
     
-    // Clean and format the public key
-    let cleanKey = publicKey
+    // More careful key cleaning - preserve structure but remove headers
+    let cleanKey = publicKey.trim();
+    
+    // Log the first few characters to debug key format
+    console.log('🔍 Key starts with:', cleanKey.substring(0, 50));
+    
+    // Remove PEM headers/footers but preserve line breaks initially
+    cleanKey = cleanKey
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/-----BEGIN RSA PUBLIC KEY-----/g, '')
-      .replace(/-----END RSA PUBLIC KEY-----/g, '')
-      .replace(/\s+/g, '')
-      .replace(/\n/g, '')
-      .replace(/\r/g, '');
+      .replace(/-----END RSA PUBLIC KEY-----/g, '');
     
-    // Validate base64 format
+    // Now remove whitespace and newlines
+    cleanKey = cleanKey.replace(/\s+/g, '').replace(/\n/g, '').replace(/\r/g, '');
+    
+    console.log('🧹 Cleaned key length:', cleanKey.length);
+    console.log('✅ Key format check:', /^[A-Za-z0-9+/]*={0,2}$/.test(cleanKey) ? 'Valid base64' : 'Invalid base64');
+    
+    if (!cleanKey || cleanKey.length < 100) {
+      throw new Error('RSA public key appears to be too short or invalid');
+    }
+    
+    // Validate base64 format more thoroughly
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanKey)) {
-      throw new Error('Invalid base64 format in public key');
+      throw new Error('RSA public key is not valid base64 format');
     }
     
-    // Convert base64 to ArrayBuffer
-    const binaryString = atob(cleanKey);
-    const binaryKey = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      binaryKey[i] = binaryString.charCodeAt(i);
-    }
-    
-    // Import the RSA public key (try SHA-256 first, then SHA-1)
-    let cryptoKey;
+    // Convert base64 to ArrayBuffer with better error handling
+    let binaryKey: Uint8Array;
     try {
-      cryptoKey = await crypto.subtle.importKey(
-        'spki',
-        binaryKey,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-256',
-        },
-        false,
-        ['encrypt']
-      );
-      console.log('RSA key imported with SHA-256');
+      const binaryString = atob(cleanKey);
+      binaryKey = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        binaryKey[i] = binaryString.charCodeAt(i);
+      }
+      console.log('📦 Binary key length:', binaryKey.length);
     } catch (error) {
-      console.log('SHA-256 failed, trying SHA-1...');
-      cryptoKey = await crypto.subtle.importKey(
-        'spki',
-        binaryKey,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-1',
-        },
-        false,
-        ['encrypt']
-      );
-      console.log('RSA key imported with SHA-1');
+      console.error('❌ Base64 decode failed:', error);
+      throw new Error('Failed to decode base64 RSA key: ' + error.message);
+    }
+    
+    // Try multiple import approaches
+    let cryptoKey;
+    const importErrors = [];
+    
+    // Try different hash algorithms in order of preference
+    const hashAlgorithms = ['SHA-256', 'SHA-1'];
+    
+    for (const hash of hashAlgorithms) {
+      try {
+        console.log(`🔧 Attempting RSA key import with ${hash}...`);
+        cryptoKey = await crypto.subtle.importKey(
+          'spki',
+          binaryKey,
+          {
+            name: 'RSA-OAEP',
+            hash: hash,
+          },
+          false,
+          ['encrypt']
+        );
+        console.log(`✅ RSA key imported successfully with ${hash}`);
+        break;
+      } catch (error) {
+        console.log(`❌ ${hash} import failed:`, error.message);
+        importErrors.push(`${hash}: ${error.message}`);
+      }
+    }
+    
+    if (!cryptoKey) {
+      throw new Error('Failed to import RSA key with any hash algorithm. Errors: ' + importErrors.join('; '));
     }
 
-    // Encrypt the data
+    // Encrypt the data with detailed logging
+    console.log('🔒 Encrypting data...');
     const encodedData = new TextEncoder().encode(data);
-    const encryptedData = await crypto.subtle.encrypt(
-      'RSA-OAEP',
-      cryptoKey,
-      encodedData
-    );
+    console.log('📏 Encoded data length:', encodedData.length);
+    
+    let encryptedData;
+    try {
+      encryptedData = await crypto.subtle.encrypt(
+        'RSA-OAEP',
+        cryptoKey,
+        encodedData
+      );
+      console.log('🎯 Encryption successful, result length:', encryptedData.byteLength);
+    } catch (error) {
+      console.error('❌ Encryption operation failed:', error);
+      throw new Error('RSA encryption operation failed: ' + error.message);
+    }
 
     // Convert to base64
     const encryptedArray = new Uint8Array(encryptedData);
     const base64Result = btoa(String.fromCharCode(...encryptedArray));
     
-    console.log('RSA encryption successful');
+    console.log('📊 Final encrypted result length:', base64Result.length);
+    console.log('🎉 RSA encryption completed successfully');
+    
     return base64Result;
     
   } catch (error) {
-    console.error('RSA encryption failed:', error);
+    console.error('💥 RSA encryption failed:', error);
     throw new Error(`RSA encryption failed: ${error.message}`);
   }
 }
@@ -146,7 +183,7 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
 
       if (existingTokenData && existingTokenData.length > 0) {
         const token = existingTokenData[0];
-        console.log('Using cached access token');
+        console.log('✅ Using cached access token, expires in', token.seconds_until_expiry, 'seconds');
         return {
           success: true,
           accessToken: token.access_token,
@@ -154,14 +191,19 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
         };
       }
 
-      console.log('Generating new Perfect Corp access token...');
+      console.log('🔄 Generating new Perfect Corp access token...');
       
       // Get credentials from environment
       const clientId = Deno.env.get('PERFECTCORP_API_KEY');
       const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
       
-      // Validate credentials exist and aren't placeholders
+      console.log('🔍 Validating credentials...');
+      console.log('📋 Client ID length:', clientId?.length || 0);
+      console.log('📋 Client Secret length:', clientSecret?.length || 0);
+      
+      // Enhanced credential validation
       if (!clientId || clientId.length < 10 || clientId.includes('placeholder') || clientId.includes('your_api_key')) {
+        console.error('❌ Invalid PERFECTCORP_API_KEY detected');
         return {
           success: false,
           error: 'Invalid or missing PERFECTCORP_API_KEY. Please configure a valid API key in Supabase secrets.'
@@ -169,33 +211,57 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       }
       
       if (!clientSecret || clientSecret.length < 100 || clientSecret.includes('placeholder') || clientSecret.includes('REPLACE_WITH_ACTUAL')) {
+        console.error('❌ Invalid PERFECTCORP_API_SECRET detected');
         return {
           success: false,
           error: 'Invalid or missing PERFECTCORP_API_SECRET. Please configure a valid RSA public key in Supabase secrets.'
         };
       }
 
-      // Generate timestamp and create the data to encrypt
+      // Enhanced data format for Perfect Corp API
       const timestamp = Date.now();
-      const dataToEncrypt = `client_id=${clientId}&timestamp=${timestamp}`;
+      console.log('⏰ Generated timestamp:', timestamp);
       
-      console.log('Encrypting authentication data...');
+      // Try multiple data formats - Perfect Corp might be picky about format
+      const dataFormats = [
+        `client_id=${clientId}&timestamp=${timestamp}`,
+        `{"client_id":"${clientId}","timestamp":${timestamp}}`,
+        `client_id=${clientId}&timestamp=${Math.floor(timestamp/1000)}`, // Unix timestamp
+      ];
+      
+      let encryptedToken;
+      let successfulFormat = '';
+      
+      for (const dataFormat of dataFormats) {
+        try {
+          console.log('🧪 Trying data format:', dataFormat.substring(0, 50) + '...');
+          encryptedToken = await encryptWithRSA(dataFormat, clientSecret);
+          successfulFormat = dataFormat;
+          console.log('✅ Successfully encrypted with format:', successfulFormat.substring(0, 50) + '...');
+          break;
+        } catch (error) {
+          console.log('❌ Format failed:', error.message);
+          continue;
+        }
+      }
+      
+      if (!encryptedToken) {
+        throw new Error('Failed to encrypt authentication data with any format');
+      }
 
-      // Encrypt the id_token using RSA
-      const encryptedToken = await encryptWithRSA(dataToEncrypt, clientSecret);
-
-      // Make authentication request to Perfect Corp
-      console.log('🚀 CRITICAL: About to make POST request to Perfect Corp');
+      // Make authentication request to Perfect Corp with enhanced logging
+      console.log('🚀 CRITICAL: Making POST request to Perfect Corp');
       console.log('🎯 URL:', PERFECTCORP_AUTH_URL);
       console.log('📝 Method: POST');
-      console.log('📋 Headers: Content-Type: application/json, Accept: application/json');
+      console.log('📊 Using data format:', successfulFormat.substring(0, 50) + '...');
       
       const requestBody = {
         client_id: clientId,
         id_token: encryptedToken
       };
 
-      console.log('📤 Request body structure:', Object.keys(requestBody));
+      console.log('📤 Request body keys:', Object.keys(requestBody));
+      console.log('📤 ID token length:', encryptedToken.length);
 
       const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
         method: 'POST',
@@ -206,44 +272,39 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
         body: JSON.stringify(requestBody),
       });
 
-      console.log(`📥 Perfect Corp auth response status: ${authResponse.status}`);
-      console.log(`📥 Perfect Corp auth response headers:`, Object.fromEntries(authResponse.headers.entries()));
+      console.log(`📥 Perfect Corp response status: ${authResponse.status}`);
+      console.log(`📥 Response headers:`, Object.fromEntries(authResponse.headers.entries()));
 
       if (!authResponse.ok) {
         let errorMessage = `Authentication failed with status ${authResponse.status}`;
         
         try {
           const errorData = await authResponse.json();
-          console.error('❌ Perfect Corp auth error response:', JSON.stringify(errorData, null, 2));
+          console.error('❌ Perfect Corp error response:', JSON.stringify(errorData, null, 2));
           
-          // Check for the specific 405 error
-          if (authResponse.status === 405) {
-            console.error('🚨 METHOD NOT ALLOWED ERROR DETECTED');
-            console.error('🔍 This means Perfect Corp received a GET request instead of POST');
-            console.error('🔍 Check if there are any redirects or middleware interfering');
-          }
-          
+          // Enhanced error handling
           switch (authResponse.status) {
             case 400:
-              errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue. Check your API credentials format.';
+              errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue. Please verify your API credentials format and the RSA public key.';
               break;
             case 401:
-              errorMessage = 'Unauthorized: Invalid API credentials or expired key. Please verify your Perfect Corp API key and secret.';
+              errorMessage = 'Unauthorized: Invalid API credentials or expired key. Please verify your Perfect Corp API key and RSA public key are correct.';
               break;
             case 403:
-              errorMessage = 'Forbidden: API key does not have required permissions';
+              errorMessage = 'Forbidden: API key does not have required permissions or is not activated for this service.';
               break;
             case 405:
-              errorMessage = 'Method Not Allowed: Perfect Corp API received GET request instead of POST. This indicates a configuration or redirect issue.';
+              errorMessage = 'Method Not Allowed: This error should not occur with POST requests. Check for redirects or middleware issues.';
+              console.error('🚨 405 ERROR: This suggests a configuration issue or the API endpoint has changed');
               break;
             case 500:
-              errorMessage = 'Internal Server Error: Perfect Corp service unavailable';
+              errorMessage = 'Internal Server Error: Perfect Corp service is experiencing issues. Please try again later.';
               break;
             default:
-              errorMessage = errorData.error || errorMessage;
+              errorMessage = errorData.error || errorData.message || errorMessage;
           }
         } catch (e) {
-          console.error('Could not parse error response:', e);
+          console.error('❌ Could not parse error response:', e);
           const errorText = await authResponse.text();
           console.error('❌ Raw error response:', errorText);
         }
@@ -255,7 +316,8 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       }
 
       const authData: PerfectCorpAuthResponse = await authResponse.json();
-      console.log('Perfect Corp authentication response received');
+      console.log('📦 Perfect Corp authentication response received');
+      console.log('📊 Response keys:', Object.keys(authData));
 
       // Handle different response formats
       let accessToken: string;
@@ -264,19 +326,21 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       if (authData.result?.access_token) {
         accessToken = authData.result.access_token;
         expiresIn = authData.result.expires_in || 7200;
+        console.log('✅ Found token in result object');
       } else if (authData.access_token) {
         accessToken = authData.access_token;
         expiresIn = authData.expires_in || 7200;
+        console.log('✅ Found token in root object');
       } else {
-        console.error('No access token found in response:', authData);
+        console.error('❌ No access token found in response:', authData);
         return {
           success: false,
-          error: 'No access token received from Perfect Corp API'
+          error: 'No access token received from Perfect Corp API. Response format may have changed.'
         };
       }
 
-      console.log('Perfect Corp authentication successful');
-      console.log('Token expires in:', expiresIn, 'seconds');
+      console.log('🎉 Perfect Corp authentication successful!');
+      console.log('⏰ Token expires in:', expiresIn, 'seconds');
 
       // Cache the token (subtract 60 seconds for safety margin)
       const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000));
@@ -286,9 +350,9 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
           access_token: accessToken,
           expires_at: expiresAt.toISOString()
         });
-        console.log('Token cached successfully');
+        console.log('💾 Token cached successfully, expires at:', expiresAt.toISOString());
       } catch (cacheError) {
-        console.warn('Failed to cache token:', cacheError);
+        console.warn('⚠️ Failed to cache token:', cacheError);
         // Continue anyway, token is still valid
       }
 
@@ -303,7 +367,7 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
     }
 
   } catch (error) {
-    console.error('Perfect Corp authentication error:', error);
+    console.error('💥 Perfect Corp authentication error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Authentication failed'
@@ -321,7 +385,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // Test endpoint for configuration validation
+  // Enhanced test endpoint for debugging
   if (req.url.endsWith('/test')) {
     console.log('🧪 Test endpoint called');
     const clientId = Deno.env.get('PERFECTCORP_API_KEY');
@@ -338,10 +402,16 @@ serve(async (req) => {
         secretLength: clientSecret?.length || 0,
         secretLengthValid: (clientSecret?.length || 0) > 200,
         secretContainsRSAMarker: clientSecret?.includes('MIGfMA0GCSqGSIb3DQEB') || false,
+        secretContainsPEMHeaders: clientSecret?.includes('BEGIN PUBLIC KEY') || false,
         isLikelyValid: ((clientSecret?.length || 0) > 200 && 
                        !clientSecret?.includes('placeholder') &&
                        !clientSecret?.includes('REPLACE_WITH_ACTUAL') &&
                        (clientSecret?.includes('MIGfMA0GCSqGSIb3DQEB') || clientSecret?.includes('BEGIN PUBLIC KEY')))
+      },
+      keyAnalysis: {
+        firstChars: clientSecret?.substring(0, 50) || 'N/A',
+        hasLineBreaks: clientSecret?.includes('\n') || false,
+        hasPEMFormat: clientSecret?.includes('-----BEGIN') || false,
       },
       recommendation: (((clientSecret?.length || 0) > 200 && 
                        !clientSecret?.includes('placeholder') &&
@@ -377,6 +447,7 @@ serve(async (req) => {
 
     const statusCode = result.success ? 200 : 400;
     console.log(`📤 Returning response with status: ${statusCode}`);
+    console.log(`📊 Response success: ${result.success}`);
     
     return new Response(
       JSON.stringify(result),
@@ -387,12 +458,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Perfect Corp auth endpoint error:', error);
+    console.error('💥 Perfect Corp auth endpoint error:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error' 
+        error: 'Internal server error: ' + error.message 
       }),
       {
         status: 500,
