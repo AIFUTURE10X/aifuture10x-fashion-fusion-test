@@ -1,4 +1,6 @@
 
+import { perfectCorpDiagnostics } from './perfectCorpDiagnostics';
+
 interface ConfigTestResult {
   status: string;
   timestamp: string;
@@ -25,6 +27,7 @@ interface TestResult {
     hasToken: boolean;
     error: string | null;
   };
+  diagnostics?: any;
 }
 
 class PerfectCorpTestService {
@@ -35,7 +38,7 @@ class PerfectCorpTestService {
     try {
       console.log('🧪 Testing Perfect Corp configuration...');
       
-      // Test the Edge Function test endpoint
+      // Get basic configuration test
       const testResponse = await fetch(
         `${this.supabaseUrl}/functions/v1/perfectcorp-auth/test`,
         {
@@ -49,7 +52,15 @@ class PerfectCorpTestService {
       const testData: ConfigTestResult = await testResponse.json();
       console.log('📋 Configuration test results:', testData);
       
-      // Try actual authentication with a test API key
+      // Run comprehensive diagnostics
+      let diagnostics = null;
+      try {
+        diagnostics = await perfectCorpDiagnostics.runFullDiagnostics();
+      } catch (diagError) {
+        console.warn('⚠️ Failed to run full diagnostics:', diagError);
+      }
+      
+      // Try actual authentication
       const authResponse = await fetch(
         `${this.supabaseUrl}/functions/v1/perfectcorp-auth`,
         {
@@ -59,7 +70,7 @@ class PerfectCorpTestService {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            apiKey: 'test_api_key_for_validation'
+            apiKey: 'test_validation'
           })
         }
       );
@@ -73,12 +84,47 @@ class PerfectCorpTestService {
           status: authResponse.ok ? 'success' : 'failed',
           hasToken: !!authData.accessToken,
           error: authData.error || null
-        }
+        },
+        diagnostics
       };
       
     } catch (error) {
       console.error('❌ Test failed:', error);
       throw new Error(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async runComprehensiveTest(): Promise<void> {
+    try {
+      console.log('=== COMPREHENSIVE PERFECT CORP TEST ===');
+      
+      // Generate detailed diagnostic report
+      const report = await perfectCorpDiagnostics.generateDetailedReport();
+      console.log(report);
+      
+      // Get analysis and recommendations
+      const recommendations = await perfectCorpDiagnostics.analyzeAuthenticationFailure();
+      
+      console.log('\n=== ACTIONABLE RECOMMENDATIONS ===');
+      recommendations.forEach(rec => console.log(rec));
+      
+      // Test with enhanced diagnostics
+      const authTest = await perfectCorpDiagnostics.testAuthenticationWithDiagnostics();
+      
+      console.log('\n=== AUTHENTICATION TEST SUMMARY ===');
+      console.log('Success:', authTest.success ? '✅' : '❌');
+      console.log('Has Token:', authTest.accessToken ? '✅' : '❌');
+      console.log('Error:', authTest.error || 'None');
+      
+      if (authTest.success) {
+        console.log('\n🎉 PERFECT CORP AUTHENTICATION IS WORKING!');
+      } else {
+        console.log('\n❌ PERFECT CORP AUTHENTICATION FAILED');
+        console.log('Review the recommendations above to resolve the issues.');
+      }
+      
+    } catch (error) {
+      console.error('❌ Comprehensive test failed:', error);
     }
   }
 
@@ -103,9 +149,32 @@ class PerfectCorpTestService {
       if (!result.configTest.encryption.success) {
         console.log('🔒 Encryption Error:', result.configTest.encryption.error);
       }
+
+      // Additional diagnostics if available
+      if (result.diagnostics) {
+        console.log('\n=== DETAILED DIAGNOSTICS ===');
+        console.log('Network Connectivity:', result.diagnostics.networkConnectivity.canReach ? '✅' : '❌');
+        console.log('Crypto Support:', result.diagnostics.cryptoSupport.supportedAlgorithms.length > 0 ? '✅' : '❌');
+        
+        if (result.diagnostics.recommendations.length > 0) {
+          console.log('\n=== RECOMMENDATIONS ===');
+          result.diagnostics.recommendations.forEach((rec: string) => console.log(rec));
+        }
+      }
       
     } catch (error) {
       console.error('❌ Configuration test failed:', error);
+    }
+  }
+
+  // Quick method to check if everything is ready
+  async isReadyForProduction(): Promise<boolean> {
+    try {
+      const authTest = await perfectCorpDiagnostics.testAuthenticationWithDiagnostics();
+      return authTest.success && !!authTest.accessToken;
+    } catch (error) {
+      console.error('❌ Production readiness check failed:', error);
+      return false;
     }
   }
 }
