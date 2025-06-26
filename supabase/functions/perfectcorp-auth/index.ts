@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from '../_shared/cors.ts';
@@ -82,27 +81,22 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
 
 async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse> {
   try {
+    // Use service_role key for database operations (has RLS access)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Check for cached token first
-    const { data: existingToken } = await supabase
-      .from('perfect_corp_tokens')
-      .select('*')
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Check for cached token first using the database function
+    const { data: existingTokenData } = await supabase.rpc('get_valid_perfect_corp_token');
 
-    if (existingToken) {
+    if (existingTokenData && existingTokenData.length > 0) {
+      const token = existingTokenData[0];
       console.log('Using cached access token');
-      const expiresIn = Math.floor((new Date(existingToken.expires_at).getTime() - Date.now()) / 1000);
       return {
         success: true,
-        accessToken: existingToken.access_token,
-        expiresIn: Math.max(expiresIn, 0)
+        accessToken: token.access_token,
+        expiresIn: Math.max(token.seconds_until_expiry, 0)
       };
     }
 
@@ -225,6 +219,7 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000));
     
     try {
+      // Use direct insert since service_role has RLS access
       await supabase.from('perfect_corp_tokens').insert({
         access_token: accessToken,
         expires_at: expiresAt.toISOString()

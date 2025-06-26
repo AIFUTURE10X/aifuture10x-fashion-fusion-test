@@ -66,7 +66,8 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
 
-  // Check for existing valid token using the new database function
+  // Check for existing valid token using the database function
+  // Note: Edge Functions use service_role which has access through RLS policies
   try {
     console.log('Checking for existing valid token...');
     const { data: tokenData, error: tokenError } = await supabase.rpc('get_valid_perfect_corp_token');
@@ -161,13 +162,14 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         console.log('S2S Authentication successful with RSA encryption');
         
         // Store the new token in the database
+        // Note: Using service_role client, which has access through RLS policies
         try {
           const expiresAt = new Date(Date.now() + (expiresIn * 1000)).toISOString();
           
           // Clean up expired tokens first
           await supabase.rpc('cleanup_expired_perfect_corp_tokens');
           
-          // Store the new token
+          // Store the new token directly using insert (service_role has access)
           const { error: insertError } = await supabase
             .from('perfect_corp_tokens')
             .insert({
