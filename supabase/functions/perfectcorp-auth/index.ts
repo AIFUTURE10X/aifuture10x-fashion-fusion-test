@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from '../_shared/cors.ts';
@@ -57,9 +56,11 @@ function formatPEMKey(keyData: string): string {
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    // Format the key properly
+    console.log('Starting RSA encryption process...');
+    console.log('Data to encrypt:', data.substring(0, 30) + '...');
+    
+    // Format the key properly first
     const formattedKey = formatPEMKey(publicKey);
-    console.log('Using formatted PEM key for encryption');
     
     // Clean the public key - remove headers and whitespace for crypto operations
     const keyData = formattedKey
@@ -69,36 +70,57 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
     
     console.log('Key data for import length:', keyData.length);
     
-    // Validate base64
+    // Validate base64 format
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(keyData)) {
       throw new Error('Invalid base64 format in public key');
     }
     
-    // Decode base64 to binary
-    const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+    // Convert base64 to ArrayBuffer
+    const binaryString = atob(keyData);
+    const binaryKey = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      binaryKey[i] = binaryString.charCodeAt(i);
+    }
+    
     console.log('Binary key length:', binaryKey.length);
+    console.log('Binary key first 10 bytes:', Array.from(binaryKey.slice(0, 10)));
     
     console.log('Importing RSA public key...');
     
-    // Import the public key with error handling
+    // Import the public key with different algorithm parameters
     let cryptoKey;
     try {
+      // Try RSA-OAEP with SHA-1 first (more commonly supported)
       cryptoKey = await crypto.subtle.importKey(
         'spki',
         binaryKey,
         {
           name: 'RSA-OAEP',
-          hash: 'SHA-256',
+          hash: 'SHA-1',
         },
         false,
         ['encrypt']
       );
-    } catch (importError) {
-      console.error('Key import failed:', importError);
-      throw new Error(`Failed to import RSA public key: ${importError.message}`);
+      console.log('RSA public key imported successfully with SHA-1');
+    } catch (sha1Error) {
+      console.log('SHA-1 import failed, trying SHA-256:', sha1Error.message);
+      try {
+        cryptoKey = await crypto.subtle.importKey(
+          'spki',
+          binaryKey,
+          {
+            name: 'RSA-OAEP',
+            hash: 'SHA-256',
+          },
+          false,
+          ['encrypt']
+        );
+        console.log('RSA public key imported successfully with SHA-256');
+      } catch (sha256Error) {
+        console.error('Both SHA-1 and SHA-256 import failed');
+        throw new Error(`Failed to import RSA public key. SHA-1 error: ${sha1Error.message}, SHA-256 error: ${sha256Error.message}`);
+      }
     }
-
-    console.log('RSA public key imported successfully');
 
     // Encrypt the data
     const encodedData = new TextEncoder().encode(data);
@@ -111,6 +133,7 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
         cryptoKey,
         encodedData
       );
+      console.log('Data encrypted successfully');
     } catch (encryptError) {
       console.error('Encryption operation failed:', encryptError);
       throw new Error(`RSA encryption operation failed: ${encryptError.message}`);
@@ -203,7 +226,7 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
       console.error('Failed to encrypt id_token:', encryptError);
       return {
         success: false,
-        error: `RSA encryption failed: ${encryptError.message}. Please verify your PERFECTCORP_API_SECRET is a valid RSA public key in proper PEM format.`
+        error: `RSA encryption failed: ${encryptError.message}. Please verify your PERFECTCORP_API_SECRET is a valid RSA public key in proper PEM or raw base64 format.`
       };
     }
 
