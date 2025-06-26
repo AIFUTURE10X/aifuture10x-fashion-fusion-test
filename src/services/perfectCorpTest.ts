@@ -2,18 +2,19 @@
 interface ConfigTestResult {
   status: string;
   timestamp: string;
-  checks: {
+  credentials: {
     hasClientId: boolean;
     clientIdLength: number;
     clientIdValid: boolean;
     hasClientSecret: boolean;
-    secretStartsWith: string;
-    secretContainsPEMHeader: boolean;
-    secretContainsPEMFooter: boolean;
     secretLength: number;
-    secretLengthValid: boolean;
-    isLikelyValid: boolean;
+    secretValid: boolean;
   };
+  encryption: {
+    success: boolean;
+    error: string;
+  };
+  apiEndpoint: string;
   recommendation: string;
 }
 
@@ -87,16 +88,20 @@ class PerfectCorpTestService {
       
       console.log('=== Perfect Corp Configuration Test Results ===');
       console.log('📅 Timestamp:', result.configTest.timestamp);
-      console.log('🔑 Has Client ID:', result.configTest.checks.hasClientId ? '✅' : '❌');
-      console.log('🔑 Client ID Valid:', result.configTest.checks.clientIdValid ? '✅' : '❌');
-      console.log('🔐 Has Client Secret:', result.configTest.checks.hasClientSecret ? '✅' : '❌');
-      console.log('🔐 Secret Length Valid:', result.configTest.checks.secretLengthValid ? '✅' : '❌');
-      console.log('📜 PEM Format Valid:', result.configTest.checks.isLikelyValid ? '✅' : '❌');
+      console.log('🔑 Has Client ID:', result.configTest.credentials.hasClientId ? '✅' : '❌');
+      console.log('🔑 Client ID Valid:', result.configTest.credentials.clientIdValid ? '✅' : '❌');
+      console.log('🔐 Has Client Secret:', result.configTest.credentials.hasClientSecret ? '✅' : '❌');
+      console.log('🔐 Secret Length Valid:', result.configTest.credentials.secretValid ? '✅' : '❌');
+      console.log('🔒 Encryption Test:', result.configTest.encryption.success ? '✅' : '❌');
       console.log('📝 Recommendation:', result.configTest.recommendation);
       console.log('🧪 Auth Test Status:', result.authTest.status);
       
       if (result.authTest.error) {
         console.log('⚠️ Auth Error:', result.authTest.error);
+      }
+      
+      if (!result.configTest.encryption.success) {
+        console.log('🔒 Encryption Error:', result.configTest.encryption.error);
       }
       
     } catch (error) {
