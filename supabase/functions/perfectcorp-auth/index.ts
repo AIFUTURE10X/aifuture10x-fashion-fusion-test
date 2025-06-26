@@ -24,18 +24,27 @@ interface AuthResponse {
   error?: string;
 }
 
-// Perfect Corp's RSA public key - REPLACE THIS WITH THE ACTUAL PUBLIC KEY FROM PERFECT CORP
-// Get this from Perfect Corp's developer documentation or API documentation
-const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-REPLACE_WITH_ACTUAL_PERFECTCORP_RSA_PUBLIC_KEY_FROM_THEIR_DOCUMENTATION
------END PUBLIC KEY-----`;
-
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
+
+function formatPEMKey(keyData: string): string {
+  // Remove any existing headers/footers and whitespace
+  const cleanKey = keyData
+    .replace(/-----BEGIN PUBLIC KEY-----/g, '')
+    .replace(/-----END PUBLIC KEY-----/g, '')
+    .replace(/\s+/g, '');
+  
+  // Add proper PEM headers
+  return `-----BEGIN PUBLIC KEY-----\n${cleanKey}\n-----END PUBLIC KEY-----`;
+}
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
-    // Clean the public key - remove headers and whitespace
-    const keyData = publicKey
+    // Format the key properly
+    const formattedKey = formatPEMKey(publicKey);
+    console.log('Using formatted PEM key for encryption');
+    
+    // Clean the public key - remove headers and whitespace for crypto operations
+    const keyData = formattedKey
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/\s+/g, '');
@@ -104,7 +113,7 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     console.log('Generating new Perfect Corp access token...');
     console.log('Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
     
-    // Add debug logging before authentication attempt
+    // Get credentials from environment
     const clientId = Deno.env.get('PERFECTCORP_API_KEY');
     const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     
@@ -116,37 +125,36 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     });
     
     // Validate that we have real credentials
-    if (!apiKey || apiKey === 'your_api_key_here' || apiKey.includes('placeholder')) {
+    if (!clientId || clientId === 'your_api_key_here' || clientId.includes('placeholder')) {
       return {
         success: false,
-        error: 'Real Perfect Corp API key not configured. Please update your API credentials.'
+        error: 'Real Perfect Corp API key not configured. Please update your API credentials in Supabase secrets.'
       };
     }
     
-    // Check if RSA public key is still placeholder
-    if (PERFECTCORP_PUBLIC_KEY.includes('REPLACE_WITH_ACTUAL')) {
+    if (!clientSecret || clientSecret === 'your_api_secret_here' || clientSecret.includes('placeholder')) {
       return {
         success: false,
-        error: 'Perfect Corp RSA public key is still a placeholder. Please replace with the actual public key from Perfect Corp documentation.'
+        error: 'Real Perfect Corp API secret not configured. Please update your API secret in Supabase secrets.'
       };
     }
     
     // Generate unique identifier for id_token - use the correct format
     const timestamp = Date.now();
-    const dataToEncrypt = `client_id=${apiKey}&timestamp=${timestamp}`;
+    const dataToEncrypt = `client_id=${clientId}&timestamp=${timestamp}`;
     
     console.log('Generated data for encryption:', dataToEncrypt.substring(0, 30) + '...');
 
     // Encrypt the id_token using RSA
     let encryptedToken: string;
     try {
-      encryptedToken = await encryptWithRSA(dataToEncrypt, PERFECTCORP_PUBLIC_KEY);
+      encryptedToken = await encryptWithRSA(dataToEncrypt, clientSecret);
       console.log('Successfully encrypted id_token');
     } catch (encryptError) {
       console.error('Failed to encrypt id_token:', encryptError);
       return {
         success: false,
-        error: 'Failed to encrypt authentication token. Please verify the RSA public key is correct.'
+        error: 'Failed to encrypt authentication token. Please verify the RSA public key format in your PERFECTCORP_API_SECRET.'
       };
     }
 
@@ -155,7 +163,7 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     console.log('Auth URL:', PERFECTCORP_AUTH_URL);
 
     const requestBody = {
-      client_id: apiKey,
+      client_id: clientId,
       id_token: encryptedToken
     };
 
@@ -179,10 +187,10 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
         
         switch (authResponse.status) {
           case 400:
-            errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue';
+            errorMessage = 'Bad Request: Invalid client_id, malformed id_token, or RSA encryption issue. Check your API credentials format.';
             break;
           case 401:
-            errorMessage = 'Unauthorized: Invalid API credentials. Please verify your Perfect Corp API key';
+            errorMessage = 'Unauthorized: Invalid API credentials. Please verify your Perfect Corp API key and secret.';
             break;
           case 403:
             errorMessage = 'Forbidden: API key does not have required permissions';
@@ -274,22 +282,22 @@ serve(async (req) => {
       checks: {
         hasClientId: !!clientId,
         clientIdLength: clientId?.length || 0,
-        clientIdValid: (clientId?.length || 0) > 10,
+        clientIdValid: (clientId?.length || 0) > 10 && !clientId?.includes('placeholder'),
         hasClientSecret: !!clientSecret,
         secretStartsWith: clientSecret?.substring(0, 20) + '...' || 'NOT SET',
         secretContainsPEMHeader: clientSecret?.includes('-----BEGIN PUBLIC KEY-----') || false,
         secretContainsPEMFooter: clientSecret?.includes('-----END PUBLIC KEY-----') || false,
         secretLength: clientSecret?.length || 0,
-        secretLengthValid: (clientSecret?.length || 0) > 400,
-        isLikelyValid: (clientSecret?.length || 0) > 400 && 
-                       clientSecret?.includes('-----BEGIN PUBLIC KEY-----') && 
-                       clientSecret?.includes('-----END PUBLIC KEY-----')
+        secretLengthValid: (clientSecret?.length || 0) > 200,
+        isLikelyValid: (clientSecret?.length || 0) > 200 && 
+                       !clientSecret?.includes('placeholder') &&
+                       !clientSecret?.includes('REPLACE_WITH_ACTUAL')
       },
-      recommendation: ((clientSecret?.length || 0) > 400 && 
-                      clientSecret?.includes('-----BEGIN PUBLIC KEY-----') && 
-                      clientSecret?.includes('-----END PUBLIC KEY-----'))
+      recommendation: ((clientSecret?.length || 0) > 200 && 
+                      !clientSecret?.includes('placeholder') &&
+                      !clientSecret?.includes('REPLACE_WITH_ACTUAL'))
                       ? '✅ Configuration appears valid'
-                      : '❌ Secret key may be incorrectly formatted - should be RSA public key in PEM format'
+                      : '❌ Please check your PERFECTCORP_API_KEY and PERFECTCORP_API_SECRET in Supabase secrets'
     };
     
     return new Response(
