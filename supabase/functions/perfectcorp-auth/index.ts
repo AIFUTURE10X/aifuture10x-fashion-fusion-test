@@ -185,12 +185,17 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       const encryptedToken = await encryptWithRSA(dataToEncrypt, clientSecret);
 
       // Make authentication request to Perfect Corp
-      console.log('Sending authentication request to Perfect Corp...');
+      console.log('🚀 CRITICAL: About to make POST request to Perfect Corp');
+      console.log('🎯 URL:', PERFECTCORP_AUTH_URL);
+      console.log('📝 Method: POST');
+      console.log('📋 Headers: Content-Type: application/json, Accept: application/json');
       
       const requestBody = {
         client_id: clientId,
         id_token: encryptedToken
       };
+
+      console.log('📤 Request body structure:', Object.keys(requestBody));
 
       const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
         method: 'POST',
@@ -201,14 +206,22 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
         body: JSON.stringify(requestBody),
       });
 
-      console.log(`Perfect Corp auth response status: ${authResponse.status}`);
+      console.log(`📥 Perfect Corp auth response status: ${authResponse.status}`);
+      console.log(`📥 Perfect Corp auth response headers:`, Object.fromEntries(authResponse.headers.entries()));
 
       if (!authResponse.ok) {
         let errorMessage = `Authentication failed with status ${authResponse.status}`;
         
         try {
           const errorData = await authResponse.json();
-          console.error('Perfect Corp auth error response:', errorData);
+          console.error('❌ Perfect Corp auth error response:', JSON.stringify(errorData, null, 2));
+          
+          // Check for the specific 405 error
+          if (authResponse.status === 405) {
+            console.error('🚨 METHOD NOT ALLOWED ERROR DETECTED');
+            console.error('🔍 This means Perfect Corp received a GET request instead of POST');
+            console.error('🔍 Check if there are any redirects or middleware interfering');
+          }
           
           switch (authResponse.status) {
             case 400:
@@ -220,6 +233,9 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
             case 403:
               errorMessage = 'Forbidden: API key does not have required permissions';
               break;
+            case 405:
+              errorMessage = 'Method Not Allowed: Perfect Corp API received GET request instead of POST. This indicates a configuration or redirect issue.';
+              break;
             case 500:
               errorMessage = 'Internal Server Error: Perfect Corp service unavailable';
               break;
@@ -228,6 +244,8 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
           }
         } catch (e) {
           console.error('Could not parse error response:', e);
+          const errorText = await authResponse.text();
+          console.error('❌ Raw error response:', errorText);
         }
 
         return {
@@ -294,13 +312,18 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
 }
 
 serve(async (req) => {
+  console.log(`🌐 Incoming request: ${req.method} ${req.url}`);
+  console.log(`🔗 Request headers:`, Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('✅ Handling OPTIONS/CORS preflight request');
     return new Response('ok', { headers: corsHeaders });
   }
 
   // Test endpoint for configuration validation
   if (req.url.endsWith('/test')) {
+    console.log('🧪 Test endpoint called');
     const clientId = Deno.env.get('PERFECTCORP_API_KEY');
     const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
     
@@ -335,6 +358,7 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
+    console.error(`❌ Invalid method: ${req.method} - Expected POST`);
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
       { 
@@ -348,10 +372,11 @@ serve(async (req) => {
     // For backwards compatibility, accept request body but use environment variables
     const body = await req.json().catch(() => ({}));
     
-    console.log('Processing Perfect Corp authentication request...');
+    console.log('🔐 Processing Perfect Corp authentication request...');
     const result = await authenticateWithPerfectCorp();
 
     const statusCode = result.success ? 200 : 400;
+    console.log(`📤 Returning response with status: ${statusCode}`);
     
     return new Response(
       JSON.stringify(result),

@@ -2,12 +2,6 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-// Perfect Corp's RSA public key - REPLACE THIS WITH THE ACTUAL PUBLIC KEY FROM PERFECT CORP
-// Get this from Perfect Corp's developer documentation or API documentation
-const PERFECTCORP_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-REPLACE_WITH_ACTUAL_PERFECTCORP_RSA_PUBLIC_KEY_FROM_THEIR_DOCUMENTATION
------END PUBLIC KEY-----`;
-
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
     // Clean the public key - remove headers and whitespace
@@ -57,41 +51,40 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
 }
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
-  console.log('Step 1: Authenticating with Perfect Corp S2S API using RSA encryption...');
+  console.log('🔐 Proxy Auth: Step 1: Authenticating with Perfect Corp S2S API using RSA encryption...');
   
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
   
   if (mockMode) {
-    console.log('Running in mock mode - using test token');
+    console.log('🧪 Proxy Auth: Running in mock mode - using test token');
     return { accessToken: 'mock_token_for_testing' };
   }
 
   // Check for existing valid token using the database function
-  // Note: Edge Functions use service_role which has access through RLS policies
   try {
-    console.log('Checking for existing valid token...');
+    console.log('🔍 Proxy Auth: Checking for existing valid token...');
     const { data: tokenData, error: tokenError } = await supabase.rpc('get_valid_perfect_corp_token');
     
     if (tokenError) {
-      console.warn('Error checking for existing token:', tokenError);
+      console.warn('⚠️ Proxy Auth: Error checking for existing token:', tokenError);
     } else if (tokenData && tokenData.length > 0) {
       const token = tokenData[0];
-      console.log(`Found valid token, expires in ${token.seconds_until_expiry} seconds`);
+      console.log(`✅ Proxy Auth: Found valid token, expires in ${token.seconds_until_expiry} seconds`);
       return { accessToken: token.access_token };
     } else {
-      console.log('No valid token found, proceeding with authentication...');
+      console.log('📭 Proxy Auth: No valid token found, proceeding with authentication...');
     }
   } catch (error) {
-    console.warn('Failed to check existing token, proceeding with authentication:', error);
+    console.warn('⚠️ Proxy Auth: Failed to check existing token, proceeding with authentication:', error);
   }
   
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
   
   try {
-    console.log('Attempting Perfect Corp S2S authentication with RSA encryption...');
-    console.log('Auth URL:', authUrl);
-    console.log('Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
-    console.log('Using API Secret:', apiSecret ? 'PROVIDED' : 'NOT PROVIDED');
+    console.log('🚀 Proxy Auth: Attempting Perfect Corp S2S authentication with RSA encryption...');
+    console.log('🎯 Proxy Auth: Auth URL:', authUrl);
+    console.log('🔑 Proxy Auth: Using API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NOT PROVIDED');
+    console.log('🗝️ Proxy Auth: Using API Secret:', apiSecret ? 'PROVIDED' : 'NOT PROVIDED');
     
     // Validate that we have real credentials
     if (!apiKey || apiKey === 'your_api_key_here' || apiKey.includes('placeholder')) {
@@ -102,24 +95,19 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       throw new Error('Real Perfect Corp API secret not configured. Please update PERFECTCORP_API_SECRET in Supabase secrets.');
     }
     
-    // Check if RSA public key is still placeholder
-    if (PERFECTCORP_PUBLIC_KEY.includes('REPLACE_WITH_ACTUAL')) {
-      throw new Error('Perfect Corp RSA public key is still a placeholder. Please replace with the actual public key from Perfect Corp documentation.');
-    }
-    
     // Generate correct data format for encryption
     const timestamp = Date.now();
     const dataToEncrypt = `client_id=${apiKey}&timestamp=${timestamp}`;
     
-    console.log('Generated data for RSA encryption');
+    console.log('🔐 Proxy Auth: Generated data for RSA encryption');
 
     // Encrypt the id_token using RSA
     let encryptedToken: string;
     try {
-      encryptedToken = await encryptWithRSA(dataToEncrypt, PERFECTCORP_PUBLIC_KEY);
-      console.log('Successfully encrypted id_token with RSA');
+      encryptedToken = await encryptWithRSA(dataToEncrypt, apiSecret);
+      console.log('✅ Proxy Auth: Successfully encrypted id_token with RSA');
     } catch (encryptError) {
-      console.error('RSA encryption failed:', encryptError);
+      console.error('❌ Proxy Auth: RSA encryption failed:', encryptError);
       throw new Error(`Failed to encrypt authentication token: ${encryptError.message}`);
     }
     
@@ -129,7 +117,11 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       id_token: encryptedToken
     };
     
-    console.log('Sending authentication request to Perfect Corp...');
+    console.log('📤 Proxy Auth: CRITICAL - About to make POST request to Perfect Corp');
+    console.log('🎯 Proxy Auth: URL:', authUrl);
+    console.log('📝 Proxy Auth: Method: POST');
+    console.log('📋 Proxy Auth: Headers: Content-Type: application/json, Accept: application/json');
+    console.log('📦 Proxy Auth: Body keys:', Object.keys(requestBody));
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
@@ -140,11 +132,12 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       body: JSON.stringify(requestBody),
     });
 
-    console.log(`S2S Auth response status: ${authResponse.status}`);
+    console.log(`📥 Proxy Auth: S2S Auth response status: ${authResponse.status}`);
+    console.log(`📥 Proxy Auth: Response headers:`, Object.fromEntries(authResponse.headers.entries()));
     
     if (authResponse.ok) {
       const authData = await authResponse.json();
-      console.log('S2S Auth response data keys:', Object.keys(authData));
+      console.log('📊 Proxy Auth: S2S Auth response data keys:', Object.keys(authData));
       
       // Handle different response formats
       let accessToken: string | null = null;
@@ -159,10 +152,9 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       }
       
       if (accessToken) {
-        console.log('S2S Authentication successful with RSA encryption');
+        console.log('✅ Proxy Auth: S2S Authentication successful with RSA encryption');
         
         // Store the new token in the database
-        // Note: Using service_role client, which has access through RLS policies
         try {
           const expiresAt = new Date(Date.now() + (expiresIn * 1000)).toISOString();
           
@@ -178,23 +170,23 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
             });
             
           if (insertError) {
-            console.warn('Failed to store token in database:', insertError);
+            console.warn('⚠️ Proxy Auth: Failed to store token in database:', insertError);
           } else {
-            console.log('Token stored successfully, expires at:', expiresAt);
+            console.log('💾 Proxy Auth: Token stored successfully, expires at:', expiresAt);
           }
         } catch (storeError) {
-          console.warn('Error storing token:', storeError);
+          console.warn('⚠️ Proxy Auth: Error storing token:', storeError);
         }
         
         return { accessToken };
       } else {
-        console.error('No access token found in response:', authData);
+        console.error('❌ Proxy Auth: No access token found in response:', authData);
         throw new Error('No access token received from Perfect Corp API');
       }
     }
     
     const errorText = await authResponse.text();
-    console.error('S2S Auth failed response:', authResponse.status, errorText);
+    console.error('❌ Proxy Auth: S2S Auth failed response:', authResponse.status, errorText);
     
     // Enhanced error handling
     let errorMessage = 'Perfect Corp S2S API authentication failed';
@@ -208,6 +200,10 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       case 403:
         errorMessage = 'Forbidden: API key does not have required permissions';
         break;
+      case 405:
+        errorMessage = 'Method Not Allowed: Perfect Corp received GET request instead of POST. Check for redirects or middleware issues.';
+        console.error('🚨 Proxy Auth: 405 METHOD NOT ALLOWED - This indicates Perfect Corp received a GET request instead of POST');
+        break;
       case 500:
         errorMessage = 'Internal Server Error: Perfect Corp service unavailable';
         break;
@@ -216,7 +212,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     throw new Error(errorMessage);
     
   } catch (error) {
-    console.error('S2S Auth error:', error);
+    console.error('❌ Proxy Auth: S2S Auth error:', error);
     throw new Error(`Perfect Corp S2S API authentication failed: ${error.message}`);
   }
 }
