@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from '../_shared/cors.ts';
 
 interface AuthRequest {
@@ -7,8 +8,13 @@ interface AuthRequest {
 }
 
 interface PerfectCorpAuthResponse {
-  access_token: string;
-  expires_in: number;
+  result?: {
+    access_token: string;
+    expires_in?: number;
+  };
+  access_token?: string;
+  expires_in?: number;
+  error?: string;
 }
 
 interface AuthResponse {
@@ -25,9 +31,6 @@ REPLACE_WITH_ACTUAL_PERFECTCORP_RSA_PUBLIC_KEY_FROM_THEIR_DOCUMENTATION
 -----END PUBLIC KEY-----`;
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
-
-// Cache for storing access tokens
-const tokenCache = new Map<string, { token: string; expiresAt: number }>();
 
 async function encryptWithRSA(data: string, publicKey: string): Promise<string> {
   try {
@@ -79,14 +82,27 @@ async function encryptWithRSA(data: string, publicKey: string): Promise<string> 
 
 async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse> {
   try {
-    // Check cache first
-    const cached = tokenCache.get(apiKey);
-    if (cached && cached.expiresAt > Date.now()) {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    // Check for cached token first
+    const { data: existingToken } = await supabase
+      .from('perfect_corp_tokens')
+      .select('*')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingToken) {
       console.log('Using cached access token');
+      const expiresIn = Math.floor((new Date(existingToken.expires_at).getTime() - Date.now()) / 1000);
       return {
         success: true,
-        accessToken: cached.token,
-        expiresIn: Math.floor((cached.expiresAt - Date.now()) / 1000)
+        accessToken: existingToken.access_token,
+        expiresIn: Math.max(expiresIn, 0)
       };
     }
 
@@ -109,16 +125,16 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
       };
     }
     
-    // Generate unique identifier for id_token
+    // Generate unique identifier for id_token - use the correct format
     const timestamp = Date.now();
-    const uniqueId = `${apiKey}_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+    const dataToEncrypt = `client_id=${apiKey}&timestamp=${timestamp}`;
     
-    console.log('Generated unique ID for token:', uniqueId.substring(0, 20) + '...');
+    console.log('Generated data for encryption:', dataToEncrypt.substring(0, 30) + '...');
 
     // Encrypt the id_token using RSA
     let encryptedToken: string;
     try {
-      encryptedToken = await encryptWithRSA(uniqueId, PERFECTCORP_PUBLIC_KEY);
+      encryptedToken = await encryptWithRSA(dataToEncrypt, PERFECTCORP_PUBLIC_KEY);
       console.log('Successfully encrypted id_token');
     } catch (encryptError) {
       console.error('Failed to encrypt id_token:', encryptError);
@@ -182,20 +198,47 @@ async function authenticateWithPerfectCorp(apiKey: string): Promise<AuthResponse
     }
 
     const authData: PerfectCorpAuthResponse = await authResponse.json();
+    console.log('Perfect Corp authentication response keys:', Object.keys(authData));
+
+    // Handle different response formats
+    let accessToken: string;
+    let expiresIn: number = 7200; // Default 2 hours
+
+    if (authData.result?.access_token) {
+      accessToken = authData.result.access_token;
+      expiresIn = authData.result.expires_in || 7200;
+    } else if (authData.access_token) {
+      accessToken = authData.access_token;
+      expiresIn = authData.expires_in || 7200;
+    } else {
+      console.error('No access token found in response:', authData);
+      return {
+        success: false,
+        error: 'No access token received from Perfect Corp API'
+      };
+    }
+
     console.log('Perfect Corp authentication successful');
-    console.log('Token expires in:', authData.expires_in, 'seconds');
+    console.log('Token expires in:', expiresIn, 'seconds');
 
     // Cache the token (subtract 60 seconds for safety margin)
-    const expiresAt = Date.now() + ((authData.expires_in - 60) * 1000);
-    tokenCache.set(apiKey, {
-      token: authData.access_token,
-      expiresAt
-    });
+    const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000));
+    
+    try {
+      await supabase.from('perfect_corp_tokens').insert({
+        access_token: accessToken,
+        expires_at: expiresAt.toISOString()
+      });
+      console.log('Token cached successfully');
+    } catch (cacheError) {
+      console.warn('Failed to cache token:', cacheError);
+      // Continue anyway, token is still valid
+    }
 
     return {
       success: true,
-      accessToken: authData.access_token,
-      expiresIn: authData.expires_in
+      accessToken: accessToken,
+      expiresIn: expiresIn
     };
 
   } catch (error) {

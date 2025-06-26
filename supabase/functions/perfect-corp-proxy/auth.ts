@@ -88,16 +88,16 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       throw new Error('Perfect Corp RSA public key is still a placeholder. Please replace with the actual public key from Perfect Corp documentation.');
     }
     
-    // Generate unique identifier for id_token
+    // Generate correct data format for encryption
     const timestamp = Date.now();
-    const uniqueId = `${apiKey}_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+    const dataToEncrypt = `client_id=${apiKey}&timestamp=${timestamp}`;
     
-    console.log('Generated unique ID for RSA encryption');
+    console.log('Generated data for RSA encryption');
 
     // Encrypt the id_token using RSA
     let encryptedToken: string;
     try {
-      encryptedToken = await encryptWithRSA(uniqueId, PERFECTCORP_PUBLIC_KEY);
+      encryptedToken = await encryptWithRSA(dataToEncrypt, PERFECTCORP_PUBLIC_KEY);
       console.log('Successfully encrypted id_token with RSA');
     } catch (encryptError) {
       console.error('RSA encryption failed:', encryptError);
@@ -127,9 +127,21 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       const authData = await authResponse.json();
       console.log('S2S Auth response data keys:', Object.keys(authData));
       
-      if (authData.access_token) {
+      // Handle different response formats
+      let accessToken: string | null = null;
+      
+      if (authData.result?.access_token) {
+        accessToken = authData.result.access_token;
+      } else if (authData.access_token) {
+        accessToken = authData.access_token;
+      }
+      
+      if (accessToken) {
         console.log('S2S Authentication successful with RSA encryption');
-        return { accessToken: authData.access_token };
+        return { accessToken };
+      } else {
+        console.error('No access token found in response:', authData);
+        throw new Error('No access token received from Perfect Corp API');
       }
     }
     
