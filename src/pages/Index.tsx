@@ -6,8 +6,10 @@ import { ShareModal } from '@/components/ShareModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
-import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
+import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { perfectCorpTest } from '@/services/perfectCorpTest';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
@@ -16,7 +18,9 @@ const Index = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
   const [showUploadComponent, setShowUploadComponent] = useState(false);
+  const [isTestingConfig, setIsTestingConfig] = useState(false);
   const { theme } = useTheme();
+  const { toast } = useToast();
 
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
@@ -53,6 +57,38 @@ const Index = () => {
     setShowUploadComponent(false);
   };
 
+  const handleTestConfiguration = async () => {
+    setIsTestingConfig(true);
+    try {
+      console.log('🧪 Starting Perfect Corp configuration test...');
+      const result = await perfectCorpTest.testConfiguration();
+      
+      // Show detailed results in toast
+      const configStatus = result.configTest.checks.isLikelyValid ? '✅ Valid' : '❌ Invalid';
+      const authStatus = result.authTest.status === 'success' ? '✅ Success' : '❌ Failed';
+      
+      toast({
+        title: "Perfect Corp Configuration Test",
+        description: `Config: ${configStatus} | Auth: ${authStatus}`,
+        duration: 5000,
+      });
+      
+      // Also log to console for detailed inspection
+      await perfectCorpTest.logConfigurationStatus();
+      
+    } catch (error) {
+      console.error('❌ Configuration test failed:', error);
+      toast({
+        title: "Configuration Test Failed",
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsTestingConfig(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative">
       {/* Animated Silk Background */}
@@ -75,9 +111,26 @@ const Index = () => {
         </div>
       )}
 
+      {/* Test Configuration Button - Only show on home page during development */}
+      {!showUploadComponent && !userPhoto && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button 
+            onClick={handleTestConfiguration}
+            disabled={isTestingConfig}
+            variant="outline" 
+            className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 hover:bg-yellow-500/30 hover:text-white backdrop-blur-sm shadow-lg"
+            size="sm"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            {isTestingConfig ? 'Testing...' : 'Test API Config'}
+          </Button>
+        </div>
+      )}
+
       {/* Hero Section - Only show when not showing upload component and no photo */}
       {!showUploadComponent && !userPhoto && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+          
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
             <div className="mb-6">
@@ -99,6 +152,7 @@ const Index = () => {
             </p>
           </div>
 
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 mt-32">
             <div className="relative group">
               {/* Spinning border effect */}
