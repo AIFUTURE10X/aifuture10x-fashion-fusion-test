@@ -27,7 +27,7 @@ interface AuthResponse {
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
 
-// RSA encryption using Web Crypto API - Enhanced version
+// Enhanced RSA encryption with better key format handling
 async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
     console.log('🔐 [RSA] Starting encryption process...');
@@ -64,83 +64,91 @@ async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string
       throw new Error(`Invalid base64 in RSA key: ${decodeError.message}`);
     }
 
-    // Import the public key with enhanced error handling
-    let publicKey: CryptoKey;
-    try {
-      // Try SPKI format first (most common)
-      publicKey = await crypto.subtle.importKey(
-        'spki',
-        keyData,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-256',
-        },
-        false,
-        ['encrypt']
-      );
-      console.log('✅ [RSA] Successfully imported RSA key (SPKI format)');
-    } catch (spkiError) {
-      console.log('⚠️ [RSA] SPKI import failed, trying SHA-1 hash...');
-      try {
-        // Try different hash algorithms
-        publicKey = await crypto.subtle.importKey(
-          'spki',
-          keyData,
-          {
-            name: 'RSA-OAEP',
-            hash: 'SHA-1',
-          },
-          false,
-          ['encrypt']
-        );
-        console.log('✅ [RSA] Successfully imported RSA key (SHA-1 hash)');
-      } catch (sha1Error) {
-        console.error('❌ [RSA] Both formats failed:', spkiError, sha1Error);
-        throw new Error(`Failed to import RSA key. Ensure it's a valid RSA public key in SPKI/PKCS#8 format. Original error: ${spkiError.message}`);
-      }
+    // Determine key size and max payload size
+    const keySize = keyData.length;
+    let maxPayloadSize: number;
+    let keyType: string;
+    
+    if (keySize <= 162) { // RSA-1024
+      maxPayloadSize = 86; // RSA-1024 with OAEP SHA-256 padding
+      keyType = 'RSA-1024';
+    } else if (keySize <= 294) { // RSA-2048
+      maxPayloadSize = 190; // RSA-2048 with OAEP SHA-256 padding
+      keyType = 'RSA-2048';
+    } else {
+      maxPayloadSize = 446; // RSA-4096 with OAEP SHA-256 padding
+      keyType = 'RSA-4096';
     }
+    
+    console.log(`🔑 [RSA] Detected key type: ${keyType}, max payload: ${maxPayloadSize} bytes`);
 
-    // Encrypt the payload with enhanced error handling
+    // Check payload size
     const encoder = new TextEncoder();
     const data = encoder.encode(payload);
     console.log('🔐 [RSA] Payload encoded, length:', data.length);
     
-    // Check payload size against key size
-    if (data.length > 190) { // RSA-2048 with OAEP padding limit
-      throw new Error(`Payload too large for RSA encryption: ${data.length} bytes (max ~190 bytes)`);
-    }
-    
-    let encrypted: ArrayBuffer;
-    try {
-      encrypted = await crypto.subtle.encrypt(
-        {
-          name: 'RSA-OAEP',
-        },
-        publicKey,
-        data
-      );
-      console.log('✅ [RSA] Encryption successful, result length:', encrypted.byteLength);
-    } catch (encryptError) {
-      console.error('❌ [RSA] Encryption failed:', encryptError);
-      console.error('❌ [RSA] Payload length:', data.length);
-      console.error('❌ [RSA] Key info available:', !!publicKey);
-      throw new Error(`RSA encryption failed: ${encryptError.message}. Check that the key is valid and payload size is appropriate.`);
+    if (data.length > maxPayloadSize) {
+      throw new Error(`Payload too large for ${keyType}: ${data.length} bytes (max ${maxPayloadSize} bytes)`);
     }
 
-    // Convert to base64
-    const encryptedArray = new Uint8Array(encrypted);
-    const result = btoa(String.fromCharCode(...encryptedArray));
-    console.log('✅ [RSA] Final encrypted token length:', result.length);
-    console.log('✅ [RSA] Encrypted token preview:', result.substring(0, 50) + '...');
+    // Try multiple encryption approaches
+    const encryptionMethods = [
+      { name: 'RSA-OAEP with SHA-256', hash: 'SHA-256' },
+      { name: 'RSA-OAEP with SHA-1', hash: 'SHA-1' },
+    ];
+
+    for (const method of encryptionMethods) {
+      try {
+        console.log(`🔑 [RSA] Trying ${method.name}...`);
+        
+        // Import the public key
+        const publicKey = await crypto.subtle.importKey(
+          'spki',
+          keyData,
+          {
+            name: 'RSA-OAEP',
+            hash: method.hash,
+          },
+          false,
+          ['encrypt']
+        );
+        
+        console.log(`✅ [RSA] Successfully imported key with ${method.name}`);
+
+        // Encrypt the payload
+        const encrypted = await crypto.subtle.encrypt(
+          {
+            name: 'RSA-OAEP',
+          },
+          publicKey,
+          data
+        );
+        
+        console.log('✅ [RSA] Encryption successful, result length:', encrypted.byteLength);
+
+        // Convert to base64
+        const encryptedArray = new Uint8Array(encrypted);
+        const result = btoa(String.fromCharCode(...encryptedArray));
+        console.log('✅ [RSA] Final encrypted token length:', result.length);
+        console.log('✅ [RSA] Encrypted token preview:', result.substring(0, 50) + '...');
+        
+        return result;
+        
+      } catch (methodError) {
+        console.log(`⚠️ [RSA] ${method.name} failed:`, methodError.message);
+        continue;
+      }
+    }
     
-    return result;
+    throw new Error('All RSA encryption methods failed. The key may be invalid or incompatible.');
+    
   } catch (error) {
     console.error('❌ [RSA] Complete encryption process failed:', error);
     throw new Error(`RSA encryption failed: ${error.message}`);
   }
 }
 
-// Enhanced validation function
+// Enhanced validation with better key format detection
 function validateCredentials(apiKey: string, apiSecret: string): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
   
@@ -175,7 +183,25 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
     }
     
     if (cleanKey.length < 100) {
-      issues.push(`API secret too short: ${cleanKey.length} characters (RSA keys are typically 300+ characters)`);
+      issues.push(`API secret too short: ${cleanKey.length} characters (RSA keys are typically 200+ characters)`);
+    }
+    
+    // Additional validation for common key sizes
+    try {
+      const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
+      const keySize = keyData.length;
+      
+      if (keySize < 100) {
+        issues.push(`RSA key data too small: ${keySize} bytes (expected 162+ for RSA-1024, 294+ for RSA-2048)`);
+      } else if (keySize <= 162) {
+        console.log('🔑 [Validation] Detected RSA-1024 key');
+      } else if (keySize <= 294) {
+        console.log('🔑 [Validation] Detected RSA-2048 key');
+      } else {
+        console.log('🔑 [Validation] Detected RSA-4096+ key');
+      }
+    } catch (validationError) {
+      issues.push(`Key validation failed: ${validationError.message}`);
     }
   }
   

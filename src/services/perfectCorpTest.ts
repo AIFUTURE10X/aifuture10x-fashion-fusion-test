@@ -12,13 +12,18 @@ interface ConfigTestResult {
     secretLength: number;
     secretValid: boolean;
   };
-  authentication: {
-    simpleAuth: {
+  authentication?: {
+    simpleAuth?: {
       attempted: boolean;
       successful: boolean;
       error: string | null;
     };
-    hmacAuth: {
+    hmacAuth?: {
+      attempted: boolean;
+      successful: boolean;
+      error: string | null;
+    };
+    rsaAuth?: {
       attempted: boolean;
       successful: boolean;
       error: string | null;
@@ -147,10 +152,21 @@ class PerfectCorpTestService {
       console.log('🔐 Has Client Secret:', result.configTest.credentials.hasClientSecret ? '✅' : '❌');
       console.log('🔐 Secret Length Valid:', result.configTest.credentials.secretValid ? '✅' : '❌');
       
-      // Show authentication test results
+      // Show authentication test results with safe property access
       if (result.configTest.authentication) {
-        console.log('🔒 Simple Auth:', result.configTest.authentication.simpleAuth.successful ? '✅' : '❌');
-        console.log('🔐 HMAC Auth:', result.configTest.authentication.hmacAuth.successful ? '✅' : '❌');
+        const auth = result.configTest.authentication;
+        
+        if (auth.simpleAuth) {
+          console.log('🔒 Simple Auth:', auth.simpleAuth.successful ? '✅' : '❌');
+        }
+        
+        if (auth.hmacAuth) {
+          console.log('🔐 HMAC Auth:', auth.hmacAuth.successful ? '✅' : '❌');
+        }
+        
+        if (auth.rsaAuth) {
+          console.log('🔑 RSA Auth:', auth.rsaAuth.successful ? '✅' : '❌');
+        }
       }
       
       console.log('📝 Recommendation:', result.configTest.recommendation);
@@ -163,14 +179,25 @@ class PerfectCorpTestService {
       // Additional diagnostics if available
       if (result.diagnostics) {
         console.log('\n=== DETAILED DIAGNOSTICS ===');
-        console.log('Network Connectivity:', result.diagnostics.networkConnectivity.canReach ? '✅' : '❌');
+        console.log('Network Connectivity:', result.diagnostics.networkConnectivity?.canReach ? '✅' : '❌');
         
         if (result.diagnostics.authenticationMethods) {
-          console.log('Simple Auth Method:', result.diagnostics.authenticationMethods.simpleAuth.successful ? '✅' : '❌');
-          console.log('HMAC Auth Method:', result.diagnostics.authenticationMethods.hmacAuth.successful ? '✅' : '❌');
+          const authMethods = result.diagnostics.authenticationMethods;
+          
+          if (authMethods.simpleAuth) {
+            console.log('Simple Auth Method:', authMethods.simpleAuth.successful ? '✅' : '❌');
+          }
+          
+          if (authMethods.hmacAuth) {
+            console.log('HMAC Auth Method:', authMethods.hmacAuth.successful ? '✅' : '❌');
+          }
+          
+          if (authMethods.rsaAuth) {
+            console.log('RSA Auth Method:', authMethods.rsaAuth.successful ? '✅' : '❌');
+          }
         }
         
-        if (result.diagnostics.recommendations.length > 0) {
+        if (result.diagnostics.recommendations && result.diagnostics.recommendations.length > 0) {
           console.log('\n=== RECOMMENDATIONS ===');
           result.diagnostics.recommendations.forEach((rec: string) => console.log(rec));
         }
