@@ -246,6 +246,14 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('✅ [Auth] RSA encryption successful');
     console.log('🎫 [Auth] ID Token length:', idToken.length);
     
+    // FIXED: Send client_id as separate field alongside encrypted id_token
+    const requestBody = {
+      client_id: apiKey,
+      id_token: idToken
+    };
+    
+    console.log('📤 [Auth] Request body structure:', Object.keys(requestBody));
+    
     const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
@@ -253,9 +261,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         'Accept': 'application/json',
         'User-Agent': 'Supabase-Edge-Function/1.0',
       },
-      body: JSON.stringify({
-        id_token: idToken
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     console.log(`📥 [Auth] Response: ${authResponse.status} ${authResponse.statusText}`);

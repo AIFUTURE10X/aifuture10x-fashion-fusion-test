@@ -305,7 +305,9 @@ async function runDiagnostics(): Promise<any> {
         const idToken = await rsaEncrypt(payload, clientSecret);
         console.log('✅ [Diagnostics] RSA encryption successful');
         
+        // FIXED: Send client_id as separate field alongside encrypted id_token
         const authBody = {
+          client_id: clientId,
           id_token: idToken
         };
         
@@ -425,6 +427,14 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       console.log('✅ [Auth] RSA encryption successful');
       console.log('🎫 [Auth] ID Token length:', idToken.length);
       
+      // FIXED: Send client_id as separate field alongside encrypted id_token
+      const requestBody = {
+        client_id: clientId,
+        id_token: idToken
+      };
+      
+      console.log('📤 [Auth] Request body structure:', Object.keys(requestBody));
+      
       const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
         method: 'POST',
         headers: {
@@ -432,9 +442,7 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
           'Accept': 'application/json',
           'User-Agent': 'Supabase-Edge-Function/1.0',
         },
-        body: JSON.stringify({
-          id_token: idToken
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log(`📥 [Auth] Response: ${authResponse.status} ${authResponse.statusText}`);
