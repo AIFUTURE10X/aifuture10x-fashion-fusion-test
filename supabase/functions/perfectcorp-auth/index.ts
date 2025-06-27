@@ -291,7 +291,16 @@ async function runDiagnostics(): Promise<any> {
       try {
         console.log('🔑 [Diagnostics] Testing RSA encryption...');
         const timestamp = Date.now();
-        const payload = `client_id=${clientId}&timestamp=${timestamp}`;
+        
+        // FIXED: Use proper JSON format for the payload as Perfect Corp expects
+        const payloadObj = {
+          client_id: clientId,
+          timestamp: timestamp.toString()
+        };
+        const payload = JSON.stringify(payloadObj);
+        
+        console.log('📝 [Diagnostics] Payload object:', payloadObj);
+        console.log('📝 [Diagnostics] JSON payload:', payload);
         
         const idToken = await rsaEncrypt(payload, clientSecret);
         console.log('✅ [Diagnostics] RSA encryption successful');
@@ -400,12 +409,17 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
     console.log('🔐 [Auth] RSA key length:', clientSecret!.length);
 
     try {
-      // Create the payload to encrypt (following Perfect Corp's sample code exactly)
+      // FIXED: Create proper JSON payload as Perfect Corp expects
       const timestamp = Date.now();
-      const payload = `client_id=${clientId}&timestamp=${timestamp}`;
+      const payloadObj = {
+        client_id: clientId,
+        timestamp: timestamp.toString()
+      };
+      const payload = JSON.stringify(payloadObj);
       
+      console.log('📝 [Auth] Payload object:', payloadObj);
+      console.log('📝 [Auth] JSON payload:', payload);
       console.log('🔒 [Auth] Encrypting payload with RSA...');
-      console.log('📝 [Auth] Payload:', payload);
       
       const idToken = await rsaEncrypt(payload, clientSecret!);
       console.log('✅ [Auth] RSA encryption successful');

@@ -229,12 +229,17 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Create the payload to encrypt (following Perfect Corp's sample code exactly)
+    // FIXED: Create proper JSON payload as Perfect Corp expects
     const timestamp = Date.now();
-    const payload = `client_id=${apiKey}&timestamp=${timestamp}`;
+    const payloadObj = {
+      client_id: apiKey,
+      timestamp: timestamp.toString()
+    };
+    const payload = JSON.stringify(payloadObj);
     
+    console.log('📝 [Auth] Payload object:', payloadObj);
+    console.log('📝 [Auth] JSON payload:', payload);
     console.log('🔒 [Auth] Encrypting payload with RSA...');
-    console.log('📝 [Auth] Payload:', payload);
     
     // Encrypt the payload using the RSA public key
     const idToken = await rsaEncrypt(payload, apiSecret);
