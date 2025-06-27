@@ -5,50 +5,100 @@ import { PERFECTCORP_BASE_URL } from './constants.ts';
 // RSA encryption using Web Crypto API
 async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
+    console.log('🔐 [RSA] Starting encryption process...');
+    console.log('🔐 [RSA] Payload to encrypt:', payload);
+    console.log('🔐 [RSA] Public key preview:', publicKeyPem.substring(0, 100) + '...');
+    
+    // First, try to detect and fix the PEM format
+    let cleanKey = publicKeyPem.trim();
+    
+    // If it doesn't start with BEGIN, try to construct proper PEM format
+    if (!cleanKey.includes('-----BEGIN')) {
+      console.log('🔧 [RSA] Key missing PEM headers, attempting to add them...');
+      // This might be a raw base64 key, let's try to format it properly
+      cleanKey = `-----BEGIN PUBLIC KEY-----\n${cleanKey}\n-----END PUBLIC KEY-----`;
+      console.log('🔧 [RSA] Formatted key preview:', cleanKey.substring(0, 100) + '...');
+    }
+    
     // Clean up the PEM format
-    const cleanKey = publicKeyPem
+    const keyContent = cleanKey
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/\n/g, '')
       .replace(/\r/g, '')
+      .replace(/\s/g, '')
       .trim();
 
+    console.log('🔐 [RSA] Cleaned key length:', keyContent.length);
+    console.log('🔐 [RSA] Cleaned key preview:', keyContent.substring(0, 50) + '...');
+
+    if (keyContent.length === 0) {
+      throw new Error('Empty key content after cleaning');
+    }
+
     // Convert base64 to ArrayBuffer
-    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
+    let keyData: Uint8Array;
+    try {
+      keyData = Uint8Array.from(atob(keyContent), c => c.charCodeAt(0));
+      console.log('✅ [RSA] Successfully decoded base64, length:', keyData.length);
+    } catch (decodeError) {
+      console.error('❌ [RSA] Base64 decode failed:', decodeError);
+      throw new Error(`Invalid base64 in RSA key: ${decodeError.message}`);
+    }
 
     // Import the public key
-    const publicKey = await crypto.subtle.importKey(
-      'spki',
-      keyData,
-      {
-        name: 'RSA-OAEP',
-        hash: 'SHA-256',
-      },
-      false,
-      ['encrypt']
-    );
+    let publicKey: CryptoKey;
+    try {
+      publicKey = await crypto.subtle.importKey(
+        'spki',
+        keyData,
+        {
+          name: 'RSA-OAEP',
+          hash: 'SHA-256',
+        },
+        false,
+        ['encrypt']
+      );
+      console.log('✅ [RSA] Successfully imported RSA key');
+    } catch (importError) {
+      console.error('❌ [RSA] Key import failed:', importError);
+      throw new Error(`Failed to import RSA key: ${importError.message}. Make sure the key is a valid RSA public key in PKCS#8 format.`);
+    }
 
     // Encrypt the payload
     const encoder = new TextEncoder();
     const data = encoder.encode(payload);
-    const encrypted = await crypto.subtle.encrypt(
-      {
-        name: 'RSA-OAEP',
-      },
-      publicKey,
-      data
-    );
+    console.log('🔐 [RSA] Payload encoded, length:', data.length);
+    
+    let encrypted: ArrayBuffer;
+    try {
+      encrypted = await crypto.subtle.encrypt(
+        {
+          name: 'RSA-OAEP',
+        },
+        publicKey,
+        data
+      );
+      console.log('✅ [RSA] Encryption successful, result length:', encrypted.byteLength);
+    } catch (encryptError) {
+      console.error('❌ [RSA] Encryption failed:', encryptError);
+      throw new Error(`RSA encryption failed: ${encryptError.message}`);
+    }
 
     // Convert to base64
     const encryptedArray = new Uint8Array(encrypted);
-    return btoa(String.fromCharCode(...encryptedArray));
+    const result = btoa(String.fromCharCode(...encryptedArray));
+    console.log('✅ [RSA] Final encrypted token length:', result.length);
+    console.log('✅ [RSA] Encrypted token preview:', result.substring(0, 50) + '...');
+    
+    return result;
   } catch (error) {
-    console.error('❌ [RSA] Encryption failed:', error);
+    console.error('❌ [RSA] Complete encryption process failed:', error);
     throw new Error(`RSA encryption failed: ${error.message}`);
   }
 }
 
-// Validate credentials format
+// Enhanced validation function
 function validateCredentials(apiKey: string, apiSecret: string): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
   
@@ -56,16 +106,32 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
     issues.push('API key is missing');
   } else if (apiKey.length < 10) {
     issues.push(`API key too short: ${apiKey.length} characters`);
-  } else if (apiKey.includes('test') || apiKey.includes('demo') || apiKey.includes('placeholder')) {
-    issues.push('API key appears to be a test/placeholder value');
   }
   
   if (!apiSecret) {
     issues.push('API secret is missing');
-  } else if (apiSecret.length < 100) {
-    issues.push(`API secret too short: ${apiSecret.length} characters (should be RSA public key)`);
-  } else if (!apiSecret.includes('-----BEGIN PUBLIC KEY-----')) {
-    issues.push('API secret does not appear to be in PEM format (should be RSA public key)');
+  } else {
+    console.log('🔍 [Validation] Checking API secret format...');
+    console.log('🔍 [Validation] Secret length:', apiSecret.length);
+    console.log('🔍 [Validation] Secret preview:', apiSecret.substring(0, 100) + '...');
+    
+    const hasPemHeaders = apiSecret.includes('-----BEGIN PUBLIC KEY-----') && apiSecret.includes('-----END PUBLIC KEY-----');
+    const isLikelyBase64 = /^[A-Za-z0-9+/]+=*$/.test(apiSecret.replace(/\s/g, ''));
+    
+    console.log('🔍 [Validation] Has PEM headers:', hasPemHeaders);
+    console.log('🔍 [Validation] Is likely base64:', isLikelyBase64);
+    
+    if (!hasPemHeaders && !isLikelyBase64) {
+      issues.push('API secret does not appear to be in PEM format or valid base64 (should be RSA public key)');
+    } else if (!hasPemHeaders && isLikelyBase64) {
+      console.log('✅ [Validation] Detected base64 key without PEM headers - will attempt to format');
+    } else if (hasPemHeaders) {
+      console.log('✅ [Validation] Detected properly formatted PEM key');
+    }
+    
+    if (apiSecret.length < 100) {
+      issues.push(`API secret too short: ${apiSecret.length} characters (RSA keys are typically 300+ characters)`);
+    }
   }
   
   return {
@@ -84,7 +150,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
 
-  // Validate credentials first
+  // Enhanced validation first
   const validation = validateCredentials(apiKey, apiSecret);
   if (!validation.valid) {
     console.error('❌ [Auth] Credential validation failed:');
@@ -117,7 +183,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Create the payload to encrypt (following Perfect Corp's sample code)
+    // Create the payload to encrypt (following Perfect Corp's sample code exactly)
     const timestamp = Date.now();
     const payload = `client_id=${apiKey}&timestamp=${timestamp}`;
     
@@ -219,7 +285,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     }
     
     if (error.message.includes('RSA')) {
-      throw new Error(`RSA encryption error: ${error.message}. Please verify the PERFECTCORP_API_SECRET contains a valid RSA public key in PEM format.`);
+      throw new Error(`RSA encryption error: ${error.message}. Please verify the PERFECTCORP_API_SECRET contains a valid RSA public key.`);
     }
     
     throw new Error(`Authentication failed: ${error.message}`);
