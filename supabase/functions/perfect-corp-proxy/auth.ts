@@ -2,6 +2,52 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
+// RSA encryption using Web Crypto API
+async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
+  try {
+    // Clean up the PEM format
+    const cleanKey = publicKeyPem
+      .replace(/-----BEGIN PUBLIC KEY-----/g, '')
+      .replace(/-----END PUBLIC KEY-----/g, '')
+      .replace(/\n/g, '')
+      .replace(/\r/g, '')
+      .trim();
+
+    // Convert base64 to ArrayBuffer
+    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
+
+    // Import the public key
+    const publicKey = await crypto.subtle.importKey(
+      'spki',
+      keyData,
+      {
+        name: 'RSA-OAEP',
+        hash: 'SHA-256',
+      },
+      false,
+      ['encrypt']
+    );
+
+    // Encrypt the payload
+    const encoder = new TextEncoder();
+    const data = encoder.encode(payload);
+    const encrypted = await crypto.subtle.encrypt(
+      {
+        name: 'RSA-OAEP',
+      },
+      publicKey,
+      data
+    );
+
+    // Convert to base64
+    const encryptedArray = new Uint8Array(encrypted);
+    return btoa(String.fromCharCode(...encryptedArray));
+  } catch (error) {
+    console.error('❌ [RSA] Encryption failed:', error);
+    throw new Error(`RSA encryption failed: ${error.message}`);
+  }
+}
+
 // Validate credentials format
 function validateCredentials(apiKey: string, apiSecret: string): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
@@ -16,10 +62,10 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
   
   if (!apiSecret) {
     issues.push('API secret is missing');
-  } else if (apiSecret.length < 10) {
-    issues.push(`API secret too short: ${apiSecret.length} characters`);
-  } else if (apiSecret.includes('test') || apiSecret.includes('demo') || apiSecret.includes('placeholder')) {
-    issues.push('API secret appears to be a test/placeholder value');
+  } else if (apiSecret.length < 100) {
+    issues.push(`API secret too short: ${apiSecret.length} characters (should be RSA public key)`);
+  } else if (!apiSecret.includes('-----BEGIN PUBLIC KEY-----')) {
+    issues.push('API secret does not appear to be in PEM format (should be RSA public key)');
   }
   
   return {
@@ -68,133 +114,101 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   try {
     console.log('🚀 [Auth] Starting fresh authentication');
     console.log('🔑 [Auth] API Key:', apiKey.substring(0, 8) + '...');
-    console.log('🗝️ [Auth] Secret length:', apiSecret.length);
+    console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Try multiple authentication methods based on Perfect Corp's current requirements
-    const authMethods = [
-      // Method 1: Simple client_id + client_secret (most common)
-      {
-        name: 'Simple Auth',
-        body: {
-          client_id: apiKey,
-          client_secret: apiSecret
-        }
-      },
-      // Method 2: client_id + token (if secret is meant to be a token)
-      {
-        name: 'Token Auth',
-        body: {
-          client_id: apiKey,
-          token: apiSecret
-        }
-      },
-      // Method 3: client_id + api_secret
-      {
-        name: 'API Secret Auth',
-        body: {
-          client_id: apiKey,
-          api_secret: apiSecret
-        }
-      },
-      // Method 4: Timestamp-based (if they require timestamp)
-      {
-        name: 'Timestamp Auth',
-        body: {
-          client_id: apiKey,
-          client_secret: apiSecret,
-          timestamp: Date.now()
-        }
-      }
-    ];
-
-    for (const method of authMethods) {
-      try {
-        console.log(`🧪 [Auth] Trying ${method.name}...`);
-        
-        const authResponse = await fetch(authUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'Supabase-Edge-Function/1.0',
-          },
-          body: JSON.stringify(method.body),
-        });
-
-        console.log(`📥 [Auth] ${method.name} Response: ${authResponse.status} ${authResponse.statusText}`);
-        console.log(`📋 [Auth] ${method.name} Response headers:`, Object.fromEntries(authResponse.headers.entries()));
-        
-        const responseText = await authResponse.text();
-        console.log(`📄 [Auth] ${method.name} Raw response:`, responseText);
-        
-        if (authResponse.ok) {
-          let authData;
-          try {
-            authData = JSON.parse(responseText);
-          } catch (parseError) {
-            console.error(`❌ [Auth] ${method.name} Failed to parse response as JSON:`, parseError);
-            continue; // Try next method
-          }
-          
-          console.log(`📊 [Auth] ${method.name} Parsed response:`, authData);
-          
-          let accessToken: string | null = null;
-          let expiresIn: number = 7200;
-          
-          // Handle different response formats
-          if (authData.result?.access_token) {
-            accessToken = authData.result.access_token;
-            expiresIn = authData.result.expires_in || 7200;
-          } else if (authData.access_token) {
-            accessToken = authData.access_token;
-            expiresIn = authData.expires_in || 7200;
-          } else if (authData.token) {
-            accessToken = authData.token;
-            expiresIn = authData.expires_in || 7200;
-          }
-          
-          if (accessToken) {
-            console.log(`🎉 [Auth] ${method.name} Authentication successful!`);
-            console.log('⏱️ [Auth] Token expires in:', expiresIn, 'seconds');
-            
-            // Cache token
-            try {
-              const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000)).toISOString();
-              
-              await supabase.rpc('cleanup_expired_perfect_corp_tokens');
-              
-              const { error: insertError } = await supabase
-                .from('perfect_corp_tokens')
-                .insert({
-                  access_token: accessToken,
-                  expires_at: expiresAt
-                });
-                
-              if (insertError) {
-                console.warn('⚠️ [Auth] Failed to store token:', insertError);
-              } else {
-                console.log('💾 [Auth] Token cached successfully');
-              }
-            } catch (storeError) {
-              console.warn('⚠️ [Auth] Token storage error:', storeError);
-            }
-            
-            return { accessToken };
-          } else {
-            console.error(`❌ [Auth] ${method.name} No access token in successful response`);
-            console.log(`🔍 [Auth] ${method.name} Available fields:`, Object.keys(authData));
-          }
-        } else {
-          console.log(`❌ [Auth] ${method.name} failed with status ${authResponse.status}:`, responseText);
-        }
-      } catch (error) {
-        console.log(`❌ [Auth] ${method.name} error:`, error.message);
-      }
-    }
+    // Create the payload to encrypt (following Perfect Corp's sample code)
+    const timestamp = Date.now();
+    const payload = `client_id=${apiKey}&timestamp=${timestamp}`;
     
-    // If all methods failed, throw error with helpful message
-    throw new Error('All authentication methods failed. Please verify your Perfect Corp credentials are correct and contact Perfect Corp support for the current authentication format.');
+    console.log('🔒 [Auth] Encrypting payload with RSA...');
+    console.log('📝 [Auth] Payload:', payload);
+    
+    // Encrypt the payload using the RSA public key
+    const idToken = await rsaEncrypt(payload, apiSecret);
+    console.log('✅ [Auth] RSA encryption successful');
+    console.log('🎫 [Auth] ID Token length:', idToken.length);
+    
+    const authResponse = await fetch(authUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Supabase-Edge-Function/1.0',
+      },
+      body: JSON.stringify({
+        id_token: idToken
+      }),
+    });
+
+    console.log(`📥 [Auth] Response: ${authResponse.status} ${authResponse.statusText}`);
+    console.log(`📋 [Auth] Response headers:`, Object.fromEntries(authResponse.headers.entries()));
+    
+    const responseText = await authResponse.text();
+    console.log(`📄 [Auth] Raw response:`, responseText);
+    
+    if (authResponse.ok) {
+      let authData;
+      try {
+        authData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`❌ [Auth] Failed to parse response as JSON:`, parseError);
+        throw new Error('Invalid JSON response from Perfect Corp API');
+      }
+      
+      console.log(`📊 [Auth] Parsed response:`, authData);
+      
+      let accessToken: string | null = null;
+      let expiresIn: number = 7200;
+      
+      // Handle different response formats
+      if (authData.result?.access_token) {
+        accessToken = authData.result.access_token;
+        expiresIn = authData.result.expires_in || 7200;
+      } else if (authData.access_token) {
+        accessToken = authData.access_token;
+        expiresIn = authData.expires_in || 7200;
+      } else if (authData.token) {
+        accessToken = authData.token;
+        expiresIn = authData.expires_in || 7200;
+      }
+      
+      if (accessToken) {
+        console.log(`🎉 [Auth] Authentication successful!`);
+        console.log('⏱️ [Auth] Token expires in:', expiresIn, 'seconds');
+        
+        // Cache token
+        try {
+          const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000)).toISOString();
+          
+          await supabase.rpc('cleanup_expired_perfect_corp_tokens');
+          
+          const { error: insertError } = await supabase
+            .from('perfect_corp_tokens')
+            .insert({
+              access_token: accessToken,
+              expires_at: expiresAt
+            });
+            
+          if (insertError) {
+            console.warn('⚠️ [Auth] Failed to store token:', insertError);
+          } else {
+            console.log('💾 [Auth] Token cached successfully');
+          }
+        } catch (storeError) {
+          console.warn('⚠️ [Auth] Token storage error:', storeError);
+        }
+        
+        return { accessToken };
+      } else {
+        console.error(`❌ [Auth] No access token in successful response`);
+        console.log(`🔍 [Auth] Available fields:`, Object.keys(authData));
+        throw new Error('No access token returned from Perfect Corp API');
+      }
+    } else {
+      console.log(`❌ [Auth] Authentication failed with status ${authResponse.status}:`, responseText);
+      throw new Error(`Authentication failed: ${responseText}`);
+    }
     
   } catch (error) {
     console.error('❌ [Auth] Authentication error:', error);
@@ -202,6 +216,10 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     // Provide detailed error context
     if (error.message.includes('fetch')) {
       throw new Error('Network error: Unable to connect to Perfect Corp API. Check internet connection and API endpoint.');
+    }
+    
+    if (error.message.includes('RSA')) {
+      throw new Error(`RSA encryption error: ${error.message}. Please verify the PERFECTCORP_API_SECRET contains a valid RSA public key in PEM format.`);
     }
     
     throw new Error(`Authentication failed: ${error.message}`);

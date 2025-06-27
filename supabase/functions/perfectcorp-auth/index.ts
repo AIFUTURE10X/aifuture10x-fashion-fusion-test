@@ -27,6 +27,52 @@ interface AuthResponse {
 
 const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
 
+// RSA encryption using Web Crypto API
+async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
+  try {
+    // Clean up the PEM format
+    const cleanKey = publicKeyPem
+      .replace(/-----BEGIN PUBLIC KEY-----/g, '')
+      .replace(/-----END PUBLIC KEY-----/g, '')
+      .replace(/\n/g, '')
+      .replace(/\r/g, '')
+      .trim();
+
+    // Convert base64 to ArrayBuffer
+    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
+
+    // Import the public key
+    const publicKey = await crypto.subtle.importKey(
+      'spki',
+      keyData,
+      {
+        name: 'RSA-OAEP',
+        hash: 'SHA-256',
+      },
+      false,
+      ['encrypt']
+    );
+
+    // Encrypt the payload
+    const encoder = new TextEncoder();
+    const data = encoder.encode(payload);
+    const encrypted = await crypto.subtle.encrypt(
+      {
+        name: 'RSA-OAEP',
+      },
+      publicKey,
+      data
+    );
+
+    // Convert to base64
+    const encryptedArray = new Uint8Array(encrypted);
+    return btoa(String.fromCharCode(...encryptedArray));
+  } catch (error) {
+    console.error('❌ [RSA] Encryption failed:', error);
+    throw new Error(`RSA encryption failed: ${error.message}`);
+  }
+}
+
 // Comprehensive diagnostics function
 async function runDiagnostics(): Promise<any> {
   console.log('🔍 [Diagnostics] Running comprehensive Perfect Corp diagnostics...');
@@ -53,10 +99,10 @@ async function runDiagnostics(): Promise<any> {
       hasClientSecret: !!clientSecret,
       clientSecretLength: clientSecret?.length || 0,
       clientSecretFormat: clientSecret ? {
-        isPlainText: !clientSecret.includes('-----BEGIN'),
+        isPemFormat: clientSecret.includes('-----BEGIN PUBLIC KEY-----'),
         isAlphanumeric: /^[a-zA-Z0-9]+$/.test(clientSecret),
         hasSpecialChars: /[^a-zA-Z0-9]/.test(clientSecret),
-        preview: clientSecret.substring(0, 20) + '...'
+        preview: clientSecret.substring(0, 50) + '...'
       } : null,
     },
     networkConnectivity: {
@@ -65,12 +111,7 @@ async function runDiagnostics(): Promise<any> {
       responseTime: 0,
     },
     authenticationMethods: {
-      simpleAuth: {
-        attempted: false,
-        successful: false,
-        error: null
-      },
-      hmacAuth: {
+      rsaAuth: {
         attempted: false,
         successful: false,
         error: null
@@ -99,50 +140,20 @@ async function runDiagnostics(): Promise<any> {
     console.log('❌ [Diagnostics] Network connectivity test failed:', error.message);
   }
   
-  // Test simple authentication methods if we have credentials
+  // Test RSA authentication if we have credentials
   if (clientId && clientSecret) {
-    // Method 1: Simple client_id + client_secret
     try {
-      diagnostics.authenticationMethods.simpleAuth.attempted = true;
-      
-      const simpleAuthBody = {
-        client_id: clientId,
-        client_secret: clientSecret
-      };
-      
-      const response = await fetch(PERFECTCORP_AUTH_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(simpleAuthBody),
-      });
-      
-      const responseText = await response.text();
-      console.log('🧪 [Diagnostics] Simple auth response:', response.status, responseText);
-      
-      if (response.ok) {
-        diagnostics.authenticationMethods.simpleAuth.successful = true;
-        console.log('✅ [Diagnostics] Simple authentication successful');
-      } else {
-        diagnostics.authenticationMethods.simpleAuth.error = responseText;
-      }
-      
-    } catch (error) {
-      diagnostics.authenticationMethods.simpleAuth.error = error.message;
-      console.log('❌ [Diagnostics] Simple auth test failed:', error.message);
-    }
-    
-    // Method 2: HMAC or timestamp-based authentication
-    try {
-      diagnostics.authenticationMethods.hmacAuth.attempted = true;
+      diagnostics.authenticationMethods.rsaAuth.attempted = true;
       
       const timestamp = Date.now();
-      const hmacAuthBody = {
-        client_id: clientId,
-        timestamp: timestamp,
-        signature: clientSecret // Try using secret as signature
+      const payload = `client_id=${clientId}&timestamp=${timestamp}`;
+      
+      console.log('🔑 [Diagnostics] Testing RSA encryption...');
+      const idToken = await rsaEncrypt(payload, clientSecret);
+      console.log('✅ [Diagnostics] RSA encryption successful');
+      
+      const authBody = {
+        id_token: idToken
       };
       
       const response = await fetch(PERFECTCORP_AUTH_URL, {
@@ -151,22 +162,22 @@ async function runDiagnostics(): Promise<any> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify(hmacAuthBody),
+        body: JSON.stringify(authBody),
       });
       
       const responseText = await response.text();
-      console.log('🧪 [Diagnostics] HMAC auth response:', response.status, responseText);
+      console.log('🧪 [Diagnostics] RSA auth response:', response.status, responseText);
       
       if (response.ok) {
-        diagnostics.authenticationMethods.hmacAuth.successful = true;
-        console.log('✅ [Diagnostics] HMAC authentication successful');
+        diagnostics.authenticationMethods.rsaAuth.successful = true;
+        console.log('✅ [Diagnostics] RSA authentication successful');
       } else {
-        diagnostics.authenticationMethods.hmacAuth.error = responseText;
+        diagnostics.authenticationMethods.rsaAuth.error = responseText;
       }
       
     } catch (error) {
-      diagnostics.authenticationMethods.hmacAuth.error = error.message;
-      console.log('❌ [Diagnostics] HMAC auth test failed:', error.message);
+      diagnostics.authenticationMethods.rsaAuth.error = error.message;
+      console.log('❌ [Diagnostics] RSA auth test failed:', error.message);
     }
   }
   
@@ -180,22 +191,20 @@ async function runDiagnostics(): Promise<any> {
   }
   
   if (!diagnostics.credentials.hasClientSecret) {
-    recommendations.push('❌ Add PERFECTCORP_API_SECRET to Supabase secrets');
-  } else if (diagnostics.credentials.clientSecretLength < 10) {
-    recommendations.push('⚠️ API secret seems too short - verify it\'s not a test value');
+    recommendations.push('❌ Add PERFECTCORP_API_SECRET (RSA public key) to Supabase secrets');
+  } else if (!diagnostics.credentials.clientSecretFormat?.isPemFormat) {
+    recommendations.push('⚠️ Client secret should be in PEM format (RSA public key)');
   }
   
   if (!diagnostics.networkConnectivity.canReach) {
     recommendations.push('❌ Cannot reach Perfect Corp API - check network connectivity');
   }
   
-  if (diagnostics.authenticationMethods.simpleAuth.successful) {
-    recommendations.push('✅ Simple authentication works - use client_id + client_secret method');
-  } else if (diagnostics.authenticationMethods.hmacAuth.successful) {
-    recommendations.push('✅ HMAC authentication works - use timestamp + signature method');
+  if (diagnostics.authenticationMethods.rsaAuth.successful) {
+    recommendations.push('✅ RSA authentication works correctly');
   } else {
-    recommendations.push('❌ No authentication method succeeded - verify credentials with Perfect Corp');
-    recommendations.push('💡 Contact Perfect Corp support for current authentication requirements');
+    recommendations.push('❌ RSA authentication failed - verify credentials and RSA public key format');
+    recommendations.push('💡 Ensure PERFECTCORP_API_SECRET contains the RSA public key in PEM format');
   }
   
   diagnostics.recommendations = recommendations;
@@ -235,114 +244,91 @@ async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       };
     }
     
-    if (!clientSecret || clientSecret.length < 10) {
+    if (!clientSecret || clientSecret.length < 100) {
       return {
         success: false,
-        error: 'PERFECTCORP_API_SECRET is not configured properly or appears to be a test value'
+        error: 'PERFECTCORP_API_SECRET (RSA public key) is not configured properly'
       };
     }
 
-    console.log('🔑 [Auth] Using simplified authentication method');
+    console.log('🔑 [Auth] Using RSA encryption authentication method');
     console.log('📝 [Auth] Client ID:', clientId.substring(0, 8) + '...');
-    console.log('🔐 [Auth] Secret length:', clientSecret.length);
+    console.log('🔐 [Auth] RSA key length:', clientSecret.length);
 
-    // Try multiple authentication methods based on Perfect Corp's current requirements
-    const authMethods = [
-      // Method 1: Simple client_id + client_secret (most common)
-      {
-        name: 'Simple Auth',
-        body: {
-          client_id: clientId,
-          client_secret: clientSecret
-        }
-      },
-      // Method 2: client_id + token (if secret is meant to be a token)
-      {
-        name: 'Token Auth',
-        body: {
-          client_id: clientId,
-          token: clientSecret
-        }
-      },
-      // Method 3: client_id + api_secret
-      {
-        name: 'API Secret Auth',
-        body: {
-          client_id: clientId,
-          api_secret: clientSecret
-        }
-      },
-      // Method 4: Timestamp-based (if they require timestamp)
-      {
-        name: 'Timestamp Auth',
-        body: {
-          client_id: clientId,
-          client_secret: clientSecret,
-          timestamp: Date.now()
-        }
-      }
-    ];
+    try {
+      // Create the payload to encrypt
+      const timestamp = Date.now();
+      const payload = `client_id=${clientId}&timestamp=${timestamp}`;
+      
+      console.log('🔒 [Auth] Encrypting payload with RSA...');
+      const idToken = await rsaEncrypt(payload, clientSecret);
+      console.log('✅ [Auth] RSA encryption successful');
+      
+      const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Supabase-Edge-Function/1.0',
+        },
+        body: JSON.stringify({
+          id_token: idToken
+        }),
+      });
 
-    for (const method of authMethods) {
-      try {
-        console.log(`🧪 [Auth] Trying ${method.name}...`);
-        
-        const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'Supabase-Edge-Function/1.0',
-          },
-          body: JSON.stringify(method.body),
-        });
+      console.log(`📥 [Auth] Response: ${authResponse.status} ${authResponse.statusText}`);
 
-        console.log(`📥 [Auth] ${method.name} Response: ${authResponse.status} ${authResponse.statusText}`);
+      const responseText = await authResponse.text();
+      console.log(`📄 [Auth] Raw response:`, responseText);
 
-        const responseText = await authResponse.text();
-        console.log(`📄 [Auth] ${method.name} Raw response:`, responseText);
+      if (authResponse.ok) {
+        const authData: PerfectCorpAuthResponse = JSON.parse(responseText);
+        console.log(`📦 [Auth] Parsed response:`, authData);
 
-        if (authResponse.ok) {
-          const authData: PerfectCorpAuthResponse = JSON.parse(responseText);
-          console.log(`📦 [Auth] ${method.name} Parsed response:`, authData);
+        if (authData.result?.access_token) {
+          const accessToken = authData.result.access_token;
+          const expiresIn = 7200; // 2 hours
+          
+          console.log(`🎉 [Auth] Authentication successful!`);
 
-          if (authData.result?.access_token) {
-            const accessToken = authData.result.access_token;
-            const expiresIn = 7200; // 2 hours
-            
-            console.log(`🎉 [Auth] ${method.name} Authentication successful!`);
-
-            // Cache the token
-            try {
-              const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000));
-              await supabase.from('perfect_corp_tokens').insert({
-                access_token: accessToken,
-                expires_at: expiresAt.toISOString()
-              });
-              console.log('💾 [Auth] Token cached successfully');
-            } catch (cacheError) {
-              console.warn('⚠️ [Auth] Failed to cache token:', cacheError);
-            }
-
-            return {
-              success: true,
-              accessToken: accessToken,
-              expiresIn: expiresIn
-            };
+          // Cache the token
+          try {
+            const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000));
+            await supabase.from('perfect_corp_tokens').insert({
+              access_token: accessToken,
+              expires_at: expiresAt.toISOString()
+            });
+            console.log('💾 [Auth] Token cached successfully');
+          } catch (cacheError) {
+            console.warn('⚠️ [Auth] Failed to cache token:', cacheError);
           }
-        } else {
-          console.log(`❌ [Auth] ${method.name} failed:`, responseText);
-        }
-      } catch (error) {
-        console.log(`❌ [Auth] ${method.name} error:`, error.message);
-      }
-    }
 
-    // If all methods failed, return error with helpful message
-    return {
-      success: false,
-      error: 'All authentication methods failed. Please verify your Perfect Corp credentials and contact their support for the correct authentication format.'
-    };
+          return {
+            success: true,
+            accessToken: accessToken,
+            expiresIn: expiresIn
+          };
+        } else {
+          console.error('❌ [Auth] No access token in successful response');
+          return {
+            success: false,
+            error: 'No access token returned from Perfect Corp API'
+          };
+        }
+      } else {
+        console.log(`❌ [Auth] Authentication failed:`, responseText);
+        return {
+          success: false,
+          error: `Authentication failed: ${responseText}`
+        };
+      }
+    } catch (error) {
+      console.log(`❌ [Auth] RSA authentication error:`, error.message);
+      return {
+        success: false,
+        error: `RSA authentication failed: ${error.message}`
+      };
+    }
 
   } catch (error) {
     console.error('💥 [Auth] Authentication error:', error);
