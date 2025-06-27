@@ -186,6 +186,31 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
   };
 }
 
+// Get server time from Perfect Corp to sync our timestamp
+async function getServerTime(): Promise<number> {
+  try {
+    const response = await fetch(`${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`, {
+      method: 'HEAD',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    const serverDate = response.headers.get('date');
+    if (serverDate) {
+      const serverTime = new Date(serverDate).getTime();
+      console.log('🕐 [Time] Server time:', new Date(serverTime).toISOString());
+      console.log('🕐 [Time] Local time:', new Date().toISOString());
+      console.log('🕐 [Time] Time difference:', Math.abs(serverTime - Date.now()), 'ms');
+      return serverTime;
+    }
+  } catch (error) {
+    console.log('⚠️ [Time] Could not get server time, using local time:', error.message);
+  }
+  
+  return Date.now();
+}
+
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
   console.log('🔐 [Auth] Starting Perfect Corp authentication...');
   
@@ -229,11 +254,11 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // FIXED: Create proper JSON payload as Perfect Corp expects
-    const timestamp = Date.now();
+    // FIXED: Get synchronized timestamp from server
+    const timestamp = await getServerTime();
     const payloadObj = {
       client_id: apiKey,
-      timestamp: timestamp.toString()
+      timestamp: Math.floor(timestamp / 1000).toString() // Convert to seconds and stringify
     };
     const payload = JSON.stringify(payloadObj);
     
@@ -253,6 +278,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     };
     
     console.log('📤 [Auth] Request body structure:', Object.keys(requestBody));
+    console.log('📤 [Auth] Client ID in body:', requestBody.client_id.substring(0, 8) + '...');
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
@@ -329,8 +355,36 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         throw new Error('No access token returned from Perfect Corp API');
       }
     } else {
-      console.log(`❌ [Auth] Authentication failed with status ${authResponse.status}:`, responseText);
-      throw new Error(`Authentication failed: ${responseText}`);
+      // Enhanced error handling for authentication failures
+      let errorDetails = '';
+      try {
+        const errorData = JSON.parse(responseText);
+        if (errorData.error === 'Invalid client_id or invalid id_token or key expired') {
+          errorDetails = `
+❌ Perfect Corp Authentication Error Details:
+- Status: ${authResponse.status}
+- Error: ${errorData.error}
+- Error Code: ${errorData.error_code}
+
+🔍 Possible causes:
+1. Client ID (${apiKey.substring(0, 8)}...) is not registered with Perfect Corp
+2. RSA public key doesn't match the one registered for this client ID
+3. Timestamp is too far from server time (check system clock)
+4. Account may be suspended or credentials expired
+
+💡 Next steps:
+- Verify client ID and RSA public key with Perfect Corp support
+- Check if credentials are active and not expired
+- Ensure system time is synchronized`;
+        } else {
+          errorDetails = responseText;
+        }
+      } catch {
+        errorDetails = responseText;
+      }
+      
+      console.log(`❌ [Auth] Authentication failed with status ${authResponse.status}:`, errorDetails);
+      throw new Error(`Authentication failed: ${errorDetails}`);
     }
     
   } catch (error) {
