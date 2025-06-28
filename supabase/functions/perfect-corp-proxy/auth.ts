@@ -2,23 +2,25 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-// Simplified RSA encryption matching Postman approach exactly
+// Enhanced RSA encryption with multiple fallback approaches
 async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
-    console.log('🔐 [RSA] Starting encryption...');
-    console.log('🔐 [RSA] Payload:', payload);
+    console.log('🔐 [RSA] Starting enhanced encryption...');
+    console.log('🔐 [RSA] Payload length:', payload.length, 'bytes');
+    console.log('🔐 [RSA] Raw key length:', publicKeyPem.length);
     
-    // Clean the public key more carefully
+    // Clean the public key more aggressively
     let cleanKey = publicKeyPem.trim();
     
-    // Remove all header/footer variations
+    // Remove all possible header/footer variations and whitespace
     cleanKey = cleanKey
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/-----BEGIN RSA PUBLIC KEY-----/g, '')
       .replace(/-----END RSA PUBLIC KEY-----/g, '')
-      .replace(/\r?\n/g, '') // Remove all line breaks
-      .replace(/\s+/g, ''); // Remove all whitespace
+      .replace(/\r?\n/g, '')
+      .replace(/\s+/g, '')
+      .trim();
 
     console.log('🔧 [RSA] Cleaned key length:', cleanKey.length);
 
@@ -26,54 +28,91 @@ async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string
       throw new Error('Empty key content after cleaning');
     }
 
-    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
-    console.log('✅ [RSA] Key decoded, length:', keyData.length);
-
-    // Try with SHA-256 first (more common), then SHA-1 if it fails
-    let publicKey;
+    // Validate base64 format
     try {
-      publicKey = await crypto.subtle.importKey(
-        'spki',
-        keyData,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-256',
-        },
-        false,
-        ['encrypt']
-      );
-      console.log('✅ [RSA] Key imported with SHA-256');
-    } catch (sha256Error) {
-      console.log('⚠️ [RSA] SHA-256 failed, trying SHA-1...', sha256Error.message);
-      publicKey = await crypto.subtle.importKey(
-        'spki',
-        keyData,
-        {
-          name: 'RSA-OAEP',
-          hash: 'SHA-1',
-        },
-        false,
-        ['encrypt']
-      );
-      console.log('✅ [RSA] Key imported with SHA-1');
+      atob(cleanKey);
+    } catch {
+      throw new Error('Invalid base64 format in RSA key');
     }
 
-    const encoder = new TextEncoder();
-    const data = encoder.encode(payload);
-    
-    const encrypted = await crypto.subtle.encrypt(
-      { name: 'RSA-OAEP' },
-      publicKey,
-      data
-    );
+    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
+    console.log('✅ [RSA] Key decoded successfully, byte length:', keyData.length);
 
-    const result = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-    console.log('✅ [RSA] Encryption successful, token length:', result.length);
+    // Check payload size limitations (RSA-2048 can encrypt max ~245 bytes with OAEP-SHA256)
+    const encoder = new TextEncoder();
+    const payloadBytes = encoder.encode(payload);
+    console.log('📏 [RSA] Payload byte size:', payloadBytes.length);
     
-    return result;
+    if (payloadBytes.length > 190) {
+      console.warn('⚠️ [RSA] Payload might be too large for RSA encryption');
+    }
+
+    // Try multiple encryption approaches
+    const approaches = [
+      // Approach 1: SPKI format with SHA-256
+      {
+        name: 'SPKI-SHA256',
+        format: 'spki' as KeyFormat,
+        algorithm: { name: 'RSA-OAEP', hash: 'SHA-256' }
+      },
+      // Approach 2: SPKI format with SHA-1  
+      {
+        name: 'SPKI-SHA1',
+        format: 'spki' as KeyFormat,
+        algorithm: { name: 'RSA-OAEP', hash: 'SHA-1' }
+      }
+    ];
+
+    let lastError: Error | null = null;
+
+    for (const approach of approaches) {
+      try {
+        console.log(`🔄 [RSA] Trying approach: ${approach.name}`);
+        
+        const publicKey = await crypto.subtle.importKey(
+          approach.format,
+          keyData,
+          approach.algorithm,
+          false,
+          ['encrypt']
+        );
+        
+        console.log(`✅ [RSA] Key imported successfully with ${approach.name}`);
+        
+        // Try encryption with smaller chunks if needed
+        let encryptedData: ArrayBuffer;
+        
+        try {
+          encryptedData = await crypto.subtle.encrypt(
+            approach.algorithm,
+            publicKey,
+            payloadBytes
+          );
+          console.log(`✅ [RSA] Encryption successful with ${approach.name}`);
+        } catch (encryptError) {
+          console.log(`❌ [RSA] Encryption failed with ${approach.name}:`, encryptError.message);
+          lastError = encryptError as Error;
+          continue;
+        }
+
+        const result = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
+        console.log('🎉 [RSA] Final encrypted token length:', result.length);
+        console.log('🎫 [RSA] Token preview:', result.substring(0, 50) + '...');
+        
+        return result;
+        
+      } catch (error) {
+        console.log(`❌ [RSA] Approach ${approach.name} failed:`, error.message);
+        lastError = error as Error;
+        continue;
+      }
+    }
+    
+    // If all approaches failed, throw the last error
+    throw new Error(`All RSA encryption approaches failed. Last error: ${lastError?.message || 'Unknown error'}`);
     
   } catch (error) {
-    console.error('❌ [RSA] Encryption failed:', error);
+    console.error('❌ [RSA] Complete encryption failure:', error);
     throw new Error(`RSA encryption failed: ${error.message}`);
   }
 }
@@ -82,11 +121,16 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
   const issues: string[] = [];
   
   if (!apiKey || apiKey.length < 10) {
-    issues.push('Invalid API key');
+    issues.push('Invalid API key - must be at least 10 characters');
   }
   
   if (!apiSecret || apiSecret.length < 100) {
-    issues.push('Invalid API secret (RSA key)');
+    issues.push('Invalid API secret - RSA key must be at least 100 characters');
+  }
+  
+  // Additional validation for RSA key format
+  if (apiSecret && !apiSecret.includes('BEGIN') && !apiSecret.match(/^[A-Za-z0-9+/=\s\n\r-]+$/)) {
+    issues.push('API secret does not appear to be a valid RSA key format');
   }
   
   return {
@@ -135,13 +179,13 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🚀 [Auth] Starting fresh authentication');
     console.log('🔑 [Auth] API Key:', apiKey.substring(0, 8) + '...');
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
+    console.log('🗝️ [Auth] RSA Key preview:', apiSecret.substring(0, 50) + '...');
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Use EXACT same format as Postman - current Unix timestamp in seconds
+    // Create timestamp and payload with minimal size
     const now = new Date();
     const timestamp = Math.floor(now.getTime() / 1000);
     
-    // Create payload exactly like Postman
     const payloadObj = {
       client_id: apiKey,
       timestamp: timestamp.toString()
@@ -150,10 +194,10 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     
     console.log('📝 [Auth] Current time:', now.toISOString());
     console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
-    console.log('📝 [Auth] Payload object:', payloadObj);
     console.log('📝 [Auth] JSON payload:', jsonPayload);
+    console.log('📏 [Auth] Payload length:', jsonPayload.length, 'characters');
     
-    // Encrypt the payload using the RSA public key
+    // Encrypt the payload using the enhanced RSA encryption
     const idToken = await rsaEncrypt(jsonPayload, apiSecret);
     console.log('✅ [Auth] RSA encryption successful');
     console.log('🎫 [Auth] ID Token length:', idToken.length);
@@ -251,18 +295,17 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         
         console.error('❌ [Auth] Error response data:', errorData);
         
-        if (errorData.error === 'Invalid client_id or invalid id_token or key expired') {
-          errorMessage = `Perfect Corp Authentication Error:
-- Status: ${authResponse.status}
-- Error: ${errorData.error}
-- Error Code: ${errorData.error_code}
+        if (errorData.error?.includes('Invalid client_id or invalid id_token')) {
+          errorMessage = `Perfect Corp Authentication Error: ${errorData.error}
 
-Debugging info:
-- Timestamp used: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
-- Payload: ${jsonPayload}
-- RSA key length: ${apiSecret.length}
+Troubleshooting steps:
+1. Verify PERFECTCORP_API_KEY is correct
+2. Verify PERFECTCORP_API_SECRET contains the complete RSA public key  
+3. Check that credentials are not expired
+4. Ensure RSA key format is correct
 
-This suggests the RSA encryption or timestamp format still doesn't match Perfect Corp's requirements.`;
+Timestamp used: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+Payload: ${jsonPayload}`;
         } else {
           errorMessage = errorData.error || responseText;
         }
