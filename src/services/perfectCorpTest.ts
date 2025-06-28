@@ -51,21 +51,45 @@ class PerfectCorpTestService {
     try {
       console.log('🧪 Testing Perfect Corp configuration...');
       
-      // Get basic configuration test
-      const testResponse = await fetch(
-        `${this.supabaseUrl}/functions/v1/perfectcorp-auth/test`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.supabaseAnonKey}`,
-            'Content-Type': 'application/json',
+      // Get basic configuration test with better error handling
+      let testData: ConfigTestResult;
+      try {
+        const testResponse = await fetch(
+          `${this.supabaseUrl}/functions/v1/perfectcorp-auth/test`,
+          {
+            headers: {
+              'Authorization': `Bearer ${this.supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+            }
           }
+        );
+        
+        if (!testResponse.ok) {
+          throw new Error(`Configuration test failed: ${testResponse.status} ${testResponse.statusText}`);
         }
-      );
+        
+        testData = await testResponse.json();
+        console.log('📋 Configuration test results:', testData);
+      } catch (testError) {
+        console.error('❌ Configuration test error:', testError);
+        // Provide fallback data structure
+        testData = {
+          status: 'error',
+          timestamp: new Date().toISOString(),
+          credentials: {
+            hasClientId: false,
+            clientIdLength: 0,
+            clientIdValid: false,
+            hasClientSecret: false,
+            secretLength: 0,
+            secretValid: false
+          },
+          apiEndpoint: 'unknown',
+          recommendation: `Configuration test failed: ${testError instanceof Error ? testError.message : 'Unknown error'}`
+        };
+      }
       
-      const testData: ConfigTestResult = await testResponse.json();
-      console.log('📋 Configuration test results:', testData);
-      
-      // Run comprehensive diagnostics
+      // Run comprehensive diagnostics with error handling
       let diagnostics = null;
       try {
         diagnostics = await perfectCorpDiagnostics.runFullDiagnostics();
@@ -73,31 +97,44 @@ class PerfectCorpTestService {
         console.warn('⚠️ Failed to run full diagnostics:', diagError);
       }
       
-      // Try actual authentication
-      const authResponse = await fetch(
-        `${this.supabaseUrl}/functions/v1/perfectcorp-auth`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.supabaseAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            apiKey: 'test_validation'
-          })
-        }
-      );
+      // Try actual authentication with error handling
+      let authTest = {
+        status: 'failed',
+        hasToken: false,
+        error: 'Authentication not attempted'
+      };
       
-      const authData = await authResponse.json();
-      console.log('🔐 Authentication test results:', authData);
+      try {
+        const authResponse = await fetch(
+          `${this.supabaseUrl}/functions/v1/perfectcorp-auth`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${this.supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              apiKey: 'test_validation'
+            })
+          }
+        );
+        
+        const authData = await authResponse.json();
+        console.log('🔐 Authentication test results:', authData);
+        
+        authTest = {
+          status: authResponse.ok && authData.success ? 'success' : 'failed',
+          hasToken: !!authData.accessToken,
+          error: authData.error || (authResponse.ok ? null : `HTTP ${authResponse.status}`)
+        };
+      } catch (authError) {
+        console.error('❌ Authentication test error:', authError);
+        authTest.error = authError instanceof Error ? authError.message : 'Authentication test failed';
+      }
       
       return {
         configTest: testData,
-        authTest: {
-          status: authResponse.ok ? 'success' : 'failed',
-          hasToken: !!authData.accessToken,
-          error: authData.error || null
-        },
+        authTest,
         diagnostics
       };
       
@@ -147,10 +184,10 @@ class PerfectCorpTestService {
       
       console.log('=== Perfect Corp Configuration Test Results ===');
       console.log('📅 Timestamp:', result.configTest.timestamp);
-      console.log('🔑 Has Client ID:', result.configTest.credentials.hasClientId ? '✅' : '❌');
-      console.log('🔑 Client ID Valid:', result.configTest.credentials.clientIdValid ? '✅' : '❌');
-      console.log('🔐 Has Client Secret:', result.configTest.credentials.hasClientSecret ? '✅' : '❌');
-      console.log('🔐 Secret Length Valid:', result.configTest.credentials.secretValid ? '✅' : '❌');
+      console.log('🔑 Has Client ID:', result.configTest.credentials?.hasClientId ? '✅' : '❌');
+      console.log('🔑 Client ID Valid:', result.configTest.credentials?.clientIdValid ? '✅' : '❌');
+      console.log('🔐 Has Client Secret:', result.configTest.credentials?.hasClientSecret ? '✅' : '❌');
+      console.log('🔐 Secret Length Valid:', result.configTest.credentials?.secretValid ? '✅' : '❌');
       
       // Show authentication test results with safe property access
       if (result.configTest.authentication) {

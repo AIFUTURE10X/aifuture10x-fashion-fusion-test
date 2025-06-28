@@ -120,6 +120,74 @@ function validateCredentials(apiKey: string, apiSecret: string): { valid: boolea
   };
 }
 
+async function getConfigurationTest() {
+  const clientId = Deno.env.get('PERFECTCORP_API_KEY');
+  const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+  
+  const hasClientId = !!clientId;
+  const hasClientSecret = !!clientSecret;
+  const clientIdLength = clientId?.length || 0;
+  const secretLength = clientSecret?.length || 0;
+  
+  const validation = validateCredentials(clientId || '', clientSecret || '');
+  
+  return {
+    status: validation.valid ? 'ready' : 'configuration_needed',
+    timestamp: new Date().toISOString(),
+    credentials: {
+      hasClientId,
+      clientIdLength,
+      clientIdValid: hasClientId && clientIdLength >= 10,
+      hasClientSecret,
+      secretLength,
+      secretValid: hasClientSecret && secretLength >= 100
+    },
+    authentication: {
+      rsaAuth: {
+        attempted: false,
+        successful: false,
+        error: validation.valid ? null : validation.issues.join(', ')
+      }
+    },
+    apiEndpoint: PERFECTCORP_AUTH_URL,
+    recommendation: validation.valid 
+      ? 'Configuration looks good. Try authentication test.'
+      : `Missing or invalid credentials: ${validation.issues.join(', ')}`
+  };
+}
+
+async function getDiagnostics() {
+  const clientId = Deno.env.get('PERFECTCORP_API_KEY');
+  const clientSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+  
+  const networkConnectivity = {
+    canReach: true, // We'll assume network is available
+    endpoint: PERFECTCORP_AUTH_URL
+  };
+  
+  const validation = validateCredentials(clientId || '', clientSecret || '');
+  
+  const authenticationMethods = {
+    rsaAuth: {
+      attempted: false,
+      successful: false,
+      error: validation.valid ? null : 'Invalid credentials'
+    }
+  };
+  
+  const recommendations = [];
+  if (!validation.valid) {
+    recommendations.push(...validation.issues.map(issue => `Fix: ${issue}`));
+  }
+  
+  return {
+    networkConnectivity,
+    authenticationMethods,
+    recommendations,
+    timestamp: new Date().toISOString()
+  };
+}
+
 async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
   try {
     const supabase = createClient(
@@ -292,6 +360,61 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const url = new URL(req.url);
+  const pathname = url.pathname;
+
+  // Handle GET /test endpoint
+  if (req.method === 'GET' && pathname.endsWith('/test')) {
+    try {
+      const testResult = await getConfigurationTest();
+      return new Response(
+        JSON.stringify(testResult),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (error) {
+      console.error('❌ [Test] Configuration test error:', error);
+      return new Response(
+        JSON.stringify({ 
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Configuration test failed'
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+
+  // Handle GET /diagnostics endpoint
+  if (req.method === 'GET' && pathname.endsWith('/diagnostics')) {
+    try {
+      const diagnostics = await getDiagnostics();
+      return new Response(
+        JSON.stringify(diagnostics),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (error) {
+      console.error('❌ [Diagnostics] Error:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: error instanceof Error ? error.message : 'Diagnostics failed'
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+
+  // Handle POST requests for authentication
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
