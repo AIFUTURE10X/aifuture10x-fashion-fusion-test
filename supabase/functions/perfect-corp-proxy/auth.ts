@@ -1,143 +1,9 @@
 
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
-
-// Enhanced RSA encryption with multiple fallback approaches
-async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
-  try {
-    console.log('🔐 [RSA] Starting enhanced encryption...');
-    console.log('🔐 [RSA] Payload length:', payload.length, 'bytes');
-    console.log('🔐 [RSA] Raw key length:', publicKeyPem.length);
-    
-    // Clean the public key more aggressively
-    let cleanKey = publicKeyPem.trim();
-    
-    // Remove all possible header/footer variations and whitespace
-    cleanKey = cleanKey
-      .replace(/-----BEGIN PUBLIC KEY-----/g, '')
-      .replace(/-----END PUBLIC KEY-----/g, '')
-      .replace(/-----BEGIN RSA PUBLIC KEY-----/g, '')
-      .replace(/-----END RSA PUBLIC KEY-----/g, '')
-      .replace(/\r?\n/g, '')
-      .replace(/\s+/g, '')
-      .trim();
-
-    console.log('🔧 [RSA] Cleaned key length:', cleanKey.length);
-
-    if (cleanKey.length === 0) {
-      throw new Error('Empty key content after cleaning');
-    }
-
-    // Validate base64 format
-    try {
-      atob(cleanKey);
-    } catch {
-      throw new Error('Invalid base64 format in RSA key');
-    }
-
-    const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
-    console.log('✅ [RSA] Key decoded successfully, byte length:', keyData.length);
-
-    // Check payload size limitations (RSA-2048 can encrypt max ~245 bytes with OAEP-SHA256)
-    const encoder = new TextEncoder();
-    const payloadBytes = encoder.encode(payload);
-    console.log('📏 [RSA] Payload byte size:', payloadBytes.length);
-    
-    if (payloadBytes.length > 190) {
-      console.warn('⚠️ [RSA] Payload might be too large for RSA encryption');
-    }
-
-    // Try multiple encryption approaches
-    const approaches = [
-      // Approach 1: SPKI format with SHA-256
-      {
-        name: 'SPKI-SHA256',
-        format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSA-OAEP', hash: 'SHA-256' }
-      },
-      // Approach 2: SPKI format with SHA-1  
-      {
-        name: 'SPKI-SHA1',
-        format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSA-OAEP', hash: 'SHA-1' }
-      }
-    ];
-
-    let lastError: Error | null = null;
-
-    for (const approach of approaches) {
-      try {
-        console.log(`🔄 [RSA] Trying approach: ${approach.name}`);
-        
-        const publicKey = await crypto.subtle.importKey(
-          approach.format,
-          keyData,
-          approach.algorithm,
-          false,
-          ['encrypt']
-        );
-        
-        console.log(`✅ [RSA] Key imported successfully with ${approach.name}`);
-        
-        // Try encryption with smaller chunks if needed
-        let encryptedData: ArrayBuffer;
-        
-        try {
-          encryptedData = await crypto.subtle.encrypt(
-            approach.algorithm,
-            publicKey,
-            payloadBytes
-          );
-          console.log(`✅ [RSA] Encryption successful with ${approach.name}`);
-        } catch (encryptError) {
-          console.log(`❌ [RSA] Encryption failed with ${approach.name}:`, encryptError.message);
-          lastError = encryptError as Error;
-          continue;
-        }
-
-        const result = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
-        console.log('🎉 [RSA] Final encrypted token length:', result.length);
-        console.log('🎫 [RSA] Token preview:', result.substring(0, 50) + '...');
-        
-        return result;
-        
-      } catch (error) {
-        console.log(`❌ [RSA] Approach ${approach.name} failed:`, error.message);
-        lastError = error as Error;
-        continue;
-      }
-    }
-    
-    // If all approaches failed, throw the last error
-    throw new Error(`All RSA encryption approaches failed. Last error: ${lastError?.message || 'Unknown error'}`);
-    
-  } catch (error) {
-    console.error('❌ [RSA] Complete encryption failure:', error);
-    throw new Error(`RSA encryption failed: ${error.message}`);
-  }
-}
-
-function validateCredentials(apiKey: string, apiSecret: string): { valid: boolean; issues: string[] } {
-  const issues: string[] = [];
-  
-  if (!apiKey || apiKey.length < 10) {
-    issues.push('Invalid API key - must be at least 10 characters');
-  }
-  
-  if (!apiSecret || apiSecret.length < 100) {
-    issues.push('Invalid API secret - RSA key must be at least 100 characters');
-  }
-  
-  // Additional validation for RSA key format
-  if (apiSecret && !apiSecret.includes('BEGIN') && !apiSecret.match(/^[A-Za-z0-9+/=\s\n\r-]+$/)) {
-    issues.push('API secret does not appear to be a valid RSA key format');
-  }
-  
-  return {
-    valid: issues.length === 0,
-    issues
-  };
-}
+import { rsaEncrypt } from './rsa-encryption.ts';
+import { validateCredentials } from './validation.ts';
+import { getCachedToken, cacheToken } from './token-cache.ts';
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
   console.log('🔐 [Auth] Starting Perfect Corp authentication...');
@@ -159,18 +25,9 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   console.log('✅ [Auth] Credential validation passed');
 
   // Check for cached token
-  try {
-    const { data: tokenData, error: tokenError } = await supabase.rpc('get_valid_perfect_corp_token');
-    
-    if (tokenError) {
-      console.warn('⚠️ [Auth] Token check error:', tokenError);
-    } else if (tokenData && tokenData.length > 0) {
-      const token = tokenData[0];
-      console.log(`✅ [Auth] Using cached token, expires in ${token.seconds_until_expiry}s`);
-      return { accessToken: token.access_token };
-    }
-  } catch (error) {
-    console.warn('⚠️ [Auth] Token check failed:', error);
+  const cachedToken = await getCachedToken(supabase);
+  if (cachedToken) {
+    return { accessToken: cachedToken };
   }
   
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
@@ -261,26 +118,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         console.log('🔑 [Auth] Token preview:', accessToken.substring(0, 20) + '...');
         
         // Cache token
-        try {
-          const expiresAt = new Date(Date.now() + ((expiresIn - 60) * 1000)).toISOString();
-          
-          await supabase.rpc('cleanup_expired_perfect_corp_tokens');
-          
-          const { error: insertError } = await supabase
-            .from('perfect_corp_tokens')
-            .insert({
-              access_token: accessToken,
-              expires_at: expiresAt
-            });
-            
-          if (insertError) {
-            console.warn('⚠️ [Auth] Failed to store token:', insertError);
-          } else {
-            console.log('💾 [Auth] Token cached successfully');
-          }
-        } catch (storeError) {
-          console.warn('⚠️ [Auth] Token storage error:', storeError);
-        }
+        await cacheToken(supabase, accessToken, expiresIn);
         
         return { accessToken };
       } else {
