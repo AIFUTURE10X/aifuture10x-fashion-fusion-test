@@ -2,19 +2,25 @@
 import { AuthResult } from './types.ts';
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-// Simplified RSA encryption matching Postman approach
+// Simplified RSA encryption matching Postman approach exactly
 async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
     console.log('🔐 [RSA] Starting encryption...');
     console.log('🔐 [RSA] Payload:', payload);
     
-    // Clean the public key
-    let cleanKey = publicKeyPem.trim()
+    // Clean the public key more carefully
+    let cleanKey = publicKeyPem.trim();
+    
+    // Remove all header/footer variations
+    cleanKey = cleanKey
       .replace(/-----BEGIN PUBLIC KEY-----/g, '')
       .replace(/-----END PUBLIC KEY-----/g, '')
       .replace(/-----BEGIN RSA PUBLIC KEY-----/g, '')
       .replace(/-----END RSA PUBLIC KEY-----/g, '')
-      .replace(/\s/g, '');
+      .replace(/\r?\n/g, '') // Remove all line breaks
+      .replace(/\s+/g, ''); // Remove all whitespace
+
+    console.log('🔧 [RSA] Cleaned key length:', cleanKey.length);
 
     if (cleanKey.length === 0) {
       throw new Error('Empty key content after cleaning');
@@ -23,17 +29,34 @@ async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string
     const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
     console.log('✅ [RSA] Key decoded, length:', keyData.length);
 
-    // Import the public key with SHA-1 (as Perfect Corp likely uses)
-    const publicKey = await crypto.subtle.importKey(
-      'spki',
-      keyData,
-      {
-        name: 'RSA-OAEP',
-        hash: 'SHA-1', // Use SHA-1 as it worked in logs
-      },
-      false,
-      ['encrypt']
-    );
+    // Try with SHA-256 first (more common), then SHA-1 if it fails
+    let publicKey;
+    try {
+      publicKey = await crypto.subtle.importKey(
+        'spki',
+        keyData,
+        {
+          name: 'RSA-OAEP',
+          hash: 'SHA-256',
+        },
+        false,
+        ['encrypt']
+      );
+      console.log('✅ [RSA] Key imported with SHA-256');
+    } catch (sha256Error) {
+      console.log('⚠️ [RSA] SHA-256 failed, trying SHA-1...', sha256Error.message);
+      publicKey = await crypto.subtle.importKey(
+        'spki',
+        keyData,
+        {
+          name: 'RSA-OAEP',
+          hash: 'SHA-1',
+        },
+        false,
+        ['encrypt']
+      );
+      console.log('✅ [RSA] Key imported with SHA-1');
+    }
 
     const encoder = new TextEncoder();
     const data = encoder.encode(payload);
@@ -114,39 +137,44 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // SIMPLIFIED: Use current Unix timestamp in seconds (like Postman)
-    const timestamp = Math.floor(Date.now() / 1000);
+    // Use EXACT same format as Postman - current Unix timestamp in seconds
+    const now = new Date();
+    const timestamp = Math.floor(now.getTime() / 1000);
+    
+    // Create payload exactly like Postman
     const payloadObj = {
       client_id: apiKey,
       timestamp: timestamp.toString()
     };
-    const payload = JSON.stringify(payloadObj);
+    const jsonPayload = JSON.stringify(payloadObj);
     
-    console.log('📝 [Auth] Timestamp (seconds):', timestamp);
+    console.log('📝 [Auth] Current time:', now.toISOString());
+    console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
     console.log('📝 [Auth] Payload object:', payloadObj);
-    console.log('📝 [Auth] JSON payload:', payload);
-    console.log('🔒 [Auth] Encrypting payload with RSA...');
+    console.log('📝 [Auth] JSON payload:', jsonPayload);
     
     // Encrypt the payload using the RSA public key
-    const idToken = await rsaEncrypt(payload, apiSecret);
+    const idToken = await rsaEncrypt(jsonPayload, apiSecret);
     console.log('✅ [Auth] RSA encryption successful');
     console.log('🎫 [Auth] ID Token length:', idToken.length);
+    console.log('🎫 [Auth] ID Token preview:', idToken.substring(0, 50) + '...');
     
-    // Send exactly like Postman: client_id + id_token
+    // Send request body exactly like Postman
     const requestBody = {
       client_id: apiKey,
       id_token: idToken
     };
     
-    console.log('📤 [Auth] Request body structure:', Object.keys(requestBody));
+    console.log('📤 [Auth] Request body keys:', Object.keys(requestBody));
     console.log('📤 [Auth] Client ID in body:', requestBody.client_id.substring(0, 8) + '...');
+    console.log('📤 [Auth] Making request to:', authUrl);
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'User-Agent': 'Supabase-Edge-Function/1.0',
+        'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
       },
       body: JSON.stringify(requestBody),
     });
@@ -220,20 +248,23 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       let errorMessage = `Authentication failed (${authResponse.status})`;
       try {
         const errorData = JSON.parse(responseText);
+        
+        console.error('❌ [Auth] Error response data:', errorData);
+        
         if (errorData.error === 'Invalid client_id or invalid id_token or key expired') {
           errorMessage = `Perfect Corp Authentication Error:
 - Status: ${authResponse.status}
 - Error: ${errorData.error}
 - Error Code: ${errorData.error_code}
 
-This suggests either:
-1. The credentials don't match what's registered with Perfect Corp
-2. The timestamp format is incorrect  
-3. The RSA encryption method doesn't match their requirements
+Debugging info:
+- Timestamp used: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+- Payload: ${jsonPayload}
+- RSA key length: ${apiSecret.length}
 
-Since Postman works, the issue is in our request format.`;
+This suggests the RSA encryption or timestamp format still doesn't match Perfect Corp's requirements.`;
         } else {
-          errorMessage = responseText;
+          errorMessage = errorData.error || responseText;
         }
       } catch {
         errorMessage = responseText;
