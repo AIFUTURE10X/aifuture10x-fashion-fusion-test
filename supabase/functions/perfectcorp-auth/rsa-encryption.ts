@@ -1,23 +1,31 @@
 
-// Enhanced RSA encryption with multiple fallback approaches
+// Enhanced RSA encryption with Perfect Corp specific handling
 export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
-    console.log('🔐 [RSA] Starting enhanced encryption...');
+    console.log('🔐 [RSA] Starting Perfect Corp RSA encryption...');
     console.log('🔐 [RSA] Payload length:', payload.length, 'bytes');
     console.log('🔐 [RSA] Raw key length:', publicKeyPem.length);
     
-    // Clean the public key more aggressively
+    // Clean and prepare the public key
     let cleanKey = publicKeyPem.trim();
     
-    // Remove all possible header/footer variations and whitespace
-    cleanKey = cleanKey
-      .replace(/-----BEGIN PUBLIC KEY-----/g, '')
-      .replace(/-----END PUBLIC KEY-----/g, '')
-      .replace(/-----BEGIN RSA PUBLIC KEY-----/g, '')
-      .replace(/-----END RSA PUBLIC KEY-----/g, '')
-      .replace(/\r?\n/g, '')
-      .replace(/\s+/g, '')
-      .trim();
+    // Handle different key formats
+    const isPemFormat = cleanKey.includes('BEGIN') && cleanKey.includes('END');
+    
+    if (isPemFormat) {
+      console.log('📝 [RSA] Processing PEM format key');
+      // Remove PEM headers/footers and clean whitespace
+      cleanKey = cleanKey
+        .replace(/-----BEGIN (?:RSA )?PUBLIC KEY-----/g, '')
+        .replace(/-----END (?:RSA )?PUBLIC KEY-----/g, '')
+        .replace(/\r?\n/g, '')
+        .replace(/\s+/g, '')
+        .trim();
+    } else {
+      console.log('📝 [RSA] Processing raw base64 key');
+      // Already base64, just clean whitespace
+      cleanKey = cleanKey.replace(/\s+/g, '');
+    }
 
     console.log('🔧 [RSA] Cleaned key length:', cleanKey.length);
 
@@ -35,28 +43,34 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
     const keyData = Uint8Array.from(atob(cleanKey), c => c.charCodeAt(0));
     console.log('✅ [RSA] Key decoded successfully, byte length:', keyData.length);
 
-    // Check payload size limitations (RSA-2048 can encrypt max ~245 bytes with OAEP-SHA256)
+    // Check payload size (RSA-1024 = ~117 bytes max, RSA-2048 = ~245 bytes max with OAEP-SHA256)
     const encoder = new TextEncoder();
     const payloadBytes = encoder.encode(payload);
     console.log('📏 [RSA] Payload byte size:', payloadBytes.length);
     
-    if (payloadBytes.length > 190) {
-      console.warn('⚠️ [RSA] Payload might be too large for RSA encryption');
+    if (payloadBytes.length > 200) {
+      throw new Error(`Payload too large for RSA encryption: ${payloadBytes.length} bytes (max ~200)`);
     }
 
-    // Try multiple encryption approaches
+    // Try multiple encryption approaches in order of likelihood for Perfect Corp
     const approaches = [
-      // Approach 1: SPKI format with SHA-256
+      // Most common approach for Perfect Corp S2S
       {
-        name: 'SPKI-SHA256',
+        name: 'SPKI-SHA1-OAEP',
+        format: 'spki' as KeyFormat,
+        algorithm: { name: 'RSA-OAEP', hash: 'SHA-1' }
+      },
+      // Alternative approach
+      {
+        name: 'SPKI-SHA256-OAEP',
         format: 'spki' as KeyFormat,
         algorithm: { name: 'RSA-OAEP', hash: 'SHA-256' }
       },
-      // Approach 2: SPKI format with SHA-1  
+      // PKCS1 padding (less common but possible)
       {
-        name: 'SPKI-SHA1',
+        name: 'SPKI-PKCS1',
         format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSA-OAEP', hash: 'SHA-1' }
+        algorithm: { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }
       }
     ];
 
@@ -66,37 +80,45 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
       try {
         console.log(`🔄 [RSA] Trying approach: ${approach.name}`);
         
-        const publicKey = await crypto.subtle.importKey(
-          approach.format,
-          keyData,
-          approach.algorithm,
-          false,
-          ['encrypt']
-        );
-        
-        console.log(`✅ [RSA] Key imported successfully with ${approach.name}`);
-        
-        // Try encryption with smaller chunks if needed
-        let encryptedData: ArrayBuffer;
-        
+        // Import the key
+        let publicKey;
         try {
-          encryptedData = await crypto.subtle.encrypt(
+          publicKey = await crypto.subtle.importKey(
+            approach.format,
+            keyData,
             approach.algorithm,
-            publicKey,
-            payloadBytes
+            false,
+            approach.algorithm.name.includes('OAEP') ? ['encrypt'] : ['verify']
           );
-          console.log(`✅ [RSA] Encryption successful with ${approach.name}`);
-        } catch (encryptError) {
-          console.log(`❌ [RSA] Encryption failed with ${approach.name}:`, encryptError.message);
-          lastError = encryptError as Error;
+          console.log(`✅ [RSA] Key imported successfully with ${approach.name}`);
+        } catch (importError) {
+          console.log(`❌ [RSA] Key import failed with ${approach.name}:`, importError.message);
+          lastError = importError as Error;
           continue;
         }
-
-        const result = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
-        console.log('🎉 [RSA] Final encrypted token length:', result.length);
-        console.log('🎫 [RSA] Token preview:', result.substring(0, 50) + '...');
         
-        return result;
+        // Try encryption (only for OAEP algorithms)
+        if (approach.algorithm.name.includes('OAEP')) {
+          try {
+            const encryptedData = await crypto.subtle.encrypt(
+              approach.algorithm,
+              publicKey,
+              payloadBytes
+            );
+            
+            const result = btoa(String.fromCharCode(...new Uint8Array(encryptedData)));
+            console.log(`✅ [RSA] Encryption successful with ${approach.name}`);
+            console.log('🎉 [RSA] Final encrypted token length:', result.length);
+            console.log('🎫 [RSA] Token preview:', result.substring(0, 50) + '...');
+            
+            return result;
+            
+          } catch (encryptError) {
+            console.log(`❌ [RSA] Encryption failed with ${approach.name}:`, encryptError.message);
+            lastError = encryptError as Error;
+            continue;
+          }
+        }
         
       } catch (error) {
         console.log(`❌ [RSA] Approach ${approach.name} failed:`, error.message);
@@ -105,8 +127,17 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
       }
     }
     
-    // If all approaches failed, throw the last error
-    throw new Error(`All RSA encryption approaches failed. Last error: ${lastError?.message || 'Unknown error'}`);
+    // If all approaches failed, provide detailed error
+    const errorMsg = `All RSA encryption approaches failed. Last error: ${lastError?.message || 'Unknown error'}`;
+    console.error('❌ [RSA] Complete failure:', errorMsg);
+    
+    // Add troubleshooting information
+    console.log('📋 [RSA] Troubleshooting info:');
+    console.log('  - Key byte length:', keyData.length);
+    console.log('  - Payload byte length:', payloadBytes.length);
+    console.log('  - Key preview:', cleanKey.substring(0, 100) + '...');
+    
+    throw new Error(errorMsg);
     
   } catch (error) {
     console.error('❌ [RSA] Complete encryption failure:', error);

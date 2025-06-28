@@ -6,13 +6,24 @@ export function validateCredentials(apiKey: string, apiSecret: string): { valid:
     issues.push('Invalid API key - must be at least 10 characters');
   }
   
-  if (!apiSecret || apiSecret.length < 100) {
-    issues.push('Invalid API secret - RSA key must be at least 100 characters');
+  if (!apiSecret || apiSecret.length < 50) {
+    issues.push('Invalid API secret - must be at least 50 characters');
   }
   
-  // Additional validation for RSA key format
-  if (apiSecret && !apiSecret.includes('BEGIN') && !apiSecret.match(/^[A-Za-z0-9+/=\s\n\r-]+$/)) {
-    issues.push('API secret does not appear to be a valid RSA key format');
+  // Enhanced validation for RSA key format
+  if (apiSecret) {
+    const hasBeginMarker = apiSecret.includes('BEGIN');
+    const hasEndMarker = apiSecret.includes('END');
+    const isBase64Only = !hasBeginMarker && !hasEndMarker && apiSecret.match(/^[A-Za-z0-9+/=\s\n\r-]+$/);
+    
+    if (!hasBeginMarker && !isBase64Only) {
+      issues.push('API secret must be either a PEM format RSA key (with BEGIN/END markers) or pure base64');
+    }
+    
+    // Check for common RSA key indicators
+    if (hasBeginMarker && !apiSecret.includes('PUBLIC KEY')) {
+      issues.push('RSA key should contain "PUBLIC KEY" markers');
+    }
   }
   
   return {

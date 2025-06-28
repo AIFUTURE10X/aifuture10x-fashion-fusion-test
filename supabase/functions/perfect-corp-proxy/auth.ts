@@ -15,7 +15,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     return { accessToken: 'mock_token_for_testing' };
   }
 
-  // Validate credentials
+  // Enhanced credential validation
   const validation = validateCredentials(apiKey, apiSecret);
   if (!validation.valid) {
     console.error('❌ [Auth] Credential validation failed:', validation.issues);
@@ -24,7 +24,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   
   console.log('✅ [Auth] Credential validation passed');
 
-  // Check for cached token
+  // Check for cached token first
   const cachedToken = await getCachedToken(supabase);
   if (cachedToken) {
     return { accessToken: cachedToken };
@@ -36,13 +36,14 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🚀 [Auth] Starting fresh authentication');
     console.log('🔑 [Auth] API Key:', apiKey.substring(0, 8) + '...');
     console.log('🗝️ [Auth] RSA Key length:', apiSecret.length);
-    console.log('🗝️ [Auth] RSA Key preview:', apiSecret.substring(0, 50) + '...');
+    console.log('🗝️ [Auth] RSA Key format:', apiSecret.includes('BEGIN') ? 'PEM' : 'Raw Base64');
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Create timestamp and payload with minimal size
+    // Create timestamp - Perfect Corp requires Unix timestamp in seconds
     const now = new Date();
     const timestamp = Math.floor(now.getTime() / 1000);
     
+    // Create minimal payload to reduce encryption size
     const payloadObj = {
       client_id: apiKey,
       timestamp: timestamp.toString()
@@ -52,36 +53,34 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('📝 [Auth] Current time:', now.toISOString());
     console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
     console.log('📝 [Auth] JSON payload:', jsonPayload);
-    console.log('📏 [Auth] Payload length:', jsonPayload.length, 'characters');
+    console.log('📏 [Auth] Payload size:', jsonPayload.length, 'characters');
     
-    // Encrypt the payload using the enhanced RSA encryption
+    // Encrypt the payload using enhanced RSA encryption
     const idToken = await rsaEncrypt(jsonPayload, apiSecret);
     console.log('✅ [Auth] RSA encryption successful');
     console.log('🎫 [Auth] ID Token length:', idToken.length);
-    console.log('🎫 [Auth] ID Token preview:', idToken.substring(0, 50) + '...');
     
-    // Send request body exactly like Postman
+    // Prepare request body exactly as Perfect Corp expects
     const requestBody = {
       client_id: apiKey,
       id_token: idToken
     };
     
-    console.log('📤 [Auth] Request body keys:', Object.keys(requestBody));
-    console.log('📤 [Auth] Client ID in body:', requestBody.client_id.substring(0, 8) + '...');
-    console.log('📤 [Auth] Making request to:', authUrl);
+    console.log('📤 [Auth] Request structure:', Object.keys(requestBody));
+    console.log('📤 [Auth] Making request to Perfect Corp...');
     
     const authResponse = await fetch(authUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
+        'User-Agent': 'Perfect-Corp-S2S-Client/1.0',
+        'Cache-Control': 'no-cache'
       },
       body: JSON.stringify(requestBody),
     });
 
     console.log(`📥 [Auth] Response: ${authResponse.status} ${authResponse.statusText}`);
-    console.log(`📋 [Auth] Response headers:`, Object.fromEntries(authResponse.headers.entries()));
     
     const responseText = await authResponse.text();
     console.log(`📄 [Auth] Raw response:`, responseText);
@@ -91,16 +90,16 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       try {
         authData = JSON.parse(responseText);
       } catch (parseError) {
-        console.error(`❌ [Auth] Failed to parse response as JSON:`, parseError);
+        console.error(`❌ [Auth] Failed to parse JSON response:`, parseError);
         throw new Error('Invalid JSON response from Perfect Corp API');
       }
       
       console.log(`📊 [Auth] Parsed response:`, authData);
       
+      // Extract access token from various possible response formats
       let accessToken: string | null = null;
-      let expiresIn: number = 7200;
+      let expiresIn: number = 7200; // Default 2 hours
       
-      // Handle different response formats
       if (authData.result?.access_token) {
         accessToken = authData.result.access_token;
         expiresIn = authData.result.expires_in || 7200;
@@ -115,57 +114,70 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
       if (accessToken) {
         console.log(`🎉 [Auth] Authentication successful!`);
         console.log('⏱️ [Auth] Token expires in:', expiresIn, 'seconds');
-        console.log('🔑 [Auth] Token preview:', accessToken.substring(0, 20) + '...');
+        console.log('🔑 [Auth] Token length:', accessToken.length);
         
-        // Cache token
+        // Cache the successful token
         await cacheToken(supabase, accessToken, expiresIn);
         
         return { accessToken };
       } else {
-        console.error(`❌ [Auth] No access token in successful response`);
-        console.log(`🔍 [Auth] Available fields:`, Object.keys(authData));
+        console.error(`❌ [Auth] No access token in response`);
+        console.log(`🔍 [Auth] Available response fields:`, Object.keys(authData));
         throw new Error('No access token returned from Perfect Corp API');
       }
     } else {
+      // Enhanced error handling for authentication failures
       let errorMessage = `Authentication failed (${authResponse.status})`;
+      let errorDetails = '';
+      
       try {
         const errorData = JSON.parse(responseText);
-        
-        console.error('❌ [Auth] Error response data:', errorData);
+        console.error('❌ [Auth] Error response:', errorData);
         
         if (errorData.error?.includes('Invalid client_id or invalid id_token')) {
-          errorMessage = `Perfect Corp Authentication Error: ${errorData.error}
+          errorDetails = `
 
-Troubleshooting steps:
-1. Verify PERFECTCORP_API_KEY is correct
-2. Verify PERFECTCORP_API_SECRET contains the complete RSA public key  
-3. Check that credentials are not expired
-4. Ensure RSA key format is correct
+🔍 Perfect Corp Authentication Troubleshooting:
 
-Timestamp used: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
-Payload: ${jsonPayload}`;
+1. ✅ Verify PERFECTCORP_API_KEY matches your Perfect Corp Client ID
+2. ✅ Verify PERFECTCORP_API_SECRET contains the complete RSA public key
+3. ✅ Ensure your Perfect Corp account has API access enabled
+4. ✅ Check that your RSA key is in the correct format (PEM or base64)
+5. ✅ Confirm your credentials haven't expired
+
+📋 Debug Information:
+- Timestamp: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+- Payload: ${jsonPayload}
+- Key format: ${apiSecret.includes('BEGIN') ? 'PEM format' : 'Raw base64'}
+- Key length: ${apiSecret.length} characters
+
+💡 Contact Perfect Corp support if credentials are correct but authentication still fails.`;
+          
+          errorMessage = `Perfect Corp Authentication Error: ${errorData.error}${errorDetails}`;
         } else {
-          errorMessage = errorData.error || responseText;
+          errorMessage = errorData.error || errorData.message || responseText;
         }
       } catch {
-        errorMessage = responseText;
+        errorMessage = responseText || `HTTP ${authResponse.status} error`;
       }
       
-      console.log(`❌ [Auth] Authentication failed:`, errorMessage);
+      console.log(`❌ [Auth] Final error message:`, errorMessage);
       throw new Error(errorMessage);
     }
     
   } catch (error) {
-    console.error('❌ [Auth] Authentication error:', error);
+    console.error('❌ [Auth] Authentication process error:', error);
     
+    // Provide specific error guidance
     if (error.message.includes('fetch')) {
-      throw new Error('Network error: Unable to connect to Perfect Corp API. Check internet connection and API endpoint.');
+      throw new Error('Network error: Unable to connect to Perfect Corp API. Check internet connection and firewall settings.');
     }
     
     if (error.message.includes('RSA')) {
-      throw new Error(`RSA encryption error: ${error.message}. Please verify the PERFECTCORP_API_SECRET contains a valid RSA public key.`);
+      throw new Error(`RSA encryption error: ${error.message}. Verify PERFECTCORP_API_SECRET contains a valid RSA public key in PEM format or base64.`);
     }
     
-    throw new Error(`Authentication failed: ${error.message}`);
+    // Re-throw the original error if it's already detailed
+    throw error;
   }
 }
