@@ -41,25 +41,21 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
 
     console.log('🔑 [Auth] Client ID:', clientId!.substring(0, 8) + '...');
     console.log('🔐 [Auth] RSA key length:', clientSecret!.length);
-    console.log('🔐 [Auth] RSA key preview:', clientSecret!.substring(0, 50) + '...');
 
     try {
-      // Create timestamp and payload with minimal size
+      // Create timestamp in seconds (not milliseconds) as Perfect Corp likely expects
       const now = new Date();
       const timestamp = Math.floor(now.getTime() / 1000);
       
-      const payloadObj = {
-        client_id: clientId,
-        timestamp: timestamp.toString()
-      };
-      const jsonPayload = JSON.stringify(payloadObj);
+      // Try different payload formats - Perfect Corp might expect URL-encoded format
+      const urlEncodedPayload = `client_id=${clientId}&timestamp=${timestamp}`;
       
       console.log('📝 [Auth] Current time:', now.toISOString());
       console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
-      console.log('📝 [Auth] JSON payload:', jsonPayload);
-      console.log('📏 [Auth] Payload length:', jsonPayload.length, 'characters');
+      console.log('📝 [Auth] URL-encoded payload:', urlEncodedPayload);
+      console.log('📏 [Auth] Payload length:', urlEncodedPayload.length, 'characters');
       
-      const idToken = await rsaEncrypt(jsonPayload, clientSecret!);
+      const idToken = await rsaEncrypt(urlEncodedPayload, clientSecret!);
       console.log('✅ [Auth] RSA encryption successful, token length:', idToken.length);
       
       const requestBody = {
@@ -129,14 +125,20 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
           if (errorData.error?.includes('Invalid client_id or invalid id_token')) {
             errorMessage = `Perfect Corp Authentication Error: ${errorData.error}
 
-Troubleshooting steps:
-1. Verify PERFECTCORP_API_KEY is correct
-2. Verify PERFECTCORP_API_SECRET contains the complete RSA public key
-3. Check that credentials are not expired
-4. Ensure RSA key format is correct (should include headers/footers or be base64 only)
+🔍 Troubleshooting steps:
+1. Verify PERFECTCORP_API_KEY matches your Perfect Corp Client ID exactly
+2. Verify PERFECTCORP_API_SECRET contains your RSA public key in correct format
+3. Check that your Perfect Corp account has active API access
+4. Ensure your credentials haven't expired
+5. Try regenerating your API credentials in Perfect Corp dashboard
 
-Timestamp used: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
-Payload: ${jsonPayload}`;
+📋 Debug Information:
+- Timestamp: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+- Payload format: URL-encoded (${urlEncodedPayload})
+- Key format: ${clientSecret!.includes('BEGIN') ? 'PEM format' : 'Raw base64'}
+- Key length: ${clientSecret!.length} characters
+
+💡 If credentials are correct, contact Perfect Corp support for assistance.`;
           } else {
             errorMessage = errorData.error || responseText;
           }

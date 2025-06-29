@@ -43,20 +43,16 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     const now = new Date();
     const timestamp = Math.floor(now.getTime() / 1000);
     
-    // Create minimal payload to reduce encryption size
-    const payloadObj = {
-      client_id: apiKey,
-      timestamp: timestamp.toString()
-    };
-    const jsonPayload = JSON.stringify(payloadObj);
+    // Try URL-encoded format instead of JSON - this might be what Perfect Corp expects
+    const urlEncodedPayload = `client_id=${apiKey}&timestamp=${timestamp}`;
     
     console.log('📝 [Auth] Current time:', now.toISOString());
     console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
-    console.log('📝 [Auth] JSON payload:', jsonPayload);
-    console.log('📏 [Auth] Payload size:', jsonPayload.length, 'characters');
+    console.log('📝 [Auth] URL-encoded payload:', urlEncodedPayload);
+    console.log('📏 [Auth] Payload size:', urlEncodedPayload.length, 'characters');
     
     // Encrypt the payload using enhanced RSA encryption
-    const idToken = await rsaEncrypt(jsonPayload, apiSecret);
+    const idToken = await rsaEncrypt(urlEncodedPayload, apiSecret);
     console.log('✅ [Auth] RSA encryption successful');
     console.log('🎫 [Auth] ID Token length:', idToken.length);
     
@@ -139,15 +135,16 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
 
 🔍 Perfect Corp Authentication Troubleshooting:
 
-1. ✅ Verify PERFECTCORP_API_KEY matches your Perfect Corp Client ID
+1. ✅ Verify PERFECTCORP_API_KEY matches your Perfect Corp Client ID exactly
 2. ✅ Verify PERFECTCORP_API_SECRET contains the complete RSA public key
 3. ✅ Ensure your Perfect Corp account has API access enabled
 4. ✅ Check that your RSA key is in the correct format (PEM or base64)
 5. ✅ Confirm your credentials haven't expired
+6. ✅ Try using URL-encoded payload format instead of JSON
 
 📋 Debug Information:
 - Timestamp: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
-- Payload: ${jsonPayload}
+- Payload format: URL-encoded (${urlEncodedPayload})
 - Key format: ${apiSecret.includes('BEGIN') ? 'PEM format' : 'Raw base64'}
 - Key length: ${apiSecret.length} characters
 
