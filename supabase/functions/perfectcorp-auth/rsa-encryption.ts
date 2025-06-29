@@ -52,25 +52,37 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
       throw new Error(`Payload too large for RSA encryption: ${payloadBytes.length} bytes (max ~200)`);
     }
 
-    // Try multiple encryption approaches in order of likelihood for Perfect Corp
+    // Try multiple encryption approaches with PKCS#1 v1.5 as priority
     const approaches = [
-      // Most common approach for Perfect Corp S2S
+      // Perfect Corp uses PKCS#1 v1.5 padding (not OAEP)
+      {
+        name: 'SPKI-PKCS1-v1_5',
+        format: 'spki' as KeyFormat,
+        algorithm: {
+          name: 'RSASSA-PKCS1-v1_5',
+          hash: 'SHA-256'
+        },
+        canEncrypt: false // This is for signing, not encryption
+      },
+      // Try RSA-OAEP as fallback
       {
         name: 'SPKI-SHA1-OAEP',
         format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSA-OAEP', hash: 'SHA-1' }
+        algorithm: {
+          name: 'RSA-OAEP',
+          hash: 'SHA-1'
+        },
+        canEncrypt: true
       },
-      // Alternative approach
+      // Alternative OAEP approach
       {
         name: 'SPKI-SHA256-OAEP',
         format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSA-OAEP', hash: 'SHA-256' }
-      },
-      // PKCS1 padding (less common but possible)
-      {
-        name: 'SPKI-PKCS1',
-        format: 'spki' as KeyFormat,
-        algorithm: { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }
+        algorithm: {
+          name: 'RSA-OAEP',
+          hash: 'SHA-256'
+        },
+        canEncrypt: true
       }
     ];
 
@@ -83,12 +95,13 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
         // Import the key
         let publicKey;
         try {
+          const keyUsages = approach.canEncrypt ? ['encrypt'] : ['verify'];
           publicKey = await crypto.subtle.importKey(
             approach.format,
             keyData,
             approach.algorithm,
             false,
-            approach.algorithm.name.includes('OAEP') ? ['encrypt'] : ['verify']
+            keyUsages
           );
           console.log(`✅ [RSA] Key imported successfully with ${approach.name}`);
         } catch (importError) {
@@ -98,7 +111,7 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
         }
         
         // Try encryption (only for OAEP algorithms)
-        if (approach.algorithm.name.includes('OAEP')) {
+        if (approach.canEncrypt) {
           try {
             const encryptedData = await crypto.subtle.encrypt(
               approach.algorithm,
@@ -118,6 +131,9 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
             lastError = encryptError as Error;
             continue;
           }
+        } else {
+          console.log(`⏭️ [RSA] Skipping ${approach.name} - not for encryption`);
+          continue;
         }
         
       } catch (error) {
