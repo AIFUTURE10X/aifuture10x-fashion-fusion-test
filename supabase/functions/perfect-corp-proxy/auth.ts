@@ -39,15 +39,14 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
     console.log('🗝️ [Auth] RSA Key format:', apiSecret.includes('BEGIN') ? 'PEM' : 'Raw Base64');
     console.log('🌐 [Auth] Auth URL:', authUrl);
 
-    // Create timestamp - Perfect Corp requires Unix timestamp in seconds
-    const now = new Date();
-    const timestamp = Math.floor(now.getTime() / 1000);
+    // Create timestamp - Perfect Corp requires timestamp in milliseconds
+    const timestamp = new Date().getTime();
     
     // Try URL-encoded format instead of JSON - this might be what Perfect Corp expects
     const urlEncodedPayload = `client_id=${apiKey}&timestamp=${timestamp}`;
     
-    console.log('📝 [Auth] Current time:', now.toISOString());
-    console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
+    console.log('📝 [Auth] Current time:', new Date().toISOString());
+    console.log('📝 [Auth] Unix timestamp (milliseconds):', timestamp);
     console.log('📝 [Auth] URL-encoded payload:', urlEncodedPayload);
     console.log('📏 [Auth] Payload size:', urlEncodedPayload.length, 'characters');
     
@@ -143,7 +142,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
 6. ✅ Try using URL-encoded payload format instead of JSON
 
 📋 Debug Information:
-- Timestamp: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+- Timestamp: ${timestamp} (${new Date(timestamp).toISOString()})
 - Payload format: URL-encoded (${urlEncodedPayload})
 - Key format: ${apiSecret.includes('BEGIN') ? 'PEM format' : 'Raw base64'}
 - Key length: ${apiSecret.length} characters

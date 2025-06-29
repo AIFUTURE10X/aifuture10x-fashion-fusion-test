@@ -43,15 +43,14 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
     console.log('🔐 [Auth] RSA key length:', clientSecret!.length);
 
     try {
-      // Create timestamp in seconds (not milliseconds) as Perfect Corp likely expects
-      const now = new Date();
-      const timestamp = Math.floor(now.getTime() / 1000);
+      // Create timestamp in milliseconds as Perfect Corp might expect
+      const timestamp = new Date().getTime();
       
       // Try different payload formats - Perfect Corp might expect URL-encoded format
       const urlEncodedPayload = `client_id=${clientId}&timestamp=${timestamp}`;
       
-      console.log('📝 [Auth] Current time:', now.toISOString());
-      console.log('📝 [Auth] Unix timestamp (seconds):', timestamp);
+      console.log('📝 [Auth] Current time:', new Date().toISOString());
+      console.log('📝 [Auth] Unix timestamp (milliseconds):', timestamp);
       console.log('📝 [Auth] URL-encoded payload:', urlEncodedPayload);
       console.log('📏 [Auth] Payload length:', urlEncodedPayload.length, 'characters');
       
@@ -133,7 +132,7 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
 5. Try regenerating your API credentials in Perfect Corp dashboard
 
 📋 Debug Information:
-- Timestamp: ${timestamp} (${new Date(timestamp * 1000).toISOString()})
+- Timestamp: ${timestamp} (${new Date(timestamp).toISOString()})
 - Payload format: URL-encoded (${urlEncodedPayload})
 - Key format: ${clientSecret!.includes('BEGIN') ? 'PEM format' : 'Raw base64'}
 - Key length: ${clientSecret!.length} characters
