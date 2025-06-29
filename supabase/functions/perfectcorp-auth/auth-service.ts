@@ -54,8 +54,8 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
       
       // Try different timestamp formats that Perfect Corp might expect
       const timestampFormats = [
-        { value: timestampMs, description: 'milliseconds' },
-        { value: timestampSec, description: 'seconds' }
+        { value: timestampSec, description: 'seconds' },
+        { value: timestampMs, description: 'milliseconds' }
       ];
       
       for (const timestampFormat of timestampFormats) {

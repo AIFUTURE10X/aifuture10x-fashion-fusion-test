@@ -49,26 +49,37 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
     
     // Try multiple RSA algorithms that Perfect Corp might expect
     const approaches = [
-      // Approach 1: RSA-OAEP with SHA-256 (most modern)
-      {
-        name: 'RSA-OAEP',
-        hash: 'SHA-256',
-        description: 'RSA-OAEP with SHA-256',
-        keyUsage: ['encrypt']
-      },
-      // Approach 2: RSA-OAEP with SHA-1 (legacy but still used)
-      {
-        name: 'RSA-OAEP',
-        hash: 'SHA-1',
-        description: 'RSA-OAEP with SHA-1',
-        keyUsage: ['encrypt']
-      },
-      // Approach 3: RSASSA-PKCS1-v1_5 (sometimes used for encryption in legacy systems)
+      // Approach 1: RSASSA-PKCS1-v1_5 (often used for encryption in legacy systems)
       {
         name: 'RSASSA-PKCS1-v1_5',
         hash: 'SHA-256',
         description: 'RSASSA-PKCS1-v1_5 with SHA-256',
-        keyUsage: ['verify'] // Note: This is typically for signing, but some APIs misuse it
+        keyUsage: ['verify'] as KeyUsage[],
+        useSign: true
+      },
+      // Approach 2: RSASSA-PKCS1-v1_5 with SHA-1 (legacy)
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-1',
+        description: 'RSASSA-PKCS1-v1_5 with SHA-1',
+        keyUsage: ['verify'] as KeyUsage[],
+        useSign: true
+      },
+      // Approach 3: RSA-OAEP with SHA-1 (current working one)
+      {
+        name: 'RSA-OAEP',
+        hash: 'SHA-1',
+        description: 'RSA-OAEP with SHA-1',
+        keyUsage: ['encrypt'] as KeyUsage[],
+        useSign: false
+      },
+      // Approach 4: RSA-OAEP with SHA-256 (most modern)
+      {
+        name: 'RSA-OAEP',
+        hash: 'SHA-256',
+        description: 'RSA-OAEP with SHA-256',
+        keyUsage: ['encrypt'] as KeyUsage[],
+        useSign: false
       }
     ];
     
@@ -100,8 +111,11 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
         
         let encrypted: ArrayBuffer;
         
-        if (approach.name === 'RSA-OAEP') {
-          encrypted = await crypto.subtle.encrypt(
+        if (approach.useSign) {
+          // For RSASSA-PKCS1-v1_5, we use sign instead of encrypt
+          // This is a workaround for APIs that expect PKCS#1 v1.5 padding
+          console.log('⚠️ [RSA] Using sign operation for PKCS#1 v1.5 (legacy workaround)');
+          encrypted = await crypto.subtle.sign(
             {
               name: approach.name
             },
@@ -109,10 +123,7 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
             payloadBytes
           );
         } else {
-          // For RSASSA-PKCS1-v1_5, we need to use sign instead of encrypt
-          // This is a workaround for APIs that expect PKCS#1 v1.5 padding
-          console.log('⚠️ [RSA] Using sign operation for PKCS#1 v1.5 (legacy workaround)');
-          encrypted = await crypto.subtle.sign(
+          encrypted = await crypto.subtle.encrypt(
             {
               name: approach.name
             },
