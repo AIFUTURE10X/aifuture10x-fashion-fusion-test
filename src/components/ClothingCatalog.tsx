@@ -51,9 +51,10 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
             rating: 4.5,
             colors: item.colors || ['custom'],
             perfect_corp_ref_id: item.perfect_corp_ref_id,
-            style_category: item.style_category
+            style_category: item.style_category || 'HOT'
           }));
 
+          console.log('Formatted clothing with styles:', formattedClothing);
           setCustomClothing(formattedClothing);
         }
       } catch (err) {
@@ -82,7 +83,17 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
 
   const handleCustomClothingAdd = (newClothing: ClothingItem) => {
     console.log('Adding new clothing with style category:', newClothing);
-    setCustomClothing(prev => [newClothing, ...prev]);
+    
+    if (editingItem) {
+      // Update existing item in the list
+      setCustomClothing(prev => prev.map(item => 
+        item.id === editingItem.id ? newClothing : item
+      ));
+    } else {
+      // Add new item to the list
+      setCustomClothing(prev => [newClothing, ...prev]);
+    }
+    
     setShowUploadModal(false);
     setEditingItem(null);
     

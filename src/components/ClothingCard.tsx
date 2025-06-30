@@ -13,6 +13,7 @@ interface ClothingItem {
   rating: number;
   colors: string[];
   perfect_corp_ref_id?: string;
+  style_category?: string;
 }
 
 interface ClothingCardProps {
@@ -48,6 +49,11 @@ export function ClothingCard({
     }
   };
 
+  // Format style categories for display
+  const displayStyles = clothing.style_category 
+    ? clothing.style_category.split(',').map(s => s.trim()).join(', ')
+    : 'HOT';
+
   return (
     <div className="group relative bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/20 transition-all duration-200 cursor-pointer">
       <div onClick={onSelect} className="block">
@@ -61,6 +67,7 @@ export function ClothingCard({
         <div className="p-2 space-y-1">
           <h3 className="text-sm font-medium text-white truncate">{clothing.name}</h3>
           <p className="text-xs text-gray-300 truncate">{clothing.brand}</p>
+          <p className="text-xs text-cyan-300 truncate">{displayStyles}</p>
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-white">${clothing.price}</span>
             <div className="flex items-center space-x-1">
