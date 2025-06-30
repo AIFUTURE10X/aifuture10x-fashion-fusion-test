@@ -27,8 +27,14 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
       setGarmentCategory(editingItem.category);
       setUploadedPhoto(editingItem.image);
       setFilePreview(editingItem.image);
-      // Set a default style array for editing items
-      setSelectedStyle(['HOT']);
+      
+      // Parse style_category from the editing item if it exists
+      if (editingItem.style_category) {
+        const styles = editingItem.style_category.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        setSelectedStyle(styles.length > 0 ? styles : ['HOT']);
+      } else {
+        setSelectedStyle(['HOT']);
+      }
     }
   }, [editingItem]);
 
@@ -123,7 +129,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
             image: data.supabase_image_url || '',
             category: data.garment_category || 'upper_body',
             rating: 4.5,
-            colors: data.colors || ['custom']
+            colors: data.colors || ['custom'],
+            style_category: data.style_category
           };
 
           console.log('Updated clothing item:', updatedClothing);
@@ -151,7 +158,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
             image: data.supabase_image_url || '',
             category: data.garment_category || 'upper_body',
             rating: 4.5,
-            colors: data.colors || ['custom']
+            colors: data.colors || ['custom'],
+            style_category: data.style_category
           };
 
           console.log('Created new clothing item:', newClothing);

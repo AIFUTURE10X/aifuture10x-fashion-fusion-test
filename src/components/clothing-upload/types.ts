@@ -9,6 +9,7 @@ export interface ClothingItem {
   rating: number;
   colors: string[];
   perfect_corp_ref_id?: string;
+  style_category?: string;
 }
 
 export interface ClothingUploadProps {
