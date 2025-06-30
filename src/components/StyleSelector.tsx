@@ -13,7 +13,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     'All', 'HOT', 'Summer', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
     'Dresses', 'Outfits', 'Tops',
-    'Bottoms', 'Sets'
+    'Pants', 'Sets'
   ];
 
   // Map style selections to clothing categories
@@ -39,9 +39,9 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
         categories.push('upper_body');
         categories.push('Tops');
         break;
-      case 'bottoms':
+      case 'pants':
         categories.push('lower_body');
-        categories.push('Bottoms');
+        categories.push('Pants');
         break;
       default:
         // For general styles like HOT, Summer, etc., we pass the style name directly for filtering
