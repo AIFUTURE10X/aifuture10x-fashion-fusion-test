@@ -123,6 +123,22 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     }
   };
 
+  const handlePredefinedEdit = (item: ClothingItem) => {
+    toast({
+      title: "Edit Not Available",
+      description: "Predefined clothing items cannot be edited. You can add a custom version instead.",
+      variant: "destructive"
+    });
+  };
+
+  const handlePredefinedDelete = (item: ClothingItem) => {
+    toast({
+      title: "Delete Not Available", 
+      description: "Predefined clothing items cannot be deleted.",
+      variant: "destructive"
+    });
+  };
+
   const handleAddCustomClothing = () => {
     setEditingItem(null);
     setShowUploadModal(true);
@@ -162,6 +178,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           onClothingSelect={onClothingSelect}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onPredefinedEdit={handlePredefinedEdit}
+          onPredefinedDelete={handlePredefinedDelete}
         />
       ) : (
         <ClothingEmptyState onAddCustomClothing={handleAddCustomClothing} />

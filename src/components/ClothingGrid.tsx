@@ -20,6 +20,8 @@ interface ClothingGridProps {
   onClothingSelect: (clothing: any) => void;
   onEdit: (item: ClothingItem) => void;
   onDelete: (item: ClothingItem) => void;
+  onPredefinedEdit: (item: ClothingItem) => void;
+  onPredefinedDelete: (item: ClothingItem) => void;
 }
 
 export function ClothingGrid({
@@ -27,7 +29,9 @@ export function ClothingGrid({
   predefinedClothing,
   onClothingSelect,
   onEdit,
-  onDelete
+  onDelete,
+  onPredefinedEdit,
+  onPredefinedDelete
 }: ClothingGridProps) {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
@@ -49,6 +53,8 @@ export function ClothingGrid({
           key={`predefined-${item.id}`}
           clothing={item}
           onSelect={() => onClothingSelect(item)}
+          onEdit={() => onPredefinedEdit(item)}
+          onDelete={() => onPredefinedDelete(item)}
           isCustom={false}
         />
       ))}
