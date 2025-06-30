@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -65,7 +64,7 @@ export const useClothingCatalog = (styleFilter: string[] = ['all']) => {
           const itemStyles = item.style_category.split(',').map(s => s.trim().toLowerCase());
           const selectedStylesLower = styleFilter.map(s => s.toLowerCase());
           
-          // Check for exact style matches
+          // Check for exact style matches first
           const hasStyleMatch = selectedStylesLower.some(selectedStyle => 
             itemStyles.includes(selectedStyle)
           );
@@ -73,9 +72,22 @@ export const useClothingCatalog = (styleFilter: string[] = ['all']) => {
           if (hasStyleMatch) return true;
         }
         
-        // Also check category matches for specific clothing types
-        const categoryMatches = styleFilter.includes(item.category);
-        return categoryMatches;
+        // For category-specific filters like "Dresses", "Outfits", "Tops", "Pants"
+        // Only show items if their style_category specifically includes these terms
+        const categorySpecificFilters = ['dresses', 'outfits', 'tops', 'pants'];
+        const selectedCategoryFilters = styleFilter.filter(style => 
+          categorySpecificFilters.includes(style.toLowerCase())
+        );
+        
+        if (selectedCategoryFilters.length > 0 && item.style_category) {
+          const itemStyles = item.style_category.split(',').map(s => s.trim().toLowerCase());
+          const hasCategoryMatch = selectedCategoryFilters.some(categoryFilter =>
+            itemStyles.includes(categoryFilter.toLowerCase())
+          );
+          return hasCategoryMatch;
+        }
+        
+        return false;
       });
       
       console.log('Filtered clothing:', filtered.length, 'items');
