@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Check, Shirt, User, Package } from 'lucide-react';
@@ -331,10 +330,12 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                 </Label>
                 <Input
                   id="clothingName"
+                  type="text"
                   value={clothingName}
                   onChange={(e) => setClothingName(e.target.value)}
                   placeholder="e.g., Blue Denim Jacket"
                   className="mt-1"
+                  required
                 />
               </div>
 
@@ -342,7 +343,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                 <Label htmlFor="garmentCategory" className="text-sm font-medium text-gray-700">
                   Garment Category *
                 </Label>
-                <Select value={garmentCategory} onValueChange={setGarmentCategory}>
+                <Select value={garmentCategory} onValueChange={setGarmentCategory} required>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -369,6 +370,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                   </Label>
                   <Input
                     id="clothingBrand"
+                    type="text"
                     value={clothingBrand}
                     onChange={(e) => setClothingBrand(e.target.value)}
                     placeholder="e.g., Nike"
@@ -384,6 +386,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                     id="clothingPrice"
                     type="number"
                     step="0.01"
+                    min="0"
                     value={clothingPrice}
                     onChange={(e) => setClothingPrice(e.target.value)}
                     placeholder="0.00"
@@ -463,7 +466,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
               <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                disabled={!uploadedPhoto || !garmentCategory || !clothingName}
+                disabled={!uploadedPhoto || !garmentCategory || !clothingName.trim()}
               >
                 <Check className="w-4 h-4 mr-2" />
                 {editingItem ? 'Update Clothing' : 'Add to Catalog'}
