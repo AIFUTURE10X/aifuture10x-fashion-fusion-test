@@ -16,7 +16,7 @@ interface ClothingUploadFormProps {
   clothingName: string;
   clothingBrand: string;
   clothingPrice: string;
-  selectedStyle: string;
+  selectedStyle: string[];
   editingItem: any;
   onDrop: (acceptedFiles: File[]) => void;
   onRemoveImage: () => void;
@@ -26,7 +26,7 @@ interface ClothingUploadFormProps {
   setClothingName: (value: string) => void;
   setClothingBrand: (value: string) => void;
   setClothingPrice: (value: string) => void;
-  setSelectedStyle: (value: string) => void;
+  setSelectedStyle: (styles: string[]) => void;
 }
 
 export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({

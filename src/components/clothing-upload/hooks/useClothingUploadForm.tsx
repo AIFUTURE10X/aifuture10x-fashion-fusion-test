@@ -15,7 +15,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
   const [clothingName, setClothingName] = useState('');
   const [clothingBrand, setClothingBrand] = useState('');
   const [clothingPrice, setClothingPrice] = useState('');
-  const [selectedStyle, setSelectedStyle] = useState('HOT');
+  const [selectedStyle, setSelectedStyle] = useState<string[]>(['HOT']);
   const { toast } = useToast();
 
   // Pre-populate form when editing
@@ -27,8 +27,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
       setGarmentCategory(editingItem.category);
       setUploadedPhoto(editingItem.image);
       setFilePreview(editingItem.image);
-      // Set a default style for editing items
-      setSelectedStyle('HOT');
+      // Set a default style array for editing items
+      setSelectedStyle(['HOT']);
     }
   }, [editingItem]);
 
@@ -95,7 +95,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         garment_category: garmentCategory,
         supabase_image_url: uploadedPhoto,
         colors: ['custom'],
-        style_category: selectedStyle
+        style_category: selectedStyle.join(',') // Store as comma-separated string
       };
 
       console.log('Item data to be saved:', itemData);
