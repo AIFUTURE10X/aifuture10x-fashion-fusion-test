@@ -74,13 +74,6 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
             key={style}
             onClick={() => handleStyleClick(style)}
             variant={activeStyle === style ? "default" : "outline"}
-            className={`
-              px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
-              ${activeStyle === style
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg border-0' 
-                : 'bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-white'
-              }
-            `}
           >
             {style}
           </Button>
