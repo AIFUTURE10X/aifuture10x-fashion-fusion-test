@@ -128,23 +128,10 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     setShowUploadModal(true);
   };
 
-  // Combine predefined and custom clothing
-  const allClothing = [...filteredCustomClothing, ...filteredClothing];
-
   return (
     <div className="space-y-6">
-      <ClothingFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        priceRange={priceRange}
-        setPriceRange={setPriceRange}
-      />
-
       {/* Add Custom Clothing Button */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Available Clothing</h3>
+      <div className="flex justify-center">
         <Button
           onClick={handleAddCustomClothing}
           className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
@@ -153,19 +140,6 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           Add Custom Clothing
         </Button>
       </div>
-
-      {/* Clothing Grid */}
-      {allClothing.length > 0 ? (
-        <ClothingGrid
-          customClothing={filteredCustomClothing}
-          predefinedClothing={filteredClothing}
-          onClothingSelect={onClothingSelect}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      ) : (
-        <ClothingEmptyState onAddCustomClothing={handleAddCustomClothing} />
-      )}
 
       {/* Upload Modal */}
       {showUploadModal && (
