@@ -1,11 +1,10 @@
-
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
 import { TryOnViewer } from '@/components/TryOnViewer';
 import { ShareModal } from '@/components/ShareModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { StyleSelector } from '@/components/StyleSelector';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home, Settings } from 'lucide-react';
@@ -336,6 +335,9 @@ const Index = () => {
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
+          
+          <StyleSelector onStyleChange={(style) => console.log('Selected style:', style)} />
+          
           <ClothingCatalog onClothingSelect={handleClothingSelect} />
         </div>
       )}
@@ -384,4 +386,3 @@ const Index = () => {
 };
 
 export default Index;
-
