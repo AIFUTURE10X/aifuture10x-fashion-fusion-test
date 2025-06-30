@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,6 +98,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         style_category: selectedStyle
       };
 
+      console.log('Item data to be saved:', itemData);
+
       if (editingItem) {
         // Update existing item
         const { data, error: dbError } = await supabase
@@ -107,6 +110,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
           .single();
 
         if (dbError) {
+          console.error('Database update error:', dbError);
           throw new Error(dbError.message);
         }
 
@@ -134,6 +138,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
           .single();
 
         if (dbError) {
+          console.error('Database insert error:', dbError);
           throw new Error(dbError.message);
         }
 

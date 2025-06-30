@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -40,7 +39,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
         }
 
         if (data) {
-          console.log('Loaded custom clothing:', data);
+          console.log('Loaded custom clothing with style categories:', data);
           const formattedClothing: ClothingItem[] = data.map((item: any) => ({
             id: item.id || '',
             name: item.name || '',
@@ -50,7 +49,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
             category: item.garment_category || 'upper_body',
             rating: 4.5,
             colors: item.colors || ['custom'],
-            perfect_corp_ref_id: item.perfect_corp_ref_id
+            perfect_corp_ref_id: item.perfect_corp_ref_id,
+            style_category: item.style_category
           }));
 
           setCustomClothing(formattedClothing);
@@ -66,6 +66,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
   // Filter clothing based on selected style
   useEffect(() => {
     console.log('Filtering clothing by style:', styleFilter);
+    console.log('Available clothing items:', customClothing);
     
     if (styleFilter === 'all') {
       setFilteredClothing(customClothing);
@@ -77,7 +78,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
   }, [customClothing, styleFilter]);
 
   const handleCustomClothingAdd = (newClothing: ClothingItem) => {
-    console.log('Adding new clothing:', newClothing);
+    console.log('Adding new clothing with style category:', newClothing);
     setCustomClothing(prev => [newClothing, ...prev]);
     setShowUploadModal(false);
     setEditingItem(null);

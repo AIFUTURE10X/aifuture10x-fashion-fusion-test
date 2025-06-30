@@ -19,6 +19,7 @@ export type Database = {
           name: string
           perfect_corp_ref_id: string | null
           price: number | null
+          style_category: string | null
           supabase_image_url: string | null
         }
         Insert: {
@@ -30,6 +31,7 @@ export type Database = {
           name: string
           perfect_corp_ref_id?: string | null
           price?: number | null
+          style_category?: string | null
           supabase_image_url?: string | null
         }
         Update: {
@@ -41,6 +43,7 @@ export type Database = {
           name?: string
           perfect_corp_ref_id?: string | null
           price?: number | null
+          style_category?: string | null
           supabase_image_url?: string | null
         }
         Relationships: []
