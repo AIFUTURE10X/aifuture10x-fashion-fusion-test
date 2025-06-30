@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ClothingUploadProps, ClothingItem } from './types';
 import { ImageUploadSection } from './ImageUploadSection';
 import { ClothingFormFields } from './ClothingFormFields';
-import { PerfectCorpSection } from './PerfectCorpSection';
 
 export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, onClose, editingItem }) => {
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
@@ -19,8 +19,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
   const [clothingName, setClothingName] = useState('');
   const [clothingBrand, setClothingBrand] = useState('');
   const [clothingPrice, setClothingPrice] = useState('');
-  const [perfectCorpStatus, setPerfectCorpStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [perfectCorpRefId, setPerfectCorpRefId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Pre-populate form when editing
@@ -32,8 +30,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
       setGarmentCategory(editingItem.category);
       setUploadedPhoto(editingItem.image);
       setFilePreview(editingItem.image);
-      setPerfectCorpRefId(editingItem.perfect_corp_ref_id || null);
-      setPerfectCorpStatus(editingItem.perfect_corp_ref_id ? 'success' : 'idle');
     }
   }, [editingItem]);
 
@@ -50,13 +46,9 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
         const publicUrl = await uploadPhotoToSupabase(file, 'clothing-references');
         setUploadedPhoto(publicUrl);
         
-        // Reset Perfect Corp status when new image is uploaded
-        setPerfectCorpStatus('idle');
-        setPerfectCorpRefId(null);
-        
         toast({
           title: "Image uploaded!",
-          description: "Ready to process with Perfect Corp AI"
+          description: "Ready to add to your catalog"
         });
       } catch (err) {
         setError(
@@ -73,52 +65,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
   const handleRemoveImage = () => {
     setUploadedPhoto(null);
     setFilePreview(null);
-    setPerfectCorpStatus('idle');
-    setPerfectCorpRefId(null);
-  };
-
-  const handlePerfectCorpUpload = async () => {
-    if (!uploadedPhoto || !garmentCategory || !clothingName.trim()) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    setPerfectCorpStatus('uploading');
-    setError(null);
-
-    try {
-      const { data, error: funcError } = await supabase.functions.invoke('perfect-corp-reference-upload', {
-        body: {
-          imageUrl: uploadedPhoto,
-          garmentCategory: garmentCategory,
-          clothingName: clothingName.trim()
-        }
-      });
-
-      if (funcError) {
-        throw new Error(funcError.message);
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Perfect Corp upload failed');
-      }
-
-      setPerfectCorpRefId(data.ref_id);
-      setPerfectCorpStatus('success');
-      
-      toast({
-        title: "Perfect Corp Upload Complete!",
-        description: "Your clothing reference is ready for try-on"
-      });
-    } catch (err) {
-      setPerfectCorpStatus('error');
-      setError(err instanceof Error ? err.message : 'Perfect Corp upload failed');
-      toast({
-        title: "Upload Failed",
-        description: "Failed to process with Perfect Corp AI. You can still add the item without AI processing.",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,7 +100,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             price: clothingPrice ? parseFloat(clothingPrice) : 0,
             garment_category: garmentCategory,
             supabase_image_url: uploadedPhoto,
-            perfect_corp_ref_id: perfectCorpRefId,
             colors: ['custom']
           })
           .eq('id', editingItem.id)
@@ -174,8 +119,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             image: data.supabase_image_url || '',
             category: data.garment_category || 'upper_body',
             rating: 4.5,
-            colors: data.colors || ['custom'],
-            perfect_corp_ref_id: data.perfect_corp_ref_id
+            colors: data.colors || ['custom']
           };
 
           console.log('Updated clothing item:', updatedClothing);
@@ -191,7 +135,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             price: clothingPrice ? parseFloat(clothingPrice) : 0,
             garment_category: garmentCategory,
             supabase_image_url: uploadedPhoto,
-            perfect_corp_ref_id: perfectCorpRefId,
             colors: ['custom']
           })
           .select()
@@ -210,8 +153,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             image: data.supabase_image_url || '',
             category: data.garment_category || 'upper_body',
             rating: 4.5,
-            colors: data.colors || ['custom'],
-            perfect_corp_ref_id: data.perfect_corp_ref_id
+            colors: data.colors || ['custom']
           };
 
           console.log('Created new clothing item:', newClothing);
@@ -261,14 +203,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
               setClothingBrand={setClothingBrand}
               clothingPrice={clothingPrice}
               setClothingPrice={setClothingPrice}
-            />
-
-            <PerfectCorpSection
-              uploadedPhoto={uploadedPhoto}
-              garmentCategory={garmentCategory}
-              clothingName={clothingName}
-              perfectCorpStatus={perfectCorpStatus}
-              onPerfectCorpUpload={handlePerfectCorpUpload}
             />
 
             {error && (
