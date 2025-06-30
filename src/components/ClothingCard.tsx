@@ -49,10 +49,14 @@ export function ClothingCard({
     }
   };
 
-  // Format style categories for display
-  const displayStyles = clothing.style_category 
-    ? clothing.style_category.split(',').map(s => s.trim()).join(', ')
+  // Format style categories for display - debug the actual value
+  console.log('ClothingCard style_category for', clothing.name, ':', clothing.style_category);
+  
+  const displayStyles = clothing.style_category && clothing.style_category.trim()
+    ? clothing.style_category.split(',').map(s => s.trim()).filter(s => s.length > 0).join(', ')
     : 'HOT';
+
+  console.log('ClothingCard displayStyles for', clothing.name, ':', displayStyles);
 
   return (
     <div className="group relative bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/20 transition-all duration-200 cursor-pointer">
