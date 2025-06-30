@@ -139,7 +139,7 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
   return (
     <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group relative">
       <CardContent className="p-0 relative">
-        {/* Image container with proper aspect ratio - made 25% smaller */}
+        {/* Image container with proper aspect ratio - made even smaller */}
         <div className="relative w-full aspect-[3/4] overflow-hidden" onClick={onSelect}>
           <img
             src={clothing.image}
@@ -152,39 +152,39 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
           />
         </div>
         
-        {/* Edit and Delete buttons for custom clothing - positioned absolutely and always visible */}
+        {/* Edit and Delete buttons for custom clothing - ALWAYS visible for custom items */}
         {isCustom && (
-          <div className="absolute top-2 right-2 flex space-x-1 z-20">
+          <div className="absolute top-1 right-1 flex space-x-1 z-30">
             <Button
               size="sm"
               variant="secondary"
-              className="h-6 w-6 p-0 bg-white/90 hover:bg-white shadow-md"
+              className="h-5 w-5 p-0 bg-white/95 hover:bg-white shadow-lg border-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.();
               }}
             >
-              <Edit className="w-3 h-3 text-gray-700" />
+              <Edit className="w-2.5 h-2.5 text-gray-700" />
             </Button>
             <Button
               size="sm"
               variant="destructive"
-              className="h-6 w-6 p-0 bg-red-500/90 hover:bg-red-600 shadow-md"
+              className="h-5 w-5 p-0 bg-red-500/95 hover:bg-red-600 shadow-lg border-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete?.();
               }}
             >
-              <Trash2 className="w-3 h-3 text-white" />
+              <Trash2 className="w-2.5 h-2.5 text-white" />
             </Button>
           </div>
         )}
         
         {/* Content overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2" onClick={onSelect}>
-          <h3 className="text-sm font-semibold text-white mb-1">{clothing.name}</h3>
-          <p className="text-xs text-gray-300">{clothing.brand}</p>
-          <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded-full">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1.5" onClick={onSelect}>
+          <h3 className="text-xs font-semibold text-white mb-0.5 truncate">{clothing.name}</h3>
+          <p className="text-xs text-gray-300 truncate">{clothing.brand}</p>
+          <div className="absolute bottom-0.5 right-0.5 bg-black/50 text-white text-xs px-1 py-0.5 rounded-full">
             ${clothing.price.toFixed(2)}
           </div>
         </div>
@@ -362,12 +362,12 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         </Button>
       </div>
 
-      {/* Clothing Grid - updated to show smaller boxes with more columns */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* Clothing Grid - made even smaller with more columns */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
         {/* Custom Clothing */}
         {filteredCustomClothing.map((item) => (
           <ClothingCard
-            key={item.id}
+            key={`custom-${item.id}`}
             clothing={item}
             onSelect={() => onClothingSelect(item)}
             onEdit={() => handleEdit(item)}
@@ -379,7 +379,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         {/* Predefined Clothing */}
         {filteredClothing.map((item) => (
           <ClothingCard
-            key={item.id}
+            key={`predefined-${item.id}`}
             clothing={item}
             onSelect={() => onClothingSelect(item)}
             isCustom={false}
