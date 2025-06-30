@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -140,7 +139,7 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
   return (
     <Card className="bg-white/5 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer group relative">
       <CardContent className="p-0 relative">
-        {/* Image container with proper aspect ratio */}
+        {/* Image container with proper aspect ratio - made 25% smaller */}
         <div className="relative w-full aspect-[3/4] overflow-hidden" onClick={onSelect}>
           <img
             src={clothing.image}
@@ -153,39 +152,39 @@ function ClothingCard({ clothing, onSelect, onEdit, onDelete, isCustom }: {
           />
         </div>
         
-        {/* Edit and Delete buttons for custom clothing - always visible */}
+        {/* Edit and Delete buttons for custom clothing - positioned absolutely and always visible */}
         {isCustom && (
-          <div className="absolute top-2 right-2 flex space-x-2 z-10">
+          <div className="absolute top-2 right-2 flex space-x-1 z-20">
             <Button
               size="sm"
               variant="secondary"
-              className="h-8 w-8 p-0 bg-white hover:bg-gray-100 shadow-md"
+              className="h-6 w-6 p-0 bg-white/90 hover:bg-white shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.();
               }}
             >
-              <Edit className="w-4 h-4 text-gray-700" />
+              <Edit className="w-3 h-3 text-gray-700" />
             </Button>
             <Button
               size="sm"
               variant="destructive"
-              className="h-8 w-8 p-0 bg-red-500 hover:bg-red-600 shadow-md"
+              className="h-6 w-6 p-0 bg-red-500/90 hover:bg-red-600 shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete?.();
               }}
             >
-              <Trash2 className="w-4 h-4 text-white" />
+              <Trash2 className="w-3 h-3 text-white" />
             </Button>
           </div>
         )}
         
         {/* Content overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3" onClick={onSelect}>
-          <h3 className="text-md font-semibold text-white mb-1">{clothing.name}</h3>
-          <p className="text-sm text-gray-300">{clothing.brand}</p>
-          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2" onClick={onSelect}>
+          <h3 className="text-sm font-semibold text-white mb-1">{clothing.name}</h3>
+          <p className="text-xs text-gray-300">{clothing.brand}</p>
+          <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded-full">
             ${clothing.price.toFixed(2)}
           </div>
         </div>
@@ -363,8 +362,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         </Button>
       </div>
 
-      {/* Clothing Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Clothing Grid - updated to show smaller boxes with more columns */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {/* Custom Clothing */}
         {filteredCustomClothing.map((item) => (
           <ClothingCard
@@ -388,6 +387,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         ))}
       </div>
 
+      {/* Empty state */}
       {allClothing.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
