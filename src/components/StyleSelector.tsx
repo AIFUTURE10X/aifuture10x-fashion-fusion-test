@@ -7,7 +7,7 @@ interface StyleSelectorProps {
 }
 
 export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) => {
-  const [activeStyle, setActiveStyle] = useState<string>('All');
+  const [activeStyle, setActiveStyle] = useState<string>('');
 
   const styleOptions = [
     'All', 'HOT', 'Summer', 'Party', 'Trendy',
@@ -18,8 +18,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
 
   // Map style selections to clothing categories
   const getClothingCategories = (style: string): string[] => {
-    // If "All" is selected, return ['all'] to show everything
-    if (style === 'All') {
+    // If no style is selected or "All" is selected, return ['all'] to show everything
+    if (style === 'All' || style === '') {
       return ['all'];
     }
     
@@ -66,7 +66,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
         <h3 className="text-2xl font-bold text-white mb-2">Select Styles</h3>
         <p className="text-gray-200">Choose a style to filter your clothing collection</p>
         <p className="text-sm text-gray-300 mt-1">
-          Selected: {activeStyle}
+          Selected: {activeStyle || 'None'}
         </p>
       </div>
       
