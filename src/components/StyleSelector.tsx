@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -12,8 +11,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
   const styleOptions = [
     'All', 'HOT', 'Summer', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
-    'Dresses', 'Outfits', 'Tops',
-    'Pants', 'Outfits'
+    'Dresses', 'Outfits', 'Tops', 'Pants'
   ];
 
   // Map style selections to clothing categories
