@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +14,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
   const [clothingName, setClothingName] = useState('');
   const [clothingBrand, setClothingBrand] = useState('');
   const [clothingPrice, setClothingPrice] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState('HOT');
   const { toast } = useToast();
 
   // Pre-populate form when editing
@@ -26,6 +26,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
       setGarmentCategory(editingItem.category);
       setUploadedPhoto(editingItem.image);
       setFilePreview(editingItem.image);
+      // Set a default style for editing items
+      setSelectedStyle('HOT');
     }
   }, [editingItem]);
 
@@ -81,21 +83,25 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         editingItem: !!editingItem,
         clothingName,
         garmentCategory,
-        uploadedPhoto
+        uploadedPhoto,
+        selectedStyle
       });
+
+      const itemData = {
+        name: clothingName.trim(),
+        brand: clothingBrand.trim() || 'Custom',
+        price: clothingPrice ? parseFloat(clothingPrice) : 0,
+        garment_category: garmentCategory,
+        supabase_image_url: uploadedPhoto,
+        colors: ['custom'],
+        style_category: selectedStyle
+      };
 
       if (editingItem) {
         // Update existing item
         const { data, error: dbError } = await supabase
           .from('clothing_items')
-          .update({
-            name: clothingName.trim(),
-            brand: clothingBrand.trim() || 'Custom',
-            price: clothingPrice ? parseFloat(clothingPrice) : 0,
-            garment_category: garmentCategory,
-            supabase_image_url: uploadedPhoto,
-            colors: ['custom']
-          })
+          .update(itemData)
           .eq('id', editingItem.id)
           .select()
           .single();
@@ -123,14 +129,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         // Create new item
         const { data, error: dbError } = await supabase
           .from('clothing_items')
-          .insert({
-            name: clothingName.trim(),
-            brand: clothingBrand.trim() || 'Custom',
-            price: clothingPrice ? parseFloat(clothingPrice) : 0,
-            garment_category: garmentCategory,
-            supabase_image_url: uploadedPhoto,
-            colors: ['custom']
-          })
+          .insert(itemData)
           .select()
           .single();
 
@@ -175,12 +174,14 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     clothingName,
     clothingBrand,
     clothingPrice,
+    selectedStyle,
     
     // Setters
     setGarmentCategory,
     setClothingName,
     setClothingBrand,
     setClothingPrice,
+    setSelectedStyle,
     
     // Handlers
     onDrop,

@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ImageUploadSection } from './ImageUploadSection';
 import { ClothingFormFields } from './ClothingFormFields';
+import { StyleSelectionSection } from './StyleSelectionSection';
 
 interface ClothingUploadFormProps {
   uploadedPhoto: string | null;
@@ -15,6 +16,7 @@ interface ClothingUploadFormProps {
   clothingName: string;
   clothingBrand: string;
   clothingPrice: string;
+  selectedStyle: string;
   editingItem: any;
   onDrop: (acceptedFiles: File[]) => void;
   onRemoveImage: () => void;
@@ -24,6 +26,7 @@ interface ClothingUploadFormProps {
   setClothingName: (value: string) => void;
   setClothingBrand: (value: string) => void;
   setClothingPrice: (value: string) => void;
+  setSelectedStyle: (value: string) => void;
 }
 
 export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
@@ -36,6 +39,7 @@ export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
   clothingName,
   clothingBrand,
   clothingPrice,
+  selectedStyle,
   editingItem,
   onDrop,
   onRemoveImage,
@@ -44,7 +48,8 @@ export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
   setGarmentCategory,
   setClothingName,
   setClothingBrand,
-  setClothingPrice
+  setClothingPrice,
+  setSelectedStyle
 }) => {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -54,6 +59,11 @@ export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
         isProcessing={isProcessing}
         onDrop={onDrop}
         onRemoveImage={onRemoveImage}
+      />
+
+      <StyleSelectionSection
+        selectedStyle={selectedStyle}
+        onStyleChange={setSelectedStyle}
       />
 
       <ClothingFormFields

@@ -16,10 +16,12 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
     clothingName,
     clothingBrand,
     clothingPrice,
+    selectedStyle,
     setGarmentCategory,
     setClothingName,
     setClothingBrand,
     setClothingPrice,
+    setSelectedStyle,
     onDrop,
     handleRemoveImage,
     handleSubmit
@@ -48,6 +50,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
         clothingName={clothingName}
         clothingBrand={clothingBrand}
         clothingPrice={clothingPrice}
+        selectedStyle={selectedStyle}
         editingItem={editingItem}
         onDrop={onDrop}
         onRemoveImage={handleRemoveImage}
@@ -57,6 +60,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
         setClothingName={setClothingName}
         setClothingBrand={setClothingBrand}
         setClothingPrice={setClothingPrice}
+        setSelectedStyle={setSelectedStyle}
       />
     </ClothingUploadModal>
   );
