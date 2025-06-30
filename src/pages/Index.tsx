@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -360,8 +361,8 @@ const Index = () => {
         selectedClothing={selectedClothing} 
       />
 
-      {/* Footer - Moved down with smaller height */}
-      <footer className="border-t border-white/10 mt-32 relative z-20">
+      {/* Footer - Moved further down to avoid modal overlap */}
+      <footer className="border-t border-white/10 mt-48 relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-2">
@@ -383,3 +384,4 @@ const Index = () => {
 };
 
 export default Index;
+
