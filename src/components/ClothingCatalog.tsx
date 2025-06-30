@@ -5,7 +5,6 @@ import { Upload } from 'lucide-react';
 import { ClothingUpload } from '@/components/ClothingUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ClothingFilters } from './ClothingFilters';
 import { ClothingGrid } from './ClothingGrid';
 import { ClothingEmptyState } from './ClothingEmptyState';
 import { clothingData, type ClothingItem } from './ClothingData';
@@ -15,9 +14,6 @@ interface ClothingCatalogProps {
 }
 
 export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSelect }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [priceRange, setPriceRange] = useState([0, 5000]);
   const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
@@ -27,6 +23,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   useEffect(() => {
     const loadCustomClothing = async () => {
       try {
+        console.log('Loading custom clothing from database...');
         const { data, error } = await supabase
           .from('clothing_items')
           .select('*')
@@ -38,6 +35,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         }
 
         if (data) {
+          console.log('Loaded custom clothing:', data);
           const formattedClothing: ClothingItem[] = data.map((item: any) => ({
             id: item.id || '',
             name: item.name || '',
@@ -60,23 +58,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     loadCustomClothing();
   }, []);
 
-  const filteredClothing = clothingData.filter(item => {
-    const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const categoryMatch = categoryFilter === 'all' || item.category === categoryFilter;
-    const priceMatch = item.price >= priceRange[0] && item.price <= priceRange[1];
-    return searchMatch && categoryMatch && priceMatch;
-  });
-
-  const filteredCustomClothing = customClothing.filter(item => {
-    const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const categoryMatch = categoryFilter === 'all' || item.category === categoryFilter;
-    const priceMatch = item.price >= priceRange[0] && item.price <= priceRange[1];
-    return searchMatch && categoryMatch && priceMatch;
-  });
-
   const handleCustomClothingAdd = (newClothing: ClothingItem) => {
+    console.log('Adding new clothing:', newClothing);
     setCustomClothing(prev => [newClothing, ...prev]);
     setShowUploadModal(false);
     setEditingItem(null);
@@ -88,11 +71,14 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   };
 
   const handleEdit = (item: ClothingItem) => {
+    console.log('Editing custom item:', item);
     setEditingItem(item);
     setShowUploadModal(true);
   };
 
   const handleDelete = async (item: ClothingItem) => {
+    console.log('Deleting custom item:', item);
+    
     if (!confirm(`Are you sure you want to delete "${item.name}"?`)) {
       return;
     }
@@ -124,6 +110,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   };
 
   const handlePredefinedEdit = (item: ClothingItem) => {
+    console.log('Attempted to edit predefined item:', item);
     toast({
       title: "Edit Not Available",
       description: "Predefined clothing items cannot be edited. You can add a custom version instead.",
@@ -132,6 +119,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   };
 
   const handlePredefinedDelete = (item: ClothingItem) => {
+    console.log('Attempted to delete predefined item:', item);
     toast({
       title: "Delete Not Available", 
       description: "Predefined clothing items cannot be deleted.",
@@ -140,32 +128,24 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
   };
 
   const handleAddCustomClothing = () => {
+    console.log('Opening upload modal for new clothing');
     setEditingItem(null);
     setShowUploadModal(true);
   };
 
   // Combine predefined and custom clothing
-  const allClothing = [...filteredCustomClothing, ...filteredClothing];
+  const allClothing = [...customClothing, ...clothingData];
+  console.log('Total clothing items:', allClothing.length, 'Custom:', customClothing.length, 'Predefined:', clothingData.length);
 
   return (
     <div className="space-y-6">
-      <ClothingFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        priceRange={priceRange}
-        setPriceRange={setPriceRange}
-      />
-
       {/* Add Custom Clothing Button */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Available Clothing</h3>
+      <div className="flex justify-center">
         <Button
           onClick={handleAddCustomClothing}
-          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 text-lg"
         >
-          <Upload className="w-4 h-4 mr-2" />
+          <Upload className="w-5 h-5 mr-2" />
           Add Custom Clothing
         </Button>
       </div>
@@ -173,8 +153,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       {/* Clothing Grid */}
       {allClothing.length > 0 ? (
         <ClothingGrid
-          customClothing={filteredCustomClothing}
-          predefinedClothing={filteredClothing}
+          customClothing={customClothing}
+          predefinedClothing={clothingData}
           onClothingSelect={onClothingSelect}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -190,6 +170,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
         <ClothingUpload
           onClothingAdd={handleCustomClothingAdd}
           onClose={() => {
+            console.log('Closing upload modal');
             setShowUploadModal(false);
             setEditingItem(null);
           }}

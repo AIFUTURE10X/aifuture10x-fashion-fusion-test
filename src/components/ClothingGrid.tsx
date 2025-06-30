@@ -33,6 +33,9 @@ export function ClothingGrid({
   onPredefinedEdit,
   onPredefinedDelete
 }: ClothingGridProps) {
+  console.log('ClothingGrid - customClothing count:', customClothing.length);
+  console.log('ClothingGrid - predefinedClothing count:', predefinedClothing.length);
+
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
       {/* Custom Clothing */}
@@ -41,8 +44,14 @@ export function ClothingGrid({
           key={`custom-${item.id}`}
           clothing={item}
           onSelect={() => onClothingSelect(item)}
-          onEdit={() => onEdit(item)}
-          onDelete={() => onDelete(item)}
+          onEdit={() => {
+            console.log('Custom edit triggered for:', item.name);
+            onEdit(item);
+          }}
+          onDelete={() => {
+            console.log('Custom delete triggered for:', item.name);
+            onDelete(item);
+          }}
           isCustom={true}
         />
       ))}
@@ -53,8 +62,14 @@ export function ClothingGrid({
           key={`predefined-${item.id}`}
           clothing={item}
           onSelect={() => onClothingSelect(item)}
-          onEdit={() => onPredefinedEdit(item)}
-          onDelete={() => onPredefinedDelete(item)}
+          onEdit={() => {
+            console.log('Predefined edit triggered for:', item.name);
+            onPredefinedEdit(item);
+          }}
+          onDelete={() => {
+            console.log('Predefined delete triggered for:', item.name);
+            onPredefinedDelete(item);
+          }}
           isCustom={false}
         />
       ))}

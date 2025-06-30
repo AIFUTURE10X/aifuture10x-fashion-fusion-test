@@ -30,6 +30,24 @@ export function ClothingCard({
   onDelete,
   isCustom
 }: ClothingCardProps) {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Edit clicked for:', clothing.name, 'isCustom:', isCustom);
+    if (onEdit) {
+      onEdit();
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Delete clicked for:', clothing.name, 'isCustom:', isCustom);
+    if (onDelete) {
+      onDelete();
+    }
+  };
+
   return (
     <div className="group relative bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/20 transition-all duration-200 cursor-pointer">
       <div onClick={onSelect} className="block">
@@ -55,31 +73,27 @@ export function ClothingCard({
       
       {/* Edit/delete buttons - now visible for all clothing items */}
       {(onEdit || onDelete) && (
-        <div className="absolute top-2 right-2 flex space-x-1">
+        <div className="absolute top-2 right-2 flex space-x-1 opacity-100">
           {onEdit && (
             <Button
               size="sm"
               variant="secondary"
-              className="h-6 w-6 p-0 bg-white/20 hover:bg-white/30"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
+              className="h-6 w-6 p-0 bg-white/20 hover:bg-white/30 border-0"
+              onClick={handleEdit}
+              type="button"
             >
-              <Edit className="w-3 h-3" />
+              <Edit className="w-3 h-3 text-white" />
             </Button>
           )}
           {onDelete && (
             <Button
               size="sm"
               variant="destructive"
-              className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
+              className="h-6 w-6 p-0 bg-red-500/20 hover:bg-red-500/30 border-0"
+              onClick={handleDelete}
+              type="button"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3 h-3 text-white" />
             </Button>
           )}
         </div>
