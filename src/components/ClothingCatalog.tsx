@@ -11,10 +11,15 @@ import { type ClothingItem } from './ClothingData';
 
 interface ClothingCatalogProps {
   onClothingSelect: (clothing: any) => void;
+  styleFilter?: string;
 }
 
-export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSelect }) => {
+export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ 
+  onClothingSelect, 
+  styleFilter = 'all' 
+}) => {
   const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
+  const [filteredClothing, setFilteredClothing] = useState<ClothingItem[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ClothingItem | null>(null);
   const { toast } = useToast();
@@ -57,6 +62,19 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
 
     loadCustomClothing();
   }, []);
+
+  // Filter clothing based on selected style
+  useEffect(() => {
+    console.log('Filtering clothing by style:', styleFilter);
+    
+    if (styleFilter === 'all') {
+      setFilteredClothing(customClothing);
+    } else {
+      const filtered = customClothing.filter(item => item.category === styleFilter);
+      console.log('Filtered clothing:', filtered.length, 'items');
+      setFilteredClothing(filtered);
+    }
+  }, [customClothing, styleFilter]);
 
   const handleCustomClothingAdd = (newClothing: ClothingItem) => {
     console.log('Adding new clothing:', newClothing);
@@ -115,7 +133,7 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     setShowUploadModal(true);
   };
 
-  console.log('Total clothing items:', customClothing.length, 'Custom:', customClothing.length);
+  console.log('Total clothing items:', customClothing.length, 'Filtered:', filteredClothing.length);
 
   return (
     <div className="space-y-6">
@@ -131,9 +149,9 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       </div>
 
       {/* Clothing Grid */}
-      {customClothing.length > 0 ? (
+      {filteredClothing.length > 0 ? (
         <ClothingGrid
-          customClothing={customClothing}
+          customClothing={filteredClothing}
           predefinedClothing={[]}
           onClothingSelect={onClothingSelect}
           onEdit={handleEdit}
@@ -141,6 +159,11 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
           onPredefinedEdit={() => {}}
           onPredefinedDelete={() => {}}
         />
+      ) : customClothing.length > 0 ? (
+        <div className="text-center py-12">
+          <p className="text-white text-lg mb-4">No items found for this style category</p>
+          <p className="text-gray-300">Try selecting a different style or add more clothing items</p>
+        </div>
       ) : (
         <ClothingEmptyState onAddCustomClothing={handleAddCustomClothing} />
       )}

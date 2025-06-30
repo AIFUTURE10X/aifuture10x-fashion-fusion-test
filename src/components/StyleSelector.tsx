@@ -16,9 +16,27 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     'Bottoms', 'Sets'
   ];
 
+  // Map style selections to clothing categories
+  const getClothingCategory = (style: string): string | null => {
+    switch (style.toLowerCase()) {
+      case 'dresses':
+        return 'full_body';
+      case 'tops':
+        return 'upper_body';
+      case 'bottoms':
+        return 'lower_body';
+      case 'sets':
+        return 'full_body';
+      default:
+        return null; // Show all categories for general styles like HOT, Summer, etc.
+    }
+  };
+
   const handleStyleClick = (style: string) => {
     setActiveStyle(style);
-    onStyleChange?.(style);
+    const category = getClothingCategory(style);
+    console.log('Selected style:', style, 'Category filter:', category);
+    onStyleChange?.(category || 'all');
   };
 
   return (

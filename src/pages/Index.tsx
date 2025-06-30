@@ -20,6 +20,7 @@ const Index = () => {
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
   const [showUploadComponent, setShowUploadComponent] = useState(false);
   const [isTestingConfig, setIsTestingConfig] = useState(false);
+  const [selectedStyleFilter, setSelectedStyleFilter] = useState<string>('all');
   const { theme } = useTheme();
   const { toast } = useToast();
 
@@ -44,6 +45,7 @@ const Index = () => {
     setTryOnResult(null);
     setCurrentStep('upload');
     setShowUploadComponent(false);
+    setSelectedStyleFilter('all');
   };
 
   const handleGoToApp = () => {
@@ -56,6 +58,11 @@ const Index = () => {
 
   const handleBackToHome = () => {
     setShowUploadComponent(false);
+  };
+
+  const handleStyleChange = (styleFilter: string) => {
+    console.log('Style filter changed to:', styleFilter);
+    setSelectedStyleFilter(styleFilter);
   };
 
   const handleTestConfiguration = async () => {
@@ -336,9 +343,12 @@ const Index = () => {
             <p className="text-gray-200 drop-shadow-sm">Select clothing items to try on virtually</p>
           </div>
           
-          <StyleSelector onStyleChange={(style) => console.log('Selected style:', style)} />
+          <StyleSelector onStyleChange={handleStyleChange} />
           
-          <ClothingCatalog onClothingSelect={handleClothingSelect} />
+          <ClothingCatalog 
+            onClothingSelect={handleClothingSelect} 
+            styleFilter={selectedStyleFilter}
+          />
         </div>
       )}
 
