@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ClothingGrid } from './ClothingGrid';
 import { ClothingEmptyState } from './ClothingEmptyState';
-import { clothingData, type ClothingItem } from './ClothingData';
+import { type ClothingItem } from './ClothingData';
 
 interface ClothingCatalogProps {
   onClothingSelect: (clothing: any) => void;
@@ -109,33 +109,13 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
     }
   };
 
-  const handlePredefinedEdit = (item: ClothingItem) => {
-    console.log('Attempted to edit predefined item:', item);
-    toast({
-      title: "Edit Not Available",
-      description: "Predefined clothing items cannot be edited. You can add a custom version instead.",
-      variant: "destructive"
-    });
-  };
-
-  const handlePredefinedDelete = (item: ClothingItem) => {
-    console.log('Attempted to delete predefined item:', item);
-    toast({
-      title: "Delete Not Available", 
-      description: "Predefined clothing items cannot be deleted.",
-      variant: "destructive"
-    });
-  };
-
   const handleAddCustomClothing = () => {
     console.log('Opening upload modal for new clothing');
     setEditingItem(null);
     setShowUploadModal(true);
   };
 
-  // Combine predefined and custom clothing
-  const allClothing = [...customClothing, ...clothingData];
-  console.log('Total clothing items:', allClothing.length, 'Custom:', customClothing.length, 'Predefined:', clothingData.length);
+  console.log('Total clothing items:', customClothing.length, 'Custom:', customClothing.length);
 
   return (
     <div className="space-y-6">
@@ -151,15 +131,15 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ onClothingSele
       </div>
 
       {/* Clothing Grid */}
-      {allClothing.length > 0 ? (
+      {customClothing.length > 0 ? (
         <ClothingGrid
           customClothing={customClothing}
-          predefinedClothing={clothingData}
+          predefinedClothing={[]}
           onClothingSelect={onClothingSelect}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onPredefinedEdit={handlePredefinedEdit}
-          onPredefinedDelete={handlePredefinedDelete}
+          onPredefinedEdit={() => {}}
+          onPredefinedDelete={() => {}}
         />
       ) : (
         <ClothingEmptyState onAddCustomClothing={handleAddCustomClothing} />
