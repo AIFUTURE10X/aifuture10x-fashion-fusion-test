@@ -13,7 +13,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     'All', 'HOT', 'Summer', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
     'Dresses', 'Outfits', 'Tops',
-    'Pants', 'Sets'
+    'Pants', 'Outfits'
   ];
 
   // Map style selections to clothing categories
@@ -26,10 +26,10 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     const categories: string[] = [];
     
     switch (style.toLowerCase()) {
-      case 'sets':
-        // Sets should map to full_body category and also pass the style name
+      case 'outfits':
+        // Outfits should map to full_body category and also pass the style name
         categories.push('full_body');
-        categories.push('Sets');
+        categories.push('Outfits');
         break;
       case 'dresses':
         categories.push('full_body');
