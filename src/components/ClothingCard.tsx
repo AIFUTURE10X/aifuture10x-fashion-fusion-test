@@ -34,11 +34,7 @@ export function ClothingCard({
     <div className="group relative bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden hover:bg-white/20 transition-all duration-200 cursor-pointer">
       <div onClick={onSelect} className="block">
         <div className="aspect-[3/4] overflow-hidden">
-          <img
-            src={clothing.image}
-            alt={clothing.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          />
+          {/* Image element removed */}
         </div>
         <div className="p-2 space-y-1">
           <h3 className="text-sm font-medium text-white truncate">{clothing.name}</h3>
