@@ -1,39 +1,14 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Upload, X, Check, Shirt, User, Package } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface ClothingItem {
-  id: string;
-  name: string;
-  brand: string;
-  price: number;
-  image: string;
-  category: string;
-  rating: number;
-  colors: string[];
-  perfect_corp_ref_id?: string;
-}
-
-interface ClothingUploadProps {
-  onClothingAdd: (clothing: ClothingItem) => void;
-  onClose: () => void;
-  editingItem?: ClothingItem | null;
-}
-
-const garmentCategories = [
-  { value: 'upper_body', label: 'Upper Body', icon: Shirt, description: 'Shirts, tops, jackets, dresses' },
-  { value: 'lower_body', label: 'Lower Body', icon: User, description: 'Pants, shorts, skirts' },
-  { value: 'full_body', label: 'Full Body', icon: Package, description: 'Dresses, jumpsuits, full outfits' }
-];
+import { ClothingUploadProps, ClothingItem } from './types';
+import { ImageUploadSection } from './ImageUploadSection';
+import { ClothingFormFields } from './ClothingFormFields';
+import { PerfectCorpSection } from './PerfectCorpSection';
 
 export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, onClose, editingItem }) => {
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
@@ -96,14 +71,12 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
     }
   }, [toast]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
-    },
-    multiple: false,
-    maxSize: 10 * 1024 * 1024 // 10MB
-  });
+  const handleRemoveImage = () => {
+    setUploadedPhoto(null);
+    setFilePreview(null);
+    setPerfectCorpStatus('idle');
+    setPerfectCorpRefId(null);
+  };
 
   const handlePerfectCorpUpload = async () => {
     if (!uploadedPhoto || !garmentCategory || !clothingName.trim()) {
@@ -272,191 +245,32 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload Section */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Reference Image *
-              </Label>
-              {uploadedPhoto ? (
-                <div className="relative">
-                  <img
-                    src={filePreview || uploadedPhoto}
-                    alt="Uploaded clothing"
-                    className="w-full h-64 object-cover rounded-lg border border-gray-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUploadedPhoto(null);
-                      setFilePreview(null);
-                      setPerfectCorpStatus('idle');
-                      setPerfectCorpRefId(null);
-                    }}
-                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  {...getRootProps()}
-                  className={cn(
-                    "border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer transition-all duration-200 hover:border-purple-400",
-                    isDragActive && "border-purple-500 bg-purple-50",
-                    isProcessing && "pointer-events-none opacity-75"
-                  )}
-                >
-                  <input {...getInputProps()} />
-                  
-                  <div className="mb-4">
-                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                      {isProcessing ? (
-                        <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <Upload className="w-6 h-6 text-gray-600" />
-                      )}
-                    </div>
-                    
-                    {isProcessing ? (
-                      <p className="text-gray-600">Uploading...</p>
-                    ) : isDragActive ? (
-                      <p className="text-purple-600 font-medium">Drop the image here</p>
-                    ) : (
-                      <>
-                        <p className="text-gray-900 font-medium mb-1">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-gray-500 text-sm">PNG, JPG, WebP up to 10MB</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <ImageUploadSection
+              uploadedPhoto={uploadedPhoto}
+              filePreview={filePreview}
+              isProcessing={isProcessing}
+              onDrop={onDrop}
+              onRemoveImage={handleRemoveImage}
+            />
 
-            {/* Form Fields */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="clothingName" className="text-sm font-medium text-gray-700">
-                  Clothing Name *
-                </Label>
-                <Input
-                  id="clothingName"
-                  value={clothingName}
-                  onChange={(e) => setClothingName(e.target.value)}
-                  placeholder="e.g., Blue Denim Jacket"
-                  className="mt-1"
-                  required
-                />
-              </div>
+            <ClothingFormFields
+              clothingName={clothingName}
+              setClothingName={setClothingName}
+              garmentCategory={garmentCategory}
+              setGarmentCategory={setGarmentCategory}
+              clothingBrand={clothingBrand}
+              setClothingBrand={setClothingBrand}
+              clothingPrice={clothingPrice}
+              setClothingPrice={setClothingPrice}
+            />
 
-              <div>
-                <Label htmlFor="garmentCategory" className="text-sm font-medium text-gray-700">
-                  Garment Category *
-                </Label>
-                <Select value={garmentCategory} onValueChange={setGarmentCategory} required>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {garmentCategories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        <div className="flex items-center space-x-2">
-                          <category.icon className="w-4 h-4" />
-                          <div>
-                            <div className="font-medium">{category.label}</div>
-                            <div className="text-xs text-gray-500">{category.description}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="clothingBrand" className="text-sm font-medium text-gray-700">
-                    Brand
-                  </Label>
-                  <Input
-                    id="clothingBrand"
-                    value={clothingBrand}
-                    onChange={(e) => setClothingBrand(e.target.value)}
-                    placeholder="e.g., Nike"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="clothingPrice" className="text-sm font-medium text-gray-700">
-                    Price ($)
-                  </Label>
-                  <Input
-                    id="clothingPrice"
-                    type="number"
-                    step="0.01"
-                    value={clothingPrice}
-                    onChange={(e) => setClothingPrice(e.target.value)}
-                    placeholder="0.00"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Perfect Corp Processing */}
-            {uploadedPhoto && garmentCategory && clothingName && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-purple-900">Perfect Corp AI Processing</h4>
-                  {perfectCorpStatus === 'success' && <Check className="w-5 h-5 text-green-600" />}
-                </div>
-                
-                {perfectCorpStatus === 'idle' && (
-                  <div>
-                    <p className="text-purple-700 text-sm mb-3">
-                      Process your clothing with Perfect Corp AI for realistic try-on results. (Optional)
-                    </p>
-                    <Button
-                      type="button"
-                      onClick={handlePerfectCorpUpload}
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      Process with AI
-                    </Button>
-                  </div>
-                )}
-                
-                {perfectCorpStatus === 'uploading' && (
-                  <div className="flex items-center space-x-2 text-purple-700">
-                    <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm">Processing with Perfect Corp AI...</span>
-                  </div>
-                )}
-                
-                {perfectCorpStatus === 'success' && (
-                  <p className="text-green-700 text-sm">
-                    ✅ Successfully processed! Ready for virtual try-on.
-                  </p>
-                )}
-                
-                {perfectCorpStatus === 'error' && (
-                  <div>
-                    <p className="text-red-700 text-sm mb-2">Failed to process with Perfect Corp AI</p>
-                    <Button
-                      type="button"
-                      onClick={handlePerfectCorpUpload}
-                      size="sm"
-                      variant="outline"
-                    >
-                      Retry Processing
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+            <PerfectCorpSection
+              uploadedPhoto={uploadedPhoto}
+              garmentCategory={garmentCategory}
+              clothingName={clothingName}
+              perfectCorpStatus={perfectCorpStatus}
+              onPerfectCorpUpload={handlePerfectCorpUpload}
+            />
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -464,7 +278,6 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
               </div>
             )}
 
-            {/* Submit Buttons */}
             <div className="flex gap-3 pt-4">
               <Button
                 type="button"

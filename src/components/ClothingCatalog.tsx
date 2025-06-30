@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
-import { ClothingUpload } from '@/components/ClothingUpload';
+import { ClothingUpload } from '@/components/clothing-upload/ClothingUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ClothingGrid } from './ClothingGrid';
