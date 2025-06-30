@@ -39,6 +39,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [garmentCategory, setGarmentCategory] = useState<string>('');
   const [clothingName, setClothingName] = useState('');
@@ -156,7 +157,21 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
       return;
     }
 
+    if (isSubmitting) {
+      return; // Prevent double submission
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
     try {
+      console.log('Starting form submission...', {
+        editingItem: !!editingItem,
+        clothingName,
+        garmentCategory,
+        uploadedPhoto
+      });
+
       if (editingItem) {
         // Update existing item
         const { data, error: dbError } = await supabase
@@ -191,12 +206,8 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             perfect_corp_ref_id: data.perfect_corp_ref_id
           };
 
+          console.log('Updated clothing item:', updatedClothing);
           onClothingAdd(updatedClothing);
-          
-          toast({
-            title: "Clothing Updated!",
-            description: "Your clothing item has been successfully updated"
-          });
         }
       } else {
         // Create new item
@@ -231,28 +242,28 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             perfect_corp_ref_id: data.perfect_corp_ref_id
           };
 
+          console.log('Created new clothing item:', newClothing);
           onClothingAdd(newClothing);
-          
-          toast({
-            title: "Clothing Added!",
-            description: "Your custom clothing item is now available for try-on"
-          });
         }
       }
     } catch (err) {
+      console.error('Form submission error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save clothing item');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
               {editingItem ? 'Edit Clothing' : 'Add Custom Clothing'}
             </h2>
             <button
+              type="button"
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
@@ -335,6 +346,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                   onChange={(e) => setClothingName(e.target.value)}
                   placeholder="e.g., Blue Denim Jacket"
                   className="mt-1"
+                  required
                 />
               </div>
 
@@ -342,7 +354,7 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
                 <Label htmlFor="garmentCategory" className="text-sm font-medium text-gray-700">
                   Garment Category *
                 </Label>
-                <Select value={garmentCategory} onValueChange={setGarmentCategory}>
+                <Select value={garmentCategory} onValueChange={setGarmentCategory} required>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -447,7 +459,9 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
             )}
 
             {error && (
-              <p className="text-red-600 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
             )}
 
             {/* Submit Buttons */}
@@ -463,10 +477,19 @@ export const ClothingUpload: React.FC<ClothingUploadProps> = ({ onClothingAdd, o
               <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                disabled={!uploadedPhoto || !garmentCategory || !clothingName}
+                disabled={!uploadedPhoto || !garmentCategory || !clothingName || isSubmitting}
               >
-                <Check className="w-4 h-4 mr-2" />
-                {editingItem ? 'Update Clothing' : 'Add to Catalog'}
+                {isSubmitting ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    {editingItem ? 'Updating...' : 'Adding...'}
+                  </div>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    {editingItem ? 'Update Clothing' : 'Add to Catalog'}
+                  </>
+                )}
               </Button>
             </div>
           </form>
