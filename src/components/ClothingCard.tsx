@@ -53,9 +53,9 @@ export function ClothingCard({
         </div>
       </div>
       
-      {/* Custom clothing edit/delete buttons */}
+      {/* Custom clothing edit/delete buttons - now permanently visible */}
       {isCustom && (onEdit || onDelete) && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-1">
+        <div className="absolute top-2 right-2 flex space-x-1">
           {onEdit && (
             <Button
               size="sm"
