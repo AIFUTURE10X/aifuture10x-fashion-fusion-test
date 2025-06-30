@@ -6,10 +6,10 @@ interface StyleSelectorProps {
 }
 
 export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) => {
-  const [activeStyles, setActiveStyles] = useState<string[]>(['HOT']);
+  const [activeStyles, setActiveStyles] = useState<string[]>(['All']);
 
   const styleOptions = [
-    'HOT', 'Summer', 'Party', 'Trendy',
+    'All', 'HOT', 'Summer', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
     'Dresses', 'Outfits', 'Tops',
     'Bottoms', 'Sets'
@@ -17,6 +17,11 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
 
   // Map style selections to clothing categories
   const getClothingCategories = (styles: string[]): string[] => {
+    // If "All" is selected, return ['all'] to show everything
+    if (styles.includes('All')) {
+      return ['all'];
+    }
+    
     const categories: string[] = [];
     
     styles.forEach(style => {
@@ -34,7 +39,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
           if (!categories.includes('full_body')) categories.push('full_body');
           break;
         default:
-          // For general styles like HOT, Summer, etc., we don't add specific categories
+          // For general styles like HOT, Summer, etc., we pass the style name directly for filtering
+          if (!categories.includes(style)) categories.push(style);
           break;
       }
     });
@@ -45,22 +51,30 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
   const handleStyleClick = (style: string) => {
     let newActiveStyles: string[];
     
-    if (activeStyles.includes(style)) {
-      // Remove style if already selected (but keep at least one)
-      if (activeStyles.length > 1) {
-        newActiveStyles = activeStyles.filter(s => s !== style);
-      } else {
-        newActiveStyles = activeStyles; // Don't allow removing the last style
-      }
+    if (style === 'All') {
+      // If "All" is clicked, select only "All"
+      newActiveStyles = ['All'];
     } else {
-      // Add style to selection
-      newActiveStyles = [...activeStyles, style];
+      // Remove "All" if it was selected and add the new style
+      const filteredStyles = activeStyles.filter(s => s !== 'All');
+      
+      if (filteredStyles.includes(style)) {
+        // Remove style if already selected (but keep at least one)
+        if (filteredStyles.length > 1) {
+          newActiveStyles = filteredStyles.filter(s => s !== style);
+        } else {
+          newActiveStyles = ['All']; // If removing the last style, default to "All"
+        }
+      } else {
+        // Add style to selection
+        newActiveStyles = [...filteredStyles, style];
+      }
     }
     
     setActiveStyles(newActiveStyles);
     const categories = getClothingCategories(newActiveStyles);
     console.log('Selected styles:', newActiveStyles, 'Category filters:', categories);
-    onStyleChange?.(categories.length > 0 ? categories : ['all']);
+    onStyleChange?.(categories);
   };
 
   return (

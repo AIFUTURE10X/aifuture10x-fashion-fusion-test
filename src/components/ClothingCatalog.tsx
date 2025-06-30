@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -71,11 +70,28 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
     console.log('Available clothing items:', customClothing);
     
     if (styleFilter.includes('all') || styleFilter.length === 0) {
+      // Show all clothing when "all" is selected
       setFilteredClothing(customClothing);
     } else {
-      const filtered = customClothing.filter(item => 
-        styleFilter.includes(item.category)
-      );
+      const filtered = customClothing.filter(item => {
+        // Check if the item's style_category contains any of the selected styles
+        if (item.style_category) {
+          const itemStyles = item.style_category.split(',').map(s => s.trim().toLowerCase());
+          const selectedStylesLower = styleFilter.map(s => s.toLowerCase());
+          
+          // Check for exact style matches
+          const hasStyleMatch = selectedStylesLower.some(selectedStyle => 
+            itemStyles.includes(selectedStyle)
+          );
+          
+          if (hasStyleMatch) return true;
+        }
+        
+        // Also check category matches for specific clothing types
+        const categoryMatches = styleFilter.includes(item.category);
+        return categoryMatches;
+      });
+      
       console.log('Filtered clothing:', filtered.length, 'items');
       setFilteredClothing(filtered);
     }
