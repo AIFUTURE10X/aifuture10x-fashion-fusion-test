@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
@@ -10,12 +11,12 @@ import { type ClothingItem } from './ClothingData';
 
 interface ClothingCatalogProps {
   onClothingSelect: (clothing: any) => void;
-  styleFilter?: string;
+  styleFilter?: string[];
 }
 
 export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({ 
   onClothingSelect, 
-  styleFilter = 'all' 
+  styleFilter = ['all'] 
 }) => {
   const [customClothing, setCustomClothing] = useState<ClothingItem[]>([]);
   const [filteredClothing, setFilteredClothing] = useState<ClothingItem[]>([]);
@@ -63,15 +64,17 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
     loadCustomClothing();
   }, []);
 
-  // Filter clothing based on selected style
+  // Filter clothing based on selected styles
   useEffect(() => {
-    console.log('Filtering clothing by style:', styleFilter);
+    console.log('Filtering clothing by styles:', styleFilter);
     console.log('Available clothing items:', customClothing);
     
-    if (styleFilter === 'all') {
+    if (styleFilter.includes('all') || styleFilter.length === 0) {
       setFilteredClothing(customClothing);
     } else {
-      const filtered = customClothing.filter(item => item.category === styleFilter);
+      const filtered = customClothing.filter(item => 
+        styleFilter.includes(item.category)
+      );
       console.log('Filtered clothing:', filtered.length, 'items');
       setFilteredClothing(filtered);
     }
@@ -162,8 +165,8 @@ export const ClothingCatalog: React.FC<ClothingCatalogProps> = ({
         />
       ) : customClothing.length > 0 ? (
         <div className="text-center py-12">
-          <p className="text-white text-lg mb-4">No items found for this style category</p>
-          <p className="text-gray-300">Try selecting a different style or add more clothing items</p>
+          <p className="text-white text-lg mb-4">No items found for the selected style categories</p>
+          <p className="text-gray-300">Try selecting different styles or add more clothing items</p>
         </div>
       ) : (
         <ClothingEmptyState onAddCustomClothing={handleAddCustomClothing} />

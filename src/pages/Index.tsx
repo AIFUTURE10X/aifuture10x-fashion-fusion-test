@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -21,7 +20,7 @@ const Index = () => {
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
   const [showUploadComponent, setShowUploadComponent] = useState(false);
   const [isTestingConfig, setIsTestingConfig] = useState(false);
-  const [selectedStyleFilter, setSelectedStyleFilter] = useState<string>('all');
+  const [selectedStyleFilter, setSelectedStyleFilter] = useState<string[]>(['all']);
   const { theme } = useTheme();
   const { toast } = useToast();
 
@@ -46,7 +45,7 @@ const Index = () => {
     setTryOnResult(null);
     setCurrentStep('upload');
     setShowUploadComponent(false);
-    setSelectedStyleFilter('all');
+    setSelectedStyleFilter(['all']);
   };
 
   const handleGoToApp = () => {
@@ -61,9 +60,9 @@ const Index = () => {
     setShowUploadComponent(false);
   };
 
-  const handleStyleChange = (styleFilter: string) => {
-    console.log('Style filter changed to:', styleFilter);
-    setSelectedStyleFilter(styleFilter);
+  const handleStyleChange = (styleFilters: string[]) => {
+    console.log('Style filters changed to:', styleFilters);
+    setSelectedStyleFilter(styleFilters);
   };
 
   const handleTestConfiguration = async () => {
