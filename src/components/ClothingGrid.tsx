@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ClothingCardComponent } from './ClothingCard';
+import { ClothingCard } from './ClothingCard';
 
 interface ClothingItem {
   id: string;
@@ -33,7 +33,7 @@ export function ClothingGrid({
     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
       {/* Custom Clothing */}
       {customClothing.map((item) => (
-        <ClothingCardComponent
+        <ClothingCard
           key={`custom-${item.id}`}
           clothing={item}
           onSelect={() => onClothingSelect(item)}
@@ -45,7 +45,7 @@ export function ClothingGrid({
       
       {/* Predefined Clothing */}
       {predefinedClothing.map((item) => (
-        <ClothingCardComponent
+        <ClothingCard
           key={`predefined-${item.id}`}
           clothing={item}
           onSelect={() => onClothingSelect(item)}
