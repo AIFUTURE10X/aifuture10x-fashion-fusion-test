@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -26,17 +27,22 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     
     styles.forEach(style => {
       switch (style.toLowerCase()) {
+        case 'sets':
+          // Sets should map to full_body category and also pass the style name
+          if (!categories.includes('full_body')) categories.push('full_body');
+          if (!categories.includes('Sets')) categories.push('Sets');
+          break;
         case 'dresses':
           if (!categories.includes('full_body')) categories.push('full_body');
+          if (!categories.includes('Dresses')) categories.push('Dresses');
           break;
         case 'tops':
           if (!categories.includes('upper_body')) categories.push('upper_body');
+          if (!categories.includes('Tops')) categories.push('Tops');
           break;
         case 'bottoms':
           if (!categories.includes('lower_body')) categories.push('lower_body');
-          break;
-        case 'sets':
-          if (!categories.includes('full_body')) categories.push('full_body');
+          if (!categories.includes('Bottoms')) categories.push('Bottoms');
           break;
         default:
           // For general styles like HOT, Summer, etc., we pass the style name directly for filtering
@@ -71,6 +77,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
       }
     }
     
+    console.log('Style clicked:', style, 'New active styles:', newActiveStyles);
     setActiveStyles(newActiveStyles);
     const categories = getClothingCategories(newActiveStyles);
     console.log('Selected styles:', newActiveStyles, 'Category filters:', categories);
@@ -96,7 +103,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
             className={`
               px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
               ${activeStyles.includes(style)
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' 
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg border-0' 
                 : 'bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-white'
               }
             `}
