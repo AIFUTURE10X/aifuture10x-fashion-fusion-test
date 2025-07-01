@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-
 interface StyleSelectorProps {
   onStyleChange?: (styles: string[]) => void;
 }
-
-export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) => {
+export const StyleSelector: React.FC<StyleSelectorProps> = ({
+  onStyleChange
+}) => {
   const [activeStyle, setActiveStyle] = useState<string>('');
-
-  const styleOptions = [
-    'All', 'HOT', 'Summer', 'Party', 'Trendy',
-    'Smart Chic', 'Edgy', 'Daily', 'Casual',
-    'Dresses', 'Outfits', 'Tops', 'Pants'
-  ];
+  const styleOptions = ['All', 'HOT', 'Summer', 'Party', 'Trendy', 'Smart Chic', 'Edgy', 'Daily', 'Casual', 'Dresses', 'Outfits', 'Tops', 'Pants'];
 
   // Map style selections to clothing categories
   const getClothingCategories = (style: string): string[] => {
@@ -20,9 +15,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     if (style === 'All' || style === '') {
       return ['all'];
     }
-    
     const categories: string[] = [];
-    
     switch (style.toLowerCase()) {
       case 'outfits':
         // Outfits should map to full_body category and also pass the style name
@@ -46,10 +39,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
         categories.push(style);
         break;
     }
-    
     return categories;
   };
-
   const handleStyleClick = (style: string) => {
     console.log('Style clicked:', style, 'Previous active style:', activeStyle);
     setActiveStyle(style);
@@ -57,9 +48,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
     console.log('Selected style:', style, 'Category filters:', categories);
     onStyleChange?.(categories);
   };
-
-  return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-lg mb-8">
+  return <div className="bg-white/10 backdrop-blur-sm p-6 border border-white/20 shadow-lg mb-8 py-[15px] my-0 mx-0 px-[15px] rounded-3xl">
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-white mb-2">Select Styles</h3>
         <p className="text-gray-200">Choose a style to filter your clothing collection</p>
@@ -69,16 +58,9 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({ onStyleChange }) =
       </div>
       
       <div className="flex flex-wrap gap-3 justify-center">
-        {styleOptions.map((style) => (
-          <Button
-            key={style}
-            onClick={() => handleStyleClick(style)}
-            variant={activeStyle === style ? "default" : "outline"}
-          >
+        {styleOptions.map(style => <Button key={style} onClick={() => handleStyleClick(style)} variant={activeStyle === style ? "default" : "outline"}>
             {style}
-          </Button>
-        ))}
+          </Button>)}
       </div>
-    </div>
-  );
+    </div>;
 };
