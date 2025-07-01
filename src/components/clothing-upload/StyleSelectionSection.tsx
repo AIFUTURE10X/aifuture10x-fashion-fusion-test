@@ -13,7 +13,7 @@ export const StyleSelectionSection: React.FC<StyleSelectionSectionProps> = ({
   onStyleChange
 }) => {
   const styleOptions = [
-    'HOT', 'Summer', 'Party', 'Trendy',
+    'HOT', 'Summer', 'Winter', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
     'Dresses', 'Outfits', 'Tops',
     'Pants', 'Sets'
