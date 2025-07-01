@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,7 +16,7 @@ export const StyleSelectionSection: React.FC<StyleSelectionSectionProps> = ({
     'HOT', 'Summer', 'Party', 'Trendy',
     'Smart Chic', 'Edgy', 'Daily', 'Casual',
     'Dresses', 'Outfits', 'Tops',
-    'Bottoms', 'Sets'
+    'Pants', 'Sets'
   ];
 
   const handleStyleClick = (style: string) => {
