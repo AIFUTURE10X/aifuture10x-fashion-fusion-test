@@ -279,7 +279,8 @@ const Index = () => {
       {/* Clothing Catalog */}
       {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Choose Your Style</h2>
+            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
+        </h2>
             <p className="text-gray-200 drop-shadow-sm">
         </p>
           </div>
