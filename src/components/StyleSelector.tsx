@@ -7,7 +7,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
   onStyleChange
 }) => {
   const [activeStyle, setActiveStyle] = useState<string>('');
-  const styleOptions = ['All', 'HOT', 'Summer', 'Party', 'Trendy', 'Smart Chic', 'Edgy', 'Daily', 'Casual', 'Dresses', 'Outfits', 'Tops', 'Pants'];
+  const styleOptions = ['All', 'HOT', 'Summer', 'Winter', 'Party', 'Trendy', 'Smart Chic', 'Edgy', 'Daily', 'Casual', 'Dresses', 'Outfits', 'Tops', 'Pants'];
 
   // Map style selections to clothing categories
   const getClothingCategories = (style: string): string[] => {
