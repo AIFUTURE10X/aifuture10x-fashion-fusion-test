@@ -19,19 +19,23 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
   });
 
   try {
-    // Validate access token before proceeding
+    // Enhanced access token validation
     if (!accessToken || accessToken === 'undefined' || accessToken.length < 10) {
       throw new Error('Invalid or missing access token for Perfect Corp API');
     }
+    
+    // Additional token format validation
+    if (!accessToken.includes('.') && accessToken !== 'mock_token_for_testing') {
+      console.warn('⚠️ Access token format seems unusual - may be corrupted');
+    }
+    
     console.log('✅ Access token validation passed');
 
-    // Step 2: Get user photo data with enhanced error handling
+    // Get user photo data with enhanced error handling
     console.log('📸 Getting user photo data for S2S API...');
     
-    // Extract storage path from userPhotoStoragePath if it exists
     let storagePath = requestData.userPhotoStoragePath;
     if (storagePath && storagePath.includes('/storage/v1/object/public/')) {
-      // Extract just the bucket/path part
       storagePath = storagePath.split('/storage/v1/object/public/')[1];
       console.log('📁 Extracted storage path:', storagePath);
     }
@@ -59,8 +63,10 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
 
     console.log('✅ Photo data validation passed');
 
-    // Step 3: Upload user photo to Perfect Corp S2S API using enhanced multi-strategy approach
+    // Upload user photo to Perfect Corp S2S API with enhanced retry logic
     console.log('📤 Uploading user photo to Perfect Corp S2S API...');
+    console.log('🔄 Using enhanced upload strategy with multiple fallbacks...');
+    
     const fileId = await uploadUserPhoto(accessToken, userPhotoData);
     console.log(`🎉 File uploaded to S2S API successfully with ID: ${fileId}`);
 
@@ -75,7 +81,7 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
 
     console.log('✅ File ID validation passed');
 
-    // Step 4: Run clothes try-on task with S2S API
+    // Continue with try-on task
     console.log('🎽 Starting S2S try-on task...');
     const taskId = await startTryOnTask(
       accessToken, 
@@ -87,12 +93,12 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     );
     console.log(`🚀 S2S Try-on task started with ID: ${taskId}`);
 
-    // Step 5: Poll for task completion from S2S API
+    // Poll for task completion
     console.log('⏳ Polling for S2S task completion...');
     const result = await pollTaskCompletion(accessToken, taskId);
     console.log('✅ S2S Task completed successfully');
 
-    // Step 6: Download and convert result image from S2S API
+    // Download and process result
     const resultImageUrl = result.result?.output_url || 
                            result.result?.result_image_url || 
                            result.output_url || 
@@ -126,12 +132,19 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     console.error('🔥 S2S Error details:', error);
     
     // Enhanced error context for debugging
-    if (error.message && error.message.includes('File upload failed')) {
+    if (error.message && error.message.includes('file upload failed')) {
       console.error('📤 File upload specific error - check Perfect Corp S2S API endpoint and credentials');
+      console.error('💡 Suggestion: Verify API endpoint availability and token permissions');
     }
     
     if (error.message && error.message.includes('Invalid access token')) {
       console.error('🔑 Authentication error - token may be expired or invalid');
+      console.error('💡 Suggestion: Check token generation and refresh logic');
+    }
+
+    if (error.message && error.message.includes('500')) {
+      console.error('🔥 Server error from Perfect Corp - API may be experiencing issues');
+      console.error('💡 Suggestion: Check Perfect Corp API status or contact support');
     }
     
     // Re-throw the error to be handled by the main function
