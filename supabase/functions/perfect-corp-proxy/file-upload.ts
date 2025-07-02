@@ -14,17 +14,20 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   try {
     console.log('Uploading to S2S endpoint:', uploadUrl);
-    console.log('Using direct binary upload with application/octet-stream');
+    console.log('Using multipart/form-data upload approach');
     
-    // Try direct binary upload with octet-stream content type
+    // Create FormData for proper multipart upload
+    const formData = new FormData();
+    const blob = new Blob([userPhotoData], { type: 'image/jpeg' });
+    formData.append('file', blob, 'user_photo.jpg');
+    
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': userPhotoData.byteLength.toString(),
+        // Don't set Content-Type, let the browser set it with boundary for FormData
       },
-      body: userPhotoData,
+      body: formData,
     });
 
     console.log(`S2S Upload response status: ${uploadResponse.status}`);
@@ -45,15 +48,16 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     const errorText = await uploadResponse.text();
     console.error('S2S Upload failed:', uploadResponse.status, errorText);
     
-    // If octet-stream fails, try with image/jpeg
-    if (uploadResponse.status === 415) {
-      console.log('Retrying with image/jpeg content type...');
+    // If FormData fails, try with direct binary upload
+    if (uploadResponse.status === 400 || uploadResponse.status === 415) {
+      console.log('Retrying with direct binary upload...');
       
       const retryResponse = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'image/jpeg',
+          'Content-Length': userPhotoData.byteLength.toString(),
         },
         body: userPhotoData,
       });

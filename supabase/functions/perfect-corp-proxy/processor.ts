@@ -10,17 +10,37 @@ import { corsHeaders } from '../_shared/cors.ts';
 export async function processTryOnRequest(requestData: any, accessToken: string): Promise<any> {
   const startTime = Date.now();
   console.log('=== Starting Perfect Corp S2S try-on process ===');
+  console.log('Request data:', {
+    hasUserPhoto: !!requestData.userPhoto,
+    hasUserPhotoStoragePath: !!requestData.userPhotoStoragePath,
+    clothingCategory: requestData.clothingCategory,
+    isCustomClothing: requestData.isCustomClothing
+  });
 
   try {
-    // Step 2: Get user photo data
+    // Step 2: Get user photo data with enhanced error handling
     console.log('Getting user photo data for S2S API...');
+    
+    // Extract storage path from userPhotoStoragePath if it exists
+    let storagePath = requestData.userPhotoStoragePath;
+    if (storagePath && storagePath.includes('/storage/v1/object/public/')) {
+      // Extract just the bucket/path part
+      storagePath = storagePath.split('/storage/v1/object/public/')[1];
+      console.log('Extracted storage path:', storagePath);
+    }
+    
     const userPhotoData = await getUserPhotoData(
       requestData.userPhoto, 
-      requestData.userPhotoStoragePath, 
+      storagePath,
       Deno.env.get('SUPABASE_URL')!, 
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     console.log(`User photo data size for S2S: ${userPhotoData.byteLength} bytes`);
+
+    // Validate photo data
+    if (userPhotoData.byteLength === 0) {
+      throw new Error('User photo data is empty');
+    }
 
     // Step 3: Upload user photo to Perfect Corp S2S API
     console.log('Uploading user photo to Perfect Corp S2S API...');
