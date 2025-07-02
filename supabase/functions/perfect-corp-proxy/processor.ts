@@ -42,10 +42,20 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
       throw new Error('User photo data is empty');
     }
 
-    // Step 3: Upload user photo to Perfect Corp S2S API
-    console.log('Uploading user photo to Perfect Corp S2S API...');
+    // Additional validation for minimum file size (avoid corrupted images)
+    if (userPhotoData.byteLength < 1000) {
+      throw new Error(`User photo data too small: ${userPhotoData.byteLength} bytes. This might indicate a corrupted or invalid image.`);
+    }
+
+    // Step 3: Upload user photo to Perfect Corp S2S API using two-step process
+    console.log('Uploading user photo to Perfect Corp S2S API using correct two-step process...');
     const fileId = await uploadUserPhoto(accessToken, userPhotoData);
     console.log(`File uploaded to S2S API with ID: ${fileId}`);
+
+    // Validate file_id format
+    if (!fileId || typeof fileId !== 'string' || fileId.trim().length === 0) {
+      throw new Error(`Invalid file_id received from S2S upload: ${fileId}`);
+    }
 
     // Step 4: Run clothes try-on task with S2S API
     console.log('Starting S2S try-on task...');
@@ -96,6 +106,11 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     const totalTime = Date.now() - startTime;
     console.error(`=== S2S Try-on process failed after ${totalTime}ms ===`);
     console.error('S2S Error details:', error);
+    
+    // Enhanced error context for debugging
+    if (error.message && error.message.includes('S2S File upload failed')) {
+      console.error('File upload specific error - check Perfect Corp S2S API endpoint and format');
+    }
     
     // Re-throw the error to be handled by the main function
     throw error;

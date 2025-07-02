@@ -2,7 +2,7 @@
 import { PERFECTCORP_BASE_URL } from './constants.ts';
 
 export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('Step 2: Uploading user photo to S2S API...');
+  console.log('Step 2: Uploading user photo to S2S API using two-step process...');
   console.log('Photo data size:', userPhotoData.byteLength, 'bytes');
   
   if (accessToken === 'mock_token_for_testing') {
@@ -10,100 +10,73 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
     return 'mock_file_id_12345';
   }
   
-  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes`;
+  // Step 1: Request upload URL and file_id from Perfect Corp S2S API
+  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes-tryon`;
   
   try {
-    console.log('Uploading to S2S endpoint:', uploadUrl);
+    console.log('Step 1: Requesting upload URL from S2S API...');
+    console.log('Upload request endpoint:', uploadRequestUrl);
     
-    // Try direct binary upload first (this is often what APIs expect)
-    console.log('Attempting direct binary upload...');
-    
-    const binaryResponse = await fetch(uploadUrl, {
+    const uploadRequestResponse = await fetch(uploadRequestUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': userPhotoData.byteLength.toString(),
+        'Content-Type': 'application/json',
       },
-      body: userPhotoData,
+      body: JSON.stringify({
+        files: [
+          {
+            content_type: 'image/jpeg',
+            file_name: 'user_photo.jpg'
+          }
+        ]
+      }),
     });
 
-    console.log(`S2S Binary upload response status: ${binaryResponse.status}`);
-    console.log('Response headers:', Object.fromEntries(binaryResponse.headers.entries()));
+    console.log(`S2S Upload request response status: ${uploadRequestResponse.status}`);
+    console.log('Response headers:', Object.fromEntries(uploadRequestResponse.headers.entries()));
 
-    if (binaryResponse.ok) {
-      const binaryData = await binaryResponse.json();
-      console.log('S2S Binary upload response data:', binaryData);
-      
-      const fileId = binaryData.result?.file_id || binaryData.file_id || binaryData.id;
-      if (fileId) {
-        console.log('Photo uploaded successfully with binary approach, file_id:', fileId);
-        return fileId;
-      }
-    }
-    
-    // If binary upload fails, try multipart form data
-    console.log('Binary upload failed, trying multipart form...');
-    
-    const formData = new FormData();
-    const blob = new Blob([userPhotoData], { type: 'image/jpeg' });
-    formData.append('file', blob, 'photo.jpg');
-    
-    const multipartResponse = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        // Don't set Content-Type for FormData - let browser set it with boundary
-      },
-      body: formData,
-    });
-
-    console.log(`S2S Multipart upload response status: ${multipartResponse.status}`);
-
-    if (multipartResponse.ok) {
-      const multipartData = await multipartResponse.json();
-      console.log('S2S Multipart upload response data:', multipartData);
-      
-      const fileId = multipartData.result?.file_id || multipartData.file_id || multipartData.id;
-      if (fileId) {
-        console.log('Photo uploaded successfully with multipart approach, file_id:', fileId);
-        return fileId;
-      }
+    if (!uploadRequestResponse.ok) {
+      const errorText = await uploadRequestResponse.text();
+      console.error('S2S Upload request failed:', uploadRequestResponse.status, errorText);
+      throw new Error(`S2S Upload request failed: ${uploadRequestResponse.status} - ${errorText}`);
     }
 
-    // If both methods fail, try with image/jpeg content type
-    console.log('Multipart upload failed, trying with image/jpeg content type...');
+    const uploadRequestData = await uploadRequestResponse.json();
+    console.log('S2S Upload request response data:', uploadRequestData);
     
-    const imageResponse = await fetch(uploadUrl, {
-      method: 'POST',
+    const uploadResult = uploadRequestData.result || uploadRequestData;
+    const uploadUrl = uploadResult.files?.[0]?.url;
+    const fileId = uploadResult.files?.[0]?.file_id;
+
+    if (!uploadUrl || !fileId) {
+      console.error('Missing upload URL or file_id in response:', uploadRequestData);
+      throw new Error('No upload URL or file_id received from Perfect Corp S2S API');
+    }
+
+    console.log('Received upload URL and file_id:', { fileId, uploadUrlLength: uploadUrl.length });
+
+    // Step 2: Upload actual image data to the signed URL
+    console.log('Step 2: Uploading image data to signed URL...');
+    
+    const imageUploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'image/jpeg',
       },
       body: userPhotoData,
     });
 
-    console.log(`S2S Image upload response status: ${imageResponse.status}`);
+    console.log(`S2S Image upload response status: ${imageUploadResponse.status}`);
 
-    if (imageResponse.ok) {
-      const imageData = await imageResponse.json();
-      console.log('S2S Image upload response data:', imageData);
-      
-      const fileId = imageData.result?.file_id || imageData.file_id || imageData.id;
-      if (fileId) {
-        console.log('Photo uploaded successfully with image/jpeg approach, file_id:', fileId);
-        return fileId;
-      }
+    if (!imageUploadResponse.ok) {
+      const errorText = await imageUploadResponse.text();
+      console.error('S2S Image upload failed:', imageUploadResponse.status, errorText);
+      throw new Error(`S2S Image upload failed: ${imageUploadResponse.status} - ${errorText}`);
     }
 
-    // Get detailed error information from the last response
-    const errorText = await imageResponse.text();
-    console.error('All S2S upload methods failed. Last error:', imageResponse.status, errorText);
-    
-    // Log response headers for debugging
-    console.error('Last response headers:', Object.fromEntries(imageResponse.headers.entries()));
-    
-    throw new Error(`S2S Upload failed: ${imageResponse.status} - ${errorText}`);
+    console.log('S2S Photo uploaded successfully using two-step process, file_id:', fileId);
+    return fileId;
     
   } catch (error) {
     console.error('S2S Upload error:', error);
