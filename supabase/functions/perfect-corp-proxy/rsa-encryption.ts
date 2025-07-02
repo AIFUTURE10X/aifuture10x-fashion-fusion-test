@@ -1,4 +1,29 @@
 
+/*
+Reference JavaScript implementation using JSEncrypt library:
+
+const encrypt = new JSEncrypt();
+const publicKey = pm.environment.get("client_secret");
+encrypt.setPublicKey(publicKey);
+
+const clientId = pm.environment.get("client_id");
+const timestamp = new Date().getTime();
+const payload = `client_id=${clientId}&timestamp=${timestamp}`;
+
+const encrypted = encrypt.encrypt(payload);
+if (!encrypted) {
+    console.error("Error in encrypt id token");
+    return;
+}
+console.log(encrypted); // id_token
+
+This example shows:
+1. Setting the public key directly on the encrypt object
+2. Using URL-encoded payload format: client_id=X&timestamp=Y
+3. Using timestamp in milliseconds (new Date().getTime())
+4. Direct encryption call that returns the encrypted string
+*/
+
 export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise<string> {
   try {
     console.log('🔐 [RSA] Starting Perfect Corp RSA encryption...');
@@ -48,22 +73,23 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
     console.log('🔧 [RSA] Key data preview (hex):', Array.from(keyData.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' '));
     
     // Try multiple RSA algorithms that Perfect Corp might expect
+    // Based on the JavaScript reference, we should prioritize RSA-OAEP
     const approaches = [
-      // Approach 1: RSA-OAEP with SHA-256 (most modern)
+      // Approach 1: RSA-OAEP with SHA-1 (most likely to match JSEncrypt default)
+      {
+        name: 'RSA-OAEP',
+        hash: 'SHA-1',
+        description: 'RSA-OAEP with SHA-1 (JSEncrypt compatible)',
+        keyUsage: ['encrypt']
+      },
+      // Approach 2: RSA-OAEP with SHA-256 (modern alternative)
       {
         name: 'RSA-OAEP',
         hash: 'SHA-256',
         description: 'RSA-OAEP with SHA-256',
         keyUsage: ['encrypt']
       },
-      // Approach 2: RSA-OAEP with SHA-1 (legacy but still used)
-      {
-        name: 'RSA-OAEP',
-        hash: 'SHA-1',
-        description: 'RSA-OAEP with SHA-1',
-        keyUsage: ['encrypt']
-      },
-      // Approach 3: RSASSA-PKCS1-v1_5 (sometimes used for encryption in legacy systems)
+      // Approach 3: RSASSA-PKCS1-v1_5 (legacy fallback)
       {
         name: 'RSASSA-PKCS1-v1_5',
         hash: 'SHA-256',
