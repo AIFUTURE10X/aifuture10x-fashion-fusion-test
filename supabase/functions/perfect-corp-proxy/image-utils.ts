@@ -22,6 +22,24 @@ export async function getUserPhotoData(
       
       const arrayBuffer = await response.arrayBuffer();
       console.log(`Successfully fetched ${arrayBuffer.byteLength} bytes from Supabase storage`);
+      
+      // Validate the image data
+      if (arrayBuffer.byteLength < 100) {
+        throw new Error(`Image data too small: ${arrayBuffer.byteLength} bytes`);
+      }
+      
+      // Check if it looks like valid image data (basic magic number check)
+      const firstBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+      const isJPEG = firstBytes[0] === 0xFF && firstBytes[1] === 0xD8;
+      const isPNG = firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47;
+      const isWebP = firstBytes[0] === 0x52 && firstBytes[1] === 0x49 && firstBytes[2] === 0x46 && firstBytes[3] === 0x46;
+      
+      if (!isJPEG && !isPNG && !isWebP) {
+        console.warn('Image format might not be standard, first 4 bytes:', Array.from(firstBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+      } else {
+        console.log('Image format validated:', isJPEG ? 'JPEG' : isPNG ? 'PNG' : 'WebP');
+      }
+      
       return arrayBuffer;
     } catch (error) {
       console.error('Failed to fetch from Supabase storage:', error);
@@ -49,8 +67,8 @@ export async function getUserPhotoData(
       console.log(`Successfully fetched ${arrayBuffer.byteLength} bytes from URL`);
       
       // Validate minimum file size (avoid empty or corrupted files)
-      if (arrayBuffer.byteLength < 1000) {
-        throw new Error(`Image too small: ${arrayBuffer.byteLength} bytes. Minimum 1KB required.`);
+      if (arrayBuffer.byteLength < 100) {
+        throw new Error(`Image too small: ${arrayBuffer.byteLength} bytes. Minimum 100 bytes required.`);
       }
       
       return arrayBuffer;

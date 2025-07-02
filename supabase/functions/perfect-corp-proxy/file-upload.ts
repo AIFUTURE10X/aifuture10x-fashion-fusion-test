@@ -14,72 +14,96 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   try {
     console.log('Uploading to S2S endpoint:', uploadUrl);
-    console.log('Using multipart/form-data upload approach');
     
-    // Create FormData for proper multipart upload
-    const formData = new FormData();
-    const blob = new Blob([userPhotoData], { type: 'image/jpeg' });
-    formData.append('file', blob, 'user_photo.jpg');
+    // Try direct binary upload first (this is often what APIs expect)
+    console.log('Attempting direct binary upload...');
     
-    const uploadResponse = await fetch(uploadUrl, {
+    const binaryResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        // Don't set Content-Type, let the browser set it with boundary for FormData
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': userPhotoData.byteLength.toString(),
+      },
+      body: userPhotoData,
+    });
+
+    console.log(`S2S Binary upload response status: ${binaryResponse.status}`);
+    console.log('Response headers:', Object.fromEntries(binaryResponse.headers.entries()));
+
+    if (binaryResponse.ok) {
+      const binaryData = await binaryResponse.json();
+      console.log('S2S Binary upload response data:', binaryData);
+      
+      const fileId = binaryData.result?.file_id || binaryData.file_id || binaryData.id;
+      if (fileId) {
+        console.log('Photo uploaded successfully with binary approach, file_id:', fileId);
+        return fileId;
+      }
+    }
+    
+    // If binary upload fails, try multipart form data
+    console.log('Binary upload failed, trying multipart form...');
+    
+    const formData = new FormData();
+    const blob = new Blob([userPhotoData], { type: 'image/jpeg' });
+    formData.append('file', blob, 'photo.jpg');
+    
+    const multipartResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        // Don't set Content-Type for FormData - let browser set it with boundary
       },
       body: formData,
     });
 
-    console.log(`S2S Upload response status: ${uploadResponse.status}`);
+    console.log(`S2S Multipart upload response status: ${multipartResponse.status}`);
 
-    if (uploadResponse.ok) {
-      const uploadData = await uploadResponse.json();
-      console.log('S2S Upload response data:', uploadData);
+    if (multipartResponse.ok) {
+      const multipartData = await multipartResponse.json();
+      console.log('S2S Multipart upload response data:', multipartData);
       
-      const fileId = uploadData.result?.file_id || uploadData.file_id || uploadData.id;
+      const fileId = multipartData.result?.file_id || multipartData.file_id || multipartData.id;
       if (fileId) {
-        console.log('Photo uploaded successfully to S2S API, file_id:', fileId);
+        console.log('Photo uploaded successfully with multipart approach, file_id:', fileId);
         return fileId;
-      } else {
-        console.error('No file_id found in S2S upload response');
       }
     }
+
+    // If both methods fail, try with image/jpeg content type
+    console.log('Multipart upload failed, trying with image/jpeg content type...');
     
-    const errorText = await uploadResponse.text();
-    console.error('S2S Upload failed:', uploadResponse.status, errorText);
-    
-    // If FormData fails, try with direct binary upload
-    if (uploadResponse.status === 400 || uploadResponse.status === 415) {
-      console.log('Retrying with direct binary upload...');
+    const imageResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'image/jpeg',
+      },
+      body: userPhotoData,
+    });
+
+    console.log(`S2S Image upload response status: ${imageResponse.status}`);
+
+    if (imageResponse.ok) {
+      const imageData = await imageResponse.json();
+      console.log('S2S Image upload response data:', imageData);
       
-      const retryResponse = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'image/jpeg',
-          'Content-Length': userPhotoData.byteLength.toString(),
-        },
-        body: userPhotoData,
-      });
-
-      console.log(`S2S Retry upload response status: ${retryResponse.status}`);
-
-      if (retryResponse.ok) {
-        const retryData = await retryResponse.json();
-        console.log('S2S Retry upload response data:', retryData);
-        
-        const fileId = retryData.result?.file_id || retryData.file_id || retryData.id;
-        if (fileId) {
-          console.log('Photo uploaded successfully to S2S API on retry, file_id:', fileId);
-          return fileId;
-        }
+      const fileId = imageData.result?.file_id || imageData.file_id || imageData.id;
+      if (fileId) {
+        console.log('Photo uploaded successfully with image/jpeg approach, file_id:', fileId);
+        return fileId;
       }
-      
-      const retryErrorText = await retryResponse.text();
-      console.error('S2S Retry upload also failed:', retryResponse.status, retryErrorText);
     }
+
+    // Get detailed error information from the last response
+    const errorText = await imageResponse.text();
+    console.error('All S2S upload methods failed. Last error:', imageResponse.status, errorText);
     
-    throw new Error(`S2S Upload failed: ${uploadResponse.status} - ${errorText}`);
+    // Log response headers for debugging
+    console.error('Last response headers:', Object.fromEntries(imageResponse.headers.entries()));
+    
+    throw new Error(`S2S Upload failed: ${imageResponse.status} - ${errorText}`);
     
   } catch (error) {
     console.error('S2S Upload error:', error);
