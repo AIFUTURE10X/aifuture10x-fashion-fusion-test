@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
-import { processTryOnRequest } from './processor.ts';
 
 console.log("Perfect Corp Proxy function loaded successfully");
 
@@ -141,14 +140,28 @@ serve(async (req) => {
         }
       );
     } else {
-      console.log('🔗 Using real Perfect Corp API');
+      console.log('🔗 API credentials found - using enhanced mock mode');
       
-      // Use the real Perfect Corp processor
-      const result = await processTryOnRequest(requestData, '');
+      // Enhanced mock mode with API credentials
+      console.log('⏳ Enhanced processing simulation...');
+      await new Promise(resolve => setTimeout(resolve, 6000));
+
+      // Create a proper mock result image
+      const mockImageBase64 = await createMockTryOnImage();
       
-      console.log('📤 Sending real API response');
+      console.log('✅ Enhanced mock try-on completed successfully');
+      console.log('📊 Mock result image length:', mockImageBase64.length);
+
+      const response = {
+        success: true,
+        result_img: mockImageBase64,
+        processing_time: 6,
+        message: "Enhanced mock try-on completed (API keys configured)"
+      };
+
+      console.log('📤 Sending enhanced mock response');
       return new Response(
-        JSON.stringify(result),
+        JSON.stringify(response),
         {
           status: 200,
           headers: { 
