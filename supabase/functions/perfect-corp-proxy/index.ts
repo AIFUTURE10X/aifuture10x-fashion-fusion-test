@@ -226,18 +226,24 @@ async function createMockTryOnImage(): Promise<string> {
       throw new Error(`Failed to fetch mock image: ${response.status}`);
     }
     
+    // Get the actual content type from the response
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    console.log('📋 Actual image content type:', contentType);
+    
     const arrayBuffer = await response.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
     
     console.log('✅ Mock image downloaded and converted to base64');
     console.log('📊 Mock image base64 length:', base64.length);
     
-    return `data:image/jpeg;base64,${base64}`;
+    // Use the actual content type from the response
+    return `data:${contentType};base64,${base64}`;
   } catch (error) {
     console.error('❌ Failed to create mock image, using fallback:', error);
     
-    // Fallback to a simple colored rectangle (valid PNG)
-    const fallbackPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAZAAAAJYCAMAAACtqHJCAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAADBQTFRF////zMzMmZmZZmZmMzMzAAAA8PDw4ODg0NDQwMDAr6+vnJycjIyMeHh4WFhYQEBAF/yJOgAAAAlwSFlzAAALEgAACxIB0t1+/AAAAFVJREFUeNrt1TEBACAMBLEl/0erNgITJOc9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwbwMDAAAAAElFTkSuQmCC";
+    // Create a simple test pattern as fallback that's guaranteed to work
+    // This is a 200x300 solid color rectangle (valid PNG)
+    const fallbackPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAMgAAAEsCAYAAACG+gu2AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAAAWdEVYdENyZWF0aW9uIFRpbWUAMDcvMTQvMTfBNnkfAAAA1klEQVR4nO3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMTvAABZwlP4AAAAABJRU5ErkJggg==";
     return `data:image/png;base64,${fallbackPngBase64}`;
   }
 }
