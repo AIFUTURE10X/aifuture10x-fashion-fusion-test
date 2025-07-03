@@ -46,10 +46,10 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
       setImageError(false);
       const interval = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 95) return prev;
-          return prev + Math.random() * 15;
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 10;
         });
-      }, 500);
+      }, 400);
 
       return () => clearInterval(interval);
     } else {
@@ -66,7 +66,8 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
         imagePrefix: tryOnResultImage?.substring(0, 100) || 'none',
         isProcessing,
         error,
-        isDataUrl: tryOnResultImage?.startsWith('data:')
+        isDataUrl: tryOnResultImage?.startsWith('data:'),
+        isSVG: tryOnResultImage?.includes('svg')
       });
       setImageError(false);
       setImageLoaded(false);
@@ -81,13 +82,14 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
     console.error('❌ Try-on result image failed to load:', e);
     console.error('Image src preview:', tryOnResultImage?.substring(0, 200));
     console.error('Image length:', tryOnResultImage?.length);
+    console.error('Is SVG?', tryOnResultImage?.includes('svg'));
     setImageError(true);
     setImageLoaded(false);
   };
 
   const handleImageLoad = () => {
     console.log('✅ Try-on result image loaded successfully');
-    console.log('Image dimensions and basic info logged');
+    console.log('✅ Image type:', tryOnResultImage?.includes('svg') ? 'SVG' : 'Other');
     setImageError(false);
     setImageLoaded(true);
   };
@@ -99,15 +101,16 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
       hasImage: !!tryOnResultImage,
       isDataUrl: tryOnResultImage.startsWith('data:'),
       length: tryOnResultImage.length,
-      preview: tryOnResultImage.substring(0, 50)
+      preview: tryOnResultImage.substring(0, 50),
+      isSVG: tryOnResultImage.includes('svg')
     });
 
     return (
-      <div className="relative w-full h-full bg-gray-100">
+      <div className="relative w-full h-full bg-gray-100 flex items-center justify-center">
         <img
           src={tryOnResultImage}
           alt="Try-on result"
-          className={`w-full h-full object-contain transition-opacity duration-300 ${
+          className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -141,7 +144,7 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="aspect-[3/4] relative bg-gray-50 flex items-center justify-center">
+      <div className="aspect-[3/4] relative bg-gray-50 flex items-center justify-center min-h-[400px]">
         {isProcessing ? (
           <div className="absolute inset-0">
             {/* Background overlay */}
@@ -177,8 +180,8 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
             <p className="text-gray-600 text-sm mb-4">
               The try-on result couldn't be displayed properly
             </p>
-            <div className="text-xs text-gray-500 mb-4 font-mono bg-gray-100 p-2 rounded">
-              Debug: {tryOnResultImage?.substring(0, 100)}...
+            <div className="text-xs text-gray-500 mb-4 font-mono bg-gray-100 p-2 rounded max-w-xs mx-auto overflow-hidden">
+              {tryOnResultImage?.substring(0, 100)}...
             </div>
             <Button onClick={handleRetry} size="sm">
               <RotateCcw className="w-4 h-4 mr-2" />

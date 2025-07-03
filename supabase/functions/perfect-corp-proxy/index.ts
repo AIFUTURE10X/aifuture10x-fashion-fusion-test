@@ -105,9 +105,9 @@ serve(async (req) => {
 
     // Simulate processing time
     console.log('⏳ Simulating try-on processing...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
-    // Create a proper mock result image
+    // Create a proper mock result image - using a simple colored rectangle as JPEG base64
     const mockImageBase64 = createMockTryOnImage();
     
     console.log('✅ Mock try-on completed successfully');
@@ -116,7 +116,7 @@ serve(async (req) => {
     const response = {
       success: true,
       result_img: mockImageBase64,
-      processing_time: 3,
+      processing_time: 4,
       message: "Mock try-on completed successfully"
     };
 
@@ -152,26 +152,32 @@ serve(async (req) => {
   }
 });
 
-// Create a proper mock try-on result image - a colorful test pattern
+// Create a proper mock try-on result image - a simple JPEG-like base64 image
 function createMockTryOnImage(): string {
-  // This creates a simple colored rectangle as a base64 PNG
+  // Create a simple 400x600 canvas with a gradient and text as base64 PNG
   const canvas = `
-    <svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:rgb(255,100,150);stop-opacity:1" />
-          <stop offset="50%" style="stop-color:rgb(100,150,255);stop-opacity:1" />
-          <stop offset="100%" style="stop-color:rgb(150,255,100);stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grad1)" />
-      <text x="200" y="250" font-family="Arial" font-size="24" fill="white" text-anchor="middle">Mock Try-On Result</text>
-      <text x="200" y="300" font-family="Arial" font-size="16" fill="white" text-anchor="middle">Virtual clothing applied</text>
-      <text x="200" y="350" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Powered by AI</text>
-    </svg>
-  `;
+<svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgb(255,182,193);stop-opacity:1" />
+      <stop offset="50%" style="stop-color:rgb(135,206,250);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgb(144,238,144);stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grad1)" />
+  
+  <!-- Simulate a person silhouette -->
+  <ellipse cx="200" cy="120" rx="60" ry="80" fill="rgba(255,255,255,0.3)" />
+  <rect x="140" y="200" width="120" height="200" rx="20" fill="rgba(255,255,255,0.4)" />
+  <rect x="160" y="400" width="80" height="150" rx="10" fill="rgba(255,255,255,0.3)" />
+  
+  <!-- Text overlay -->
+  <text x="200" y="480" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle" font-weight="bold">✨ Try-On Result ✨</text>
+  <text x="200" y="510" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">Virtual clothing applied</text>
+  <text x="200" y="535" font-family="Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.8)" text-anchor="middle">Powered by AI</text>
+</svg>`;
   
   // Convert SVG to base64 data URL
-  const base64 = btoa(canvas);
+  const base64 = btoa(unescape(encodeURIComponent(canvas)));
   return `data:image/svg+xml;base64,${base64}`;
 }
