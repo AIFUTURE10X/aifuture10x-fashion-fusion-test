@@ -36,50 +36,107 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
 }) => {
   const [progress, setProgress] = React.useState(0);
   const [imageError, setImageError] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
 
   // Simulate progress during processing
   React.useEffect(() => {
     if (isProcessing) {
       setProgress(0);
+      setImageLoaded(false);
+      setImageError(false);
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 95) return prev;
           return prev + Math.random() * 15;
         });
-      }, 1000);
+      }, 500);
 
       return () => clearInterval(interval);
     } else {
-      setProgress(0);
+      setProgress(100);
     }
   }, [isProcessing]);
 
-  // Reset image error when new image is provided
+  // Reset states when new image is provided
   React.useEffect(() => {
     if (tryOnResultImage) {
-      setImageError(false);
       console.log('🖼️ TryOnResultPanel - New image received:', {
         hasTryOnResultImage: !!tryOnResultImage,
         imageLength: tryOnResultImage?.length || 0,
-        imagePrefix: tryOnResultImage?.substring(0, 50) || 'none',
+        imagePrefix: tryOnResultImage?.substring(0, 100) || 'none',
         isProcessing,
         error,
         isDataUrl: tryOnResultImage?.startsWith('data:')
       });
+      setImageError(false);
+      setImageLoaded(false);
     } else {
       console.log('🗑️ TryOnResultPanel - Image cleared');
+      setImageError(false);
+      setImageLoaded(false);
     }
   }, [tryOnResultImage, isProcessing, error]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     console.error('❌ Try-on result image failed to load:', e);
-    console.error('Image src preview:', tryOnResultImage?.substring(0, 100));
+    console.error('Image src preview:', tryOnResultImage?.substring(0, 200));
+    console.error('Image length:', tryOnResultImage?.length);
     setImageError(true);
+    setImageLoaded(false);
   };
 
   const handleImageLoad = () => {
     console.log('✅ Try-on result image loaded successfully');
+    console.log('Image dimensions and basic info logged');
     setImageError(false);
+    setImageLoaded(true);
+  };
+
+  const renderImage = () => {
+    if (!tryOnResultImage) return null;
+
+    console.log('🎨 Rendering image with data:', {
+      hasImage: !!tryOnResultImage,
+      isDataUrl: tryOnResultImage.startsWith('data:'),
+      length: tryOnResultImage.length,
+      preview: tryOnResultImage.substring(0, 50)
+    });
+
+    return (
+      <div className="relative w-full h-full bg-gray-100">
+        <img
+          src={tryOnResultImage}
+          alt="Try-on result"
+          className={`w-full h-full object-contain transition-opacity duration-300 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            filter: `brightness(${adjustments.brightness[0]}%)`,
+            transform: `scale(${adjustments.size[0] / 100}) translateY(${
+              (adjustments.position[0] - 50) * 2
+            }px)`,
+          }}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+          </div>
+        )}
+        {imageLoaded && (
+          <div className="absolute top-4 left-4">
+            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+              <Zap className="w-3 h-3 mr-1" />
+              AI Generated
+              {processingTime && (
+                <span className="ml-1">({processingTime}s)</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -112,37 +169,17 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
             </div>
           </div>
         ) : tryOnResultImage && !imageError ? (
-          <div className="relative w-full h-full">
-            <img
-              src={tryOnResultImage}
-              alt="Try-on result"
-              className="w-full h-full object-cover"
-              style={{
-                filter: `brightness(${adjustments.brightness[0]}%)`,
-                transform: `scale(${adjustments.size[0] / 100}) translateY(${
-                  (adjustments.position[0] - 50) * 2
-                }px)`,
-              }}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-            />
-            <div className="absolute top-4 left-4">
-              <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
-                <Zap className="w-3 h-3 mr-1" />
-                AI Generated
-                {processingTime && (
-                  <span className="ml-1">({processingTime}s)</span>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : imageError || (tryOnResultImage && imageError) ? (
+          renderImage()
+        ) : imageError ? (
           <div className="text-center p-6">
             <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
             <h4 className="font-semibold text-gray-900 mb-2">Image Display Error</h4>
             <p className="text-gray-600 text-sm mb-4">
               The try-on result couldn't be displayed properly
             </p>
+            <div className="text-xs text-gray-500 mb-4 font-mono bg-gray-100 p-2 rounded">
+              Debug: {tryOnResultImage?.substring(0, 100)}...
+            </div>
             <Button onClick={handleRetry} size="sm">
               <RotateCcw className="w-4 h-4 mr-2" />
               Try Again

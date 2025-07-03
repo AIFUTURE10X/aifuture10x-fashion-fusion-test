@@ -1,4 +1,3 @@
-
 export interface TryOnRequest {
   userPhoto: string;
   clothingImage: string;
@@ -20,25 +19,30 @@ class PerfectCorpApiService {
   // Validate if a string is a valid base64 data URL
   private isValidDataUrl(dataUrl: string): boolean {
     if (!dataUrl || typeof dataUrl !== 'string') {
+      console.error('❌ Invalid data URL: not a string or empty');
       return false;
     }
     
     // Check if it starts with data:image
     if (!dataUrl.startsWith('data:image/')) {
+      console.error('❌ Invalid data URL: does not start with data:image/');
       return false;
     }
     
     // Check if it contains base64 indicator
     if (!dataUrl.includes('base64,')) {
+      console.error('❌ Invalid data URL: does not contain base64,');
       return false;
     }
     
     // Extract base64 part
     const base64Part = dataUrl.split('base64,')[1];
     if (!base64Part || base64Part.length < 10) {
+      console.error('❌ Invalid data URL: base64 part too short or missing');
       return false;
     }
     
+    console.log('✅ Data URL validation passed');
     return true;
   }
 
@@ -61,7 +65,7 @@ class PerfectCorpApiService {
         userPhoto: request.userPhoto
       };
       
-      console.log('📤 Request payload:', JSON.stringify(payload, null, 2));
+      console.log('📤 Request payload prepared');
 
       const fetchStartTime = Date.now();
       
@@ -86,7 +90,6 @@ class PerfectCorpApiService {
         const networkTime = Date.now() - fetchStartTime;
         console.log('⏱️ Network request completed in:', networkTime, 'ms');
         console.log('📊 Response status:', response.status, response.statusText);
-        console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
           let errorMessage = `Request failed with status ${response.status}: ${response.statusText}`;
@@ -109,24 +112,26 @@ class PerfectCorpApiService {
         const totalTime = Date.now() - requestStartTime;
         
         console.log('📥 Response received in:', totalTime, 'ms');
-        console.log('📋 Response data:', data);
+        console.log('📋 Response structure:', {
+          success: data.success,
+          hasResultImg: !!data.result_img,
+          resultImgLength: data.result_img?.length || 0,
+          processingTime: data.processing_time,
+          message: data.message
+        });
 
         if (data && data.result_img) {
           console.log('🖼️ Result image received, validating...');
+          console.log('🔍 Image preview:', data.result_img.substring(0, 100));
           
           // Validate the image data
           if (!this.isValidDataUrl(data.result_img)) {
-            console.error('❌ Invalid image data received:', {
-              hasResultImg: !!data.result_img,
-              length: data.result_img?.length || 0,
-              startsWithData: data.result_img?.startsWith('data:'),
-              preview: data.result_img?.substring(0, 50) || 'none'
-            });
+            console.error('❌ Invalid image data received');
             throw new Error('Invalid image data received from server');
           }
           
           console.log('✅ Image validation passed');
-          console.log('📊 Result image stats:', {
+          console.log('📊 Final result image stats:', {
             length: data.result_img.length,
             format: data.result_img.substring(0, data.result_img.indexOf(';')) || 'unknown'
           });
