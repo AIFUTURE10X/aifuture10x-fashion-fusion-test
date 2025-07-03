@@ -105,9 +105,9 @@ serve(async (req) => {
 
     // Simulate processing time
     console.log('⏳ Simulating try-on processing...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Create a proper mock result image - a simple colored rectangle
+    // Create a proper mock result image
     const mockImageBase64 = createMockTryOnImage();
     
     console.log('✅ Mock try-on completed successfully');
@@ -116,7 +116,7 @@ serve(async (req) => {
     const response = {
       success: true,
       result_img: mockImageBase64,
-      processing_time: 2,
+      processing_time: 3,
       message: "Mock try-on completed successfully"
     };
 
@@ -152,10 +152,26 @@ serve(async (req) => {
   }
 });
 
-// Create a mock try-on result image - a proper test image
+// Create a proper mock try-on result image - a colorful test pattern
 function createMockTryOnImage(): string {
-  // This is a proper base64 encoded PNG image - a colorful test pattern
-  const mockImageBase64 = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQCAYAAACAvzbMAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAABxrSURBVHic7d1/bBvXfQfw9y+JEinRlihLlmRZseLYju04TpzETdM2TZu2WYt1wIAO2LAB2z9bsWHYgA1YgQ3Yf/2xAdu6Adu6dUCxARvWYd2KdV2LdW3apk2bpm7TxHESO45jy7JlyZZkyZYoipJI/e4fJCVREimJ5OPd8b4vwIFlyaL43rkf33vv3XtCRERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERbsP3IvVf9Z6z8vVsqcZs10lp//NkGLG+p9f7dP9KlG+t7er7r/nj91xWu9/+N89lPc/pLFw5fS3VhMWq8T6vXb1/j0+vUfs9X/de9fv87tf4v8PX0vv7//jeFzzGC+dz4mP+n93O82++N+t5/z1Vv+Zle7BfX5+2re6K/3vU99zrfL1FfQWNfRgOUOc/3xVbvXf9dW7q/T0eo9f7XfZP3X4LxvlfsXyuXCHwYJK9L9a7z/Gd5GnRe1Qkqpu2xYhYlcfU+vd7j6nqe739PPfT2rf3B3S/d8fq+v7Pf7f1/vfeV37v9z4vVJ9Xa/cP3+Lm+9rRWKlS9//YeZ73/Uf9Ufs9f47v97p/dr37D+/a+7/Y81/v5y+P97J1fPYfDfvyP+nHG6fN8s0/3e//kf9j3/6N/+v3+sFgdlG2fZvAhTqtO+P5vb8fXvjf9n3+sf1+Fhfh3lH2/9SIc6P8eCLe/+hd//7f87y7vS/Xvs/jf73n+XhJR7/8fXPxH7p1t++fP9/7Tl/sf/b7v3P4H++7vxTuv+iHft/m+rCZH2+X3VWBDY1cCGa9kxFGpH2/8s67GQj+/eH/fuz/b9e7mfk9n9A/vFrH9f/y5fr8/q+t5/4eXvP9j3t//7T1S7vd/v//3+/vU3vl78f9+/v3X/5T6n7v6P8f/3s//Xes/9X1X/pDrf6Pv31uf5f1u3s8t7v3sPd9/3zc3vfs89y1Qnt91wYgJglw5VYzxqjRqzOh5/rA5RfLr/4lLQl+0KgNP6tE3/8c/18xWb9XxV/JH7H1eL9o/bfl8ndf3eav/3avHy+Xsf+h6/nzz//T2v8Wv/xF7H5L/j8azcw/yv//V3fu+g/7VfcUe3v8r/2u5t+xP73/rOsX/yv2f0/8Y/b87lp";
+  // This creates a simple colored rectangle as a base64 PNG
+  const canvas = `
+    <svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:rgb(255,100,150);stop-opacity:1" />
+          <stop offset="50%" style="stop-color:rgb(100,150,255);stop-opacity:1" />
+          <stop offset="100%" style="stop-color:rgb(150,255,100);stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grad1)" />
+      <text x="200" y="250" font-family="Arial" font-size="24" fill="white" text-anchor="middle">Mock Try-On Result</text>
+      <text x="200" y="300" font-family="Arial" font-size="16" fill="white" text-anchor="middle">Virtual clothing applied</text>
+      <text x="200" y="350" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Powered by AI</text>
+    </svg>
+  `;
   
-  return mockImageBase64;
+  // Convert SVG to base64 data URL
+  const base64 = btoa(canvas);
+  return `data:image/svg+xml;base64,${base64}`;
 }
