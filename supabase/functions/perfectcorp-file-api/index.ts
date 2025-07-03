@@ -2,9 +2,38 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { authenticateWithPerfectCorp } from '../perfect-corp-proxy/auth.ts'
 
 console.log('Perfect Corp File API function loaded')
+
+// Authentication function for Perfect Corp
+async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any) {
+  console.log('🔐 [File API] Starting Perfect Corp authentication...');
+  
+  // Check for cached token first
+  const { data: existingTokenData } = await supabase.rpc('get_valid_perfect_corp_token');
+
+  if (existingTokenData && existingTokenData.length > 0) {
+    const token = existingTokenData[0];
+    console.log('✅ [File API] Using cached token, expires in', token.seconds_until_expiry, 'seconds');
+    return { accessToken: token.access_token };
+  }
+
+  // If no cached token, call the perfectcorp-auth function
+  const { data: authData, error: authError } = await supabase.functions.invoke('perfectcorp-auth');
+  
+  if (authError) {
+    console.error('❌ [File API] Auth function error:', authError);
+    throw new Error(`Authentication failed: ${authError.message}`);
+  }
+
+  if (!authData?.success || !authData?.accessToken) {
+    console.error('❌ [File API] Invalid auth response:', authData);
+    throw new Error('Failed to authenticate with Perfect Corp');
+  }
+
+  console.log('✅ [File API] Authentication successful');
+  return { accessToken: authData.accessToken };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
