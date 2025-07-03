@@ -7,10 +7,60 @@ import { arrayBufferToBase64 } from './image-utils.ts';
 import { uploadImageToFileAPI } from './file-upload.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
+// Authentication function
+async function authenticateWithPerfectCorp(): Promise<string> {
+  console.log('🔐 Starting Perfect Corp authentication...');
+  
+  const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
+  const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+  
+  if (!apiKey || !apiSecret) {
+    throw new Error('Perfect Corp API credentials not configured');
+  }
+
+  // Mock token for testing - replace with actual auth logic
+  if (apiKey === 'test_key' || apiSecret === 'test_secret') {
+    console.log('🧪 Using mock authentication for testing');
+    return 'mock_token_for_testing';
+  }
+  
+  // For now, let's try to call the auth function directly
+  try {
+    console.log('🔑 Calling perfectcorp-auth function...');
+    
+    const authUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/perfectcorp-auth`;
+    const response = await fetch(authUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Auth function failed:', response.status, errorText);
+      throw new Error(`Authentication failed: ${response.status} - ${errorText}`);
+    }
+
+    const authData = await response.json();
+    if (!authData.success || !authData.accessToken) {
+      console.error('❌ Invalid auth response:', authData);
+      throw new Error('Failed to get access token from auth service');
+    }
+
+    console.log('✅ Authentication successful');
+    return authData.accessToken;
+  } catch (error) {
+    console.error('❌ Authentication error:', error);
+    throw new Error(`Authentication failed: ${error.message}`);
+  }
+}
+
 export async function processTryOnRequest(requestData: any, accessToken: string): Promise<any> {
   const startTime = Date.now();
   console.log('=== Starting Perfect Corp S2S try-on process ===');
-  console.log('🔑 Access token preview:', accessToken.substring(0, 20) + '...');
   console.log('📋 Request data:', {
     hasUserPhoto: !!requestData.userPhoto,
     hasUserPhotoStoragePath: !!requestData.userPhotoStoragePath,
@@ -21,17 +71,10 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
   });
 
   try {
-    // Enhanced access token validation
-    if (!accessToken || accessToken === 'undefined' || accessToken.length < 10) {
-      throw new Error('Invalid or missing access token for Perfect Corp API');
-    }
-    
-    // Additional token format validation
-    if (!accessToken.includes('.') && accessToken !== 'mock_token_for_testing') {
-      console.warn('⚠️ Access token format seems unusual - may be corrupted');
-    }
-    
-    console.log('✅ Access token validation passed');
+    // Get access token
+    console.log('🔐 Getting Perfect Corp access token...');
+    const actualAccessToken = await authenticateWithPerfectCorp();
+    console.log('✅ Access token obtained successfully');
 
     let perfectCorpFileId: string;
 
@@ -46,7 +89,7 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
       
       try {
         perfectCorpFileId = await uploadImageToFileAPI(
-          accessToken, 
+          actualAccessToken, 
           requestData.clothingImage,
           'clothing_reference.jpg'
         );
@@ -65,7 +108,7 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     
     try {
       userPhotoFileId = await uploadImageToFileAPI(
-        accessToken, 
+        actualAccessToken, 
         requestData.userPhoto,
         'user_photo.jpg'
       );
@@ -78,7 +121,7 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     // Start try-on task with Perfect Corp file_ids
     console.log('🎽 Starting S2S try-on task with Perfect Corp file_ids...');
     const taskId = await startTryOnTask(
-      accessToken, 
+      actualAccessToken, 
       userPhotoFileId, // User photo file_id
       perfectCorpFileId, // Clothing file_id  
       true, // isCustomClothing (always true now since we use File API)
@@ -89,7 +132,7 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
 
     // Poll for task completion
     console.log('⏳ Polling for S2S task completion...');
-    const result = await pollTaskCompletion(accessToken, taskId);
+    const result = await pollTaskCompletion(actualAccessToken, taskId);
     console.log('✅ S2S Task completed successfully');
 
     // Download and process result
