@@ -30,102 +30,112 @@ class PerfectCorpApiService {
       const proxyUrl = `${this.supabaseUrl}/functions/v1/perfect-corp-proxy`;
       console.log('📡 Making request to proxy:', proxyUrl);
 
-      // send both for migration/backward-compat
       const payload: any = {
         clothingImage: request.clothingImage,
         clothingCategory: request.clothingCategory,
+        userPhoto: request.userPhoto
       };
       
-      // If a storage path is present, use that, else use userPhoto
-      if ('userPhotoStoragePath' in request && request.userPhotoStoragePath) {
-        payload.userPhotoStoragePath = request.userPhotoStoragePath;
-        payload.userPhoto = request.userPhoto; // still send for fallback
-        console.log('📁 Using storage path:', request.userPhotoStoragePath);
-      } else {
-        payload.userPhoto = request.userPhoto;
-        console.log('🔗 Using direct photo URL');
-      }
-
-      console.log('📤 Request payload size:', JSON.stringify(payload).length, 'characters');
+      console.log('📤 Request payload:', JSON.stringify(payload, null, 2));
 
       const fetchStartTime = Date.now();
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const networkTime = Date.now() - fetchStartTime;
-      console.log('⏱️ Network request completed in:', networkTime, 'ms');
-      console.log('📊 Response status:', response.status, response.statusText);
-
-      if (!response.ok) {
-        let errorMessage = `Proxy request failed with status ${response.status}: ${response.statusText}`;
-        
-        try {
-          const errorData = await response.json();
-          console.error('❌ Error response data:', errorData);
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          console.error('❌ Could not parse error response:', e);
-          const errorText = await response.text();
-          console.error('❌ Raw error response:', errorText);
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      const totalTime = Date.now() - requestStartTime;
       
-      console.log('📥 Proxy response received in:', totalTime, 'ms');
-      console.log('📋 Response data keys:', Object.keys(data));
-      console.log('✅ Response success:', data.success);
+      // Add timeout to the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      // Handle the response based on Perfect Corp's API format
-      if (data && data.result_img) {
-        console.log('🖼️ Success! Result image received from proxy');
-        console.log('📏 Image data length:', data.result_img.length);
+      try {
+        const response = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.supabaseAnonKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        const networkTime = Date.now() - fetchStartTime;
+        console.log('⏱️ Network request completed in:', networkTime, 'ms');
+        console.log('📊 Response status:', response.status, response.statusText);
+        console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+
+        if (!response.ok) {
+          let errorMessage = `Request failed with status ${response.status}: ${response.statusText}`;
+          
+          try {
+            const errorData = await response.json();
+            console.error('❌ Error response data:', errorData);
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            console.error('❌ Could not parse error response:', e);
+            const errorText = await response.text();
+            console.error('❌ Raw error response:', errorText);
+            errorMessage = errorText || errorMessage;
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        const totalTime = Date.now() - requestStartTime;
         
-        // Validate base64 format
-        if (data.result_img && !data.result_img.startsWith('data:image/')) {
-          console.log('🔧 Raw base64 detected, will be prefixed in component');
+        console.log('📥 Response received in:', totalTime, 'ms');
+        console.log('📋 Response data:', data);
+
+        if (data && data.result_img) {
+          console.log('🖼️ Success! Result image received');
+          
+          return {
+            success: true,
+            resultImage: data.result_img,
+            processingTime: data.processing_time
+          };
+        } else if (data && data.error) {
+          console.error('❌ API returned error:', data.error);
+          throw new Error(data.error);
+        } else {
+          console.error('❌ Unexpected response format');
+          console.log('📋 Available fields:', Object.keys(data));
+          throw new Error('Unexpected response format from API');
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout: The try-on service took too long to respond. Please try again.');
         }
         
-        return {
-          success: true,
-          resultImage: data.result_img,
-          processingTime: data.processing_time
-        };
-      } else if (data && data.error) {
-        console.error('❌ Proxy returned error:', data.error);
-        throw new Error(data.error);
-      } else {
-        console.error('❌ Unexpected proxy response format');
-        console.log('📋 Available fields:', Object.keys(data));
-        console.log('📄 Full response:', JSON.stringify(data, null, 2));
-        throw new Error('Unexpected response format from proxy');
+        throw fetchError;
       }
+      
     } catch (error) {
       const totalTime = Date.now() - requestStartTime;
       console.error('❌ Perfect Corp API Error after', totalTime, 'ms');
       console.error('🔥 Error details:', error);
 
-      // Network error detection
+      // Enhanced error categorization
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('🌐 Network error detected');
+        console.error('🌐 Network connectivity error');
         return {
           success: false,
-          error: 'Network error: Unable to connect to the try-on service. Please check your internet connection and try again.'
+          error: 'Unable to connect to the try-on service. Please check that the Edge Function is deployed and try again.'
+        };
+      }
+
+      if (error.message.includes('timeout')) {
+        return {
+          success: false,
+          error: 'The try-on service took too long to respond. Please try again.'
         };
       }
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred during try-on processing'
       };
     }
   }

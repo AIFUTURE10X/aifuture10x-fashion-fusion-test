@@ -1,14 +1,14 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
-import { processTryOnRequest } from './processor.ts'
 
-console.log('Perfect Corp Proxy function loaded and ready')
+console.log('Perfect Corp Proxy function starting...')
 
 serve(async (req) => {
-  console.log('=== Perfect Corp Proxy Request Received ===')
+  console.log('=== Perfect Corp Proxy Request ===')
   console.log('Method:', req.method)
   console.log('URL:', req.url)
+  console.log('Headers:', Object.fromEntries(req.headers.entries()))
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -24,7 +24,7 @@ serve(async (req) => {
     if (req.method !== 'POST') {
       console.log('Invalid method:', req.method)
       return new Response(JSON.stringify({
-        error: 'Method not allowed. Only POST requests are supported.',
+        error: 'Only POST requests are supported',
         success: false
       }), {
         status: 405,
@@ -35,13 +35,10 @@ serve(async (req) => {
     // Parse request body
     let requestData
     try {
-      requestData = await req.json()
-      console.log('Request data received:', {
-        hasUserPhoto: !!requestData.userPhoto,
-        hasUserPhotoStoragePath: !!requestData.userPhotoStoragePath,
-        clothingCategory: requestData.clothingCategory,
-        clothingImage: requestData.clothingImage ? 'provided' : 'missing'
-      })
+      const bodyText = await req.text()
+      console.log('Raw request body:', bodyText)
+      requestData = JSON.parse(bodyText)
+      console.log('Parsed request data:', requestData)
     } catch (parseError) {
       console.error('Failed to parse request JSON:', parseError)
       return new Response(JSON.stringify({
@@ -54,8 +51,10 @@ serve(async (req) => {
     }
 
     // Validate required fields
-    if (!requestData.userPhoto) {
-      console.error('Missing userPhoto in request')
+    const { userPhoto, clothingImage, clothingCategory } = requestData
+    
+    if (!userPhoto) {
+      console.error('Missing userPhoto')
       return new Response(JSON.stringify({
         error: 'userPhoto is required',
         success: false
@@ -65,10 +64,21 @@ serve(async (req) => {
       })
     }
 
-    if (!requestData.clothingImage && !requestData.perfectCorpRefId) {
-      console.error('Missing both clothingImage and perfectCorpRefId')
+    if (!clothingImage) {
+      console.error('Missing clothingImage')
       return new Response(JSON.stringify({
-        error: 'Either clothingImage or perfectCorpRefId is required',
+        error: 'clothingImage is required',
+        success: false
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (!clothingCategory) {
+      console.error('Missing clothingCategory')
+      return new Response(JSON.stringify({
+        error: 'clothingCategory is required',
         success: false
       }), {
         status: 400,
@@ -83,7 +93,7 @@ serve(async (req) => {
     if (!apiKey || !apiSecret) {
       console.error('Perfect Corp API credentials not configured')
       return new Response(JSON.stringify({
-        error: 'Perfect Corp API credentials not configured. Please contact support.',
+        error: 'Perfect Corp API credentials not configured',
         success: false
       }), {
         status: 500,
@@ -91,28 +101,30 @@ serve(async (req) => {
       })
     }
 
-    console.log('✅ All validations passed, starting try-on process...')
+    console.log('✅ All validations passed, processing try-on request...')
 
-    // Process the try-on request
-    const result = await processTryOnRequest(requestData, 'will_be_obtained_in_processor')
+    // For now, return a mock response to test connectivity
+    // TODO: Implement actual Perfect Corp API integration
+    console.log('Returning mock response for testing...')
     
-    console.log('✅ Try-on process completed successfully')
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify({
+      success: true,
+      result_img: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
+      processing_time: 2,
+      message: 'Mock try-on completed successfully'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
     
   } catch (error) {
     console.error('❌ Perfect Corp Proxy error:', error)
+    console.error('Error stack:', error.stack)
     
-    // Enhanced error response with more details
-    const errorResponse = {
-      error: error.message || 'An unexpected error occurred during try-on processing',
+    return new Response(JSON.stringify({
+      error: `Try-on processing failed: ${error.message}`,
       success: false,
-      timestamp: new Date().toISOString(),
-      details: error.name || 'UnknownError'
-    }
-    
-    return new Response(JSON.stringify(errorResponse), {
+      details: error.stack
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
