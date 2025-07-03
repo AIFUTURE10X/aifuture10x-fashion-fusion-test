@@ -4,6 +4,7 @@ import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { validateFileUpload } from '@/utils/validation';
+import { usePerfectCorpUpload } from '@/hooks/usePerfectCorpUpload';
 import { ClothingItem } from '../types';
 
 export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
@@ -17,7 +18,9 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
   const [clothingBrand, setClothingBrand] = useState('');
   const [clothingPrice, setClothingPrice] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string[]>(['HOT']);
+  const [perfectCorpFileId, setPerfectCorpFileId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { uploadToPerfectCorp, isUploading } = usePerfectCorpUpload();
 
   // Pre-populate form when editing
   useEffect(() => {
@@ -28,6 +31,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
       setGarmentCategory(editingItem.category);
       setUploadedPhoto(editingItem.image);
       setFilePreview(editingItem.image);
+      setPerfectCorpFileId(editingItem.perfect_corp_ref_id || null);
       
       // Parse style_category from the editing item if it exists
       if (editingItem.style_category) {
@@ -55,9 +59,18 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         const previewUrl = URL.createObjectURL(file);
         setFilePreview(previewUrl);
 
-        // Upload image to Supabase Storage
-        const publicUrl = await uploadPhotoToSupabase(file, 'clothing-references');
-        setUploadedPhoto(publicUrl);
+        // Upload to both Supabase (for display) and Perfect Corp (for AI processing)
+        const [supabaseUrl, perfectCorpResult] = await Promise.all([
+          uploadPhotoToSupabase(file, 'clothing-references'),
+          uploadToPerfectCorp(file)
+        ]);
+
+        if (!perfectCorpResult?.success) {
+          throw new Error('Failed to upload to Perfect Corp - required for AI processing');
+        }
+
+        setUploadedPhoto(supabaseUrl);
+        setPerfectCorpFileId(perfectCorpResult.fileId);
         
         toast({
           title: "Image uploaded successfully!",
@@ -71,15 +84,17 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         );
         setFilePreview(null);
         setUploadedPhoto(null);
+        setPerfectCorpFileId(null);
       } finally {
         setIsProcessing(false);
       }
     }
-  }, [toast]);
+  }, [toast, uploadToPerfectCorp]);
 
   const handleRemoveImage = () => {
     setUploadedPhoto(null);
     setFilePreview(null);
+    setPerfectCorpFileId(null);
   };
 
   const handleSubmit = async (onClothingAdd: (clothing: ClothingItem) => void) => {
@@ -101,6 +116,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         clothingName,
         garmentCategory,
         uploadedPhoto,
+        perfectCorpFileId,
         selectedStyle
       });
 
@@ -110,6 +126,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         price: clothingPrice ? parseFloat(clothingPrice) : 0,
         garment_category: garmentCategory,
         supabase_image_url: uploadedPhoto,
+        perfect_corp_ref_id: perfectCorpFileId, // Store Perfect Corp file_id
         colors: ['custom'],
         style_category: selectedStyle.join(',') // Store as comma-separated string
       };
@@ -140,7 +157,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
             category: data.garment_category || 'upper_body',
             rating: 4.5,
             colors: data.colors || ['custom'],
-            style_category: data.style_category
+            style_category: data.style_category,
+            perfect_corp_ref_id: data.perfect_corp_ref_id
           };
 
           console.log('Updated clothing item:', updatedClothing);
@@ -169,7 +187,8 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
             category: data.garment_category || 'upper_body',
             rating: 4.5,
             colors: data.colors || ['custom'],
-            style_category: data.style_category
+            style_category: data.style_category,
+            perfect_corp_ref_id: data.perfect_corp_ref_id
           };
 
           console.log('Created new clothing item:', newClothing);
@@ -190,7 +209,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     // State
     uploadedPhoto,
     filePreview,
-    isProcessing,
+    isProcessing: isProcessing || isUploading,
     isSubmitting,
     error,
     garmentCategory,
@@ -198,6 +217,7 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     clothingBrand,
     clothingPrice,
     selectedStyle,
+    perfectCorpFileId,
     
     // Setters
     setGarmentCategory,
