@@ -216,10 +216,10 @@ serve(async (req) => {
 // Create a proper mock try-on result image as a base64 data URL
 async function createMockTryOnImage(): Promise<string> {
   try {
-    // Use a proper mock try-on image from Unsplash (fashion/clothing related)
-    const mockImageUrl = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400&h=600&fit=crop&crop=center';
+    // Use a proper mock try-on result - a person wearing clothing
+    const mockImageUrl = 'https://images.unsplash.com/photo-1594736797933-d0c4110a072b?w=400&h=600&fit=crop&crop=face';
     
-    console.log('📥 Downloading mock try-on image...');
+    console.log('📥 Downloading mock try-on result...');
     const response = await fetch(mockImageUrl);
     
     if (!response.ok) {
