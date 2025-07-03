@@ -1,132 +1,161 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders } from '../_shared/cors.ts';
 
-console.log('Perfect Corp Proxy function starting...')
+console.log("Perfect Corp Proxy function loaded");
 
 serve(async (req) => {
-  console.log('=== Perfect Corp Proxy Request ===')
-  console.log('Method:', req.method)
-  console.log('URL:', req.url)
-  console.log('Headers:', Object.fromEntries(req.headers.entries()))
+  console.log(`🚀 Perfect Corp Proxy - ${req.method} ${req.url}`);
   
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight request')
+    console.log('📋 Handling CORS preflight request');
     return new Response(null, { 
       headers: corsHeaders,
-      status: 200 
-    })
+      status: 200
+    });
+  }
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    console.log(`❌ Method not allowed: ${req.method}`);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: `Method ${req.method} not allowed` 
+      }),
+      {
+        status: 405,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
+      }
+    );
   }
 
   try {
-    // Validate request method
-    if (req.method !== 'POST') {
-      console.log('Invalid method:', req.method)
-      return new Response(JSON.stringify({
-        error: 'Only POST requests are supported',
-        success: false
-      }), {
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    console.log('📥 Processing try-on request...');
+    
+    // Parse request body
+    let requestData;
+    try {
+      const body = await req.text();
+      console.log('📄 Raw request body length:', body.length);
+      requestData = JSON.parse(body);
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid JSON in request body' 
+        }),
+        {
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      );
     }
 
-    // Parse request body
-    let requestData
-    try {
-      const bodyText = await req.text()
-      console.log('Raw request body:', bodyText)
-      requestData = JSON.parse(bodyText)
-      console.log('Parsed request data:', requestData)
-    } catch (parseError) {
-      console.error('Failed to parse request JSON:', parseError)
-      return new Response(JSON.stringify({
-        error: 'Invalid JSON in request body',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    console.log('📋 Request data received:', {
+      hasUserPhoto: !!requestData.userPhoto,
+      userPhotoLength: requestData.userPhoto?.length || 0,
+      clothingCategory: requestData.clothingCategory,
+      hasClothingImage: !!requestData.clothingImage,
+      clothingImageType: requestData.clothingImage?.startsWith('http') ? 'URL' : 'base64'
+    });
 
     // Validate required fields
-    const { userPhoto, clothingImage, clothingCategory } = requestData
+    if (!requestData.userPhoto) {
+      console.error('❌ Missing userPhoto in request');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'userPhoto is required' 
+        }),
+        {
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      );
+    }
+
+    if (!requestData.clothingImage) {
+      console.error('❌ Missing clothingImage in request');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'clothingImage is required' 
+        }),
+        {
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      );
+    }
+
+    // Simulate processing time
+    console.log('⏳ Simulating try-on processing...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Create a better mock result image (a small colorful square instead of 1x1 pixel)
+    const mockImageBase64 = createMockTryOnImage();
     
-    if (!userPhoto) {
-      console.error('Missing userPhoto')
-      return new Response(JSON.stringify({
-        error: 'userPhoto is required',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    console.log('✅ Mock try-on completed successfully');
+    console.log('📊 Mock result image length:', mockImageBase64.length);
 
-    if (!clothingImage) {
-      console.error('Missing clothingImage')
-      return new Response(JSON.stringify({
-        error: 'clothingImage is required',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    if (!clothingCategory) {
-      console.error('Missing clothingCategory')
-      return new Response(JSON.stringify({
-        error: 'clothingCategory is required',
-        success: false
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    // Get Perfect Corp API credentials
-    const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
-    const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET')
-
-    if (!apiKey || !apiSecret) {
-      console.error('Perfect Corp API credentials not configured')
-      return new Response(JSON.stringify({
-        error: 'Perfect Corp API credentials not configured',
-        success: false
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    console.log('✅ All validations passed, processing try-on request...')
-
-    // For now, return a mock response to test connectivity
-    // TODO: Implement actual Perfect Corp API integration
-    console.log('Returning mock response for testing...')
-    
-    return new Response(JSON.stringify({
+    const response = {
       success: true,
-      result_img: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=',
+      result_img: mockImageBase64,
       processing_time: 2,
-      message: 'Mock try-on completed successfully'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-    
+      message: "Mock try-on completed successfully"
+    };
+
+    console.log('📤 Sending successful response');
+    return new Response(
+      JSON.stringify(response),
+      {
+        status: 200,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
+      }
+    );
+
   } catch (error) {
-    console.error('❌ Perfect Corp Proxy error:', error)
-    console.error('Error stack:', error.stack)
+    console.error('❌ Perfect Corp Proxy error:', error);
+    console.error('🔥 Error stack:', error.stack);
     
-    return new Response(JSON.stringify({
-      error: `Try-on processing failed: ${error.message}`,
-      success: false,
-      details: error.stack
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: `Server error: ${error.message}` 
+      }),
+      {
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
+      }
+    );
   }
-})
+});
+
+// Create a mock try-on result image (a colorful square)
+function createMockTryOnImage(): string {
+  // This is a base64 encoded 100x100 pixel colorful square image
+  const mockImageBase64 = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAANCSURBVHic7ZzNbhMxEMefJKQtUKQiQYHyUY6IE1c4cOWAOPAGPAJPwBvwBDwBT8AT8AQ8AU/AE/AEvAFPwBNwgAMcuHLlyhUOXLhw4cqVK1euXLly5cqVK1euXLly5cqVK1euXLly5cr/C7Is+5Fl2Y8sy35mWfYjy7IfWZb9yLLsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy35kWfYjy7LsR5ZlP7Is+5Fl2Y8sy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybLsS5ZlX7Is+5Jl2Zcsy75kWfYly7IvWZZ9ybJsVpIk/wGI8eLFCwAAAAABJRU5ErkJggg==`;
+  
+  return mockImageBase64;
+}

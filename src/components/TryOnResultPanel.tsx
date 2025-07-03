@@ -35,6 +35,7 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
   onShare,
 }) => {
   const [progress, setProgress] = React.useState(0);
+  const [imageError, setImageError] = React.useState(false);
 
   // Simulate progress during processing
   React.useEffect(() => {
@@ -53,16 +54,33 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
     }
   }, [isProcessing]);
 
-  // Debug effect to log image state
+  // Reset image error when new image is provided
   React.useEffect(() => {
-    console.log('🖼️ TryOnResultPanel - Image state:', {
-      hasTryOnResultImage: !!tryOnResultImage,
-      imageLength: tryOnResultImage?.length || 0,
-      imagePrefix: tryOnResultImage?.substring(0, 50) || 'none',
-      isProcessing,
-      error
-    });
+    if (tryOnResultImage) {
+      setImageError(false);
+      console.log('🖼️ TryOnResultPanel - New image received:', {
+        hasTryOnResultImage: !!tryOnResultImage,
+        imageLength: tryOnResultImage?.length || 0,
+        imagePrefix: tryOnResultImage?.substring(0, 50) || 'none',
+        isProcessing,
+        error,
+        isDataUrl: tryOnResultImage?.startsWith('data:')
+      });
+    } else {
+      console.log('🗑️ TryOnResultPanel - Image cleared');
+    }
   }, [tryOnResultImage, isProcessing, error]);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('❌ Try-on result image failed to load:', e);
+    console.error('Image src preview:', tryOnResultImage?.substring(0, 100));
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('✅ Try-on result image loaded successfully');
+    setImageError(false);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -93,7 +111,7 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
               </div>
             </div>
           </div>
-        ) : tryOnResultImage ? (
+        ) : tryOnResultImage && !imageError ? (
           <div className="relative w-full h-full">
             <img
               src={tryOnResultImage}
@@ -105,13 +123,8 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
                   (adjustments.position[0] - 50) * 2
                 }px)`,
               }}
-              onLoad={() => {
-                console.log('✅ Try-on result image loaded successfully');
-              }}
-              onError={(e) => {
-                console.error('❌ Try-on result image failed to load:', e);
-                console.error('Image src:', tryOnResultImage?.substring(0, 100));
-              }}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
             />
             <div className="absolute top-4 left-4">
               <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
@@ -122,6 +135,18 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
                 )}
               </div>
             </div>
+          </div>
+        ) : imageError || (tryOnResultImage && imageError) ? (
+          <div className="text-center p-6">
+            <AlertCircle className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+            <h4 className="font-semibold text-gray-900 mb-2">Image Display Error</h4>
+            <p className="text-gray-600 text-sm mb-4">
+              The try-on result couldn't be displayed properly
+            </p>
+            <Button onClick={handleRetry} size="sm">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
           </div>
         ) : error ? (
           <div className="text-center p-6">

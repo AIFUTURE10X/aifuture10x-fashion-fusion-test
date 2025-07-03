@@ -17,6 +17,31 @@ class PerfectCorpApiService {
   private supabaseUrl = "https://bpjlxtjbrunzibehbyrk.supabase.co";
   private supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwamx4dGpicnVuemliZWhieXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjE1NTcsImV4cCI6MjA2NTUzNzU1N30.w3_oTurN_UesG_DpwNU67f216flzYmOnDo-lrEMLYDw";
 
+  // Validate if a string is a valid base64 data URL
+  private isValidDataUrl(dataUrl: string): boolean {
+    if (!dataUrl || typeof dataUrl !== 'string') {
+      return false;
+    }
+    
+    // Check if it starts with data:image
+    if (!dataUrl.startsWith('data:image/')) {
+      return false;
+    }
+    
+    // Check if it contains base64 indicator
+    if (!dataUrl.includes('base64,')) {
+      return false;
+    }
+    
+    // Extract base64 part
+    const base64Part = dataUrl.split('base64,')[1];
+    if (!base64Part || base64Part.length < 10) {
+      return false;
+    }
+    
+    return true;
+  }
+
   async tryOnClothing(request: TryOnRequest & { userPhotoStoragePath?: string }): Promise<TryOnResponse> {
     const requestStartTime = Date.now();
     
@@ -87,7 +112,24 @@ class PerfectCorpApiService {
         console.log('📋 Response data:', data);
 
         if (data && data.result_img) {
-          console.log('🖼️ Success! Result image received');
+          console.log('🖼️ Result image received, validating...');
+          
+          // Validate the image data
+          if (!this.isValidDataUrl(data.result_img)) {
+            console.error('❌ Invalid image data received:', {
+              hasResultImg: !!data.result_img,
+              length: data.result_img?.length || 0,
+              startsWithData: data.result_img?.startsWith('data:'),
+              preview: data.result_img?.substring(0, 50) || 'none'
+            });
+            throw new Error('Invalid image data received from server');
+          }
+          
+          console.log('✅ Image validation passed');
+          console.log('📊 Result image stats:', {
+            length: data.result_img.length,
+            format: data.result_img.substring(0, data.result_img.indexOf(';')) || 'unknown'
+          });
           
           return {
             success: true,
@@ -130,6 +172,13 @@ class PerfectCorpApiService {
         return {
           success: false,
           error: 'The try-on service took too long to respond. Please try again.'
+        };
+      }
+
+      if (error.message.includes('Invalid image data')) {
+        return {
+          success: false,
+          error: 'The try-on result could not be processed. Please try again.'
         };
       }
 
