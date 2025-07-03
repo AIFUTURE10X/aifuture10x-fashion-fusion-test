@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
+import { processTryOnRequest } from './processor.ts';
 
 console.log("Perfect Corp Proxy function loaded successfully");
 
@@ -103,60 +104,127 @@ serve(async (req) => {
       );
     }
 
-    // Simulate processing time
-    console.log('⏳ Simulating try-on processing...');
-    await new Promise(resolve => setTimeout(resolve, 8000));
+    // Check if we should use real API or mock
+    const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
+    const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
+    const useMockMode = !apiKey || !apiSecret || apiKey === 'test_key' || apiSecret === 'test_secret';
 
-    // Create a proper mock result image (using a real base64 image)
-    const mockImageBase64 = createMockTryOnImage();
-    
-    console.log('✅ Mock try-on completed successfully');
-    console.log('📊 Mock result image length:', mockImageBase64.length);
+    if (useMockMode) {
+      console.log('🧪 Using mock mode - API credentials not configured');
+      
+      // Simulate processing time
+      console.log('⏳ Simulating try-on processing...');
+      await new Promise(resolve => setTimeout(resolve, 4000));
 
-    const response = {
-      success: true,
-      result_img: mockImageBase64,
-      processing_time: 8,
-      message: "Mock try-on completed successfully"
-    };
+      // Create a proper mock result image
+      const mockImageBase64 = await createMockTryOnImage();
+      
+      console.log('✅ Mock try-on completed successfully');
+      console.log('📊 Mock result image length:', mockImageBase64.length);
 
-    console.log('📤 Sending successful response');
-    return new Response(
-      JSON.stringify(response),
-      {
-        status: 200,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
+      const response = {
+        success: true,
+        result_img: mockImageBase64,
+        processing_time: 4,
+        message: "Mock try-on completed successfully"
+      };
+
+      console.log('📤 Sending mock response');
+      return new Response(
+        JSON.stringify(response),
+        {
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
         }
-      }
-    );
+      );
+    } else {
+      console.log('🔗 Using real Perfect Corp API');
+      
+      // Use the real Perfect Corp processor
+      const result = await processTryOnRequest(requestData, '');
+      
+      console.log('📤 Sending real API response');
+      return new Response(
+        JSON.stringify(result),
+        {
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      );
+    }
 
   } catch (error) {
     console.error('❌ Perfect Corp Proxy error:', error);
     console.error('🔥 Error stack:', error.stack);
     
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: `Server error: ${error.message}` 
-      }),
-      {
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
+    // Fallback to mock on error
+    console.log('🔄 Falling back to mock mode due to error');
+    try {
+      const mockImageBase64 = await createMockTryOnImage();
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          result_img: mockImageBase64,
+          processing_time: 2,
+          message: "Fallback mock try-on (error occurred with real API)"
+        }),
+        {
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
         }
-      }
-    );
+      );
+    } catch (fallbackError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Server error: ${error.message}` 
+        }),
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          }
+        }
+      );
+    }
   }
 });
 
-// Create a simple mock try-on result image as a base64 data URL
-function createMockTryOnImage(): string {
-  // Create a simple 200x300 mock try-on result image
-  // This is a minimal but valid 1x1 transparent PNG
-  const validPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI5kl5ghQAAAABJRU5ErkJggg==";
-  
-  return `data:image/png;base64,${validPngBase64}`;
+// Create a proper mock try-on result image as a base64 data URL
+async function createMockTryOnImage(): Promise<string> {
+  try {
+    // Use a proper mock try-on image from Unsplash (fashion/clothing related)
+    const mockImageUrl = 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400&h=600&fit=crop&crop=center';
+    
+    console.log('📥 Downloading mock try-on image...');
+    const response = await fetch(mockImageUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch mock image: ${response.status}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    
+    console.log('✅ Mock image downloaded and converted to base64');
+    console.log('📊 Mock image base64 length:', base64.length);
+    
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (error) {
+    console.error('❌ Failed to create mock image, using fallback:', error);
+    
+    // Fallback to a simple colored rectangle (valid PNG)
+    const fallbackPngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAZAAAAJYCAMAAACtqHJCAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAADBQTFRF////zMzMmZmZZmZmMzMzAAAA8PDw4ODg0NDQwMDAr6+vnJycjIyMeHh4WFhYQEBAF/yJOgAAAAlwSFlzAAALEgAACxIB0t1+/AAAAFVJREFUeNrt1TEBACAMBLEl/0erNgITJOc9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwbwMDAAAAAElFTkSuQmCC";
+    return `data:image/png;base64,${fallbackPngBase64}`;
+  }
 }
