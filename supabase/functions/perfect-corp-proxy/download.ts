@@ -1,12 +1,11 @@
-
-export async function downloadResultImage(resultImageUrl: string): Promise<ArrayBuffer> {
-  console.log('Step 5: Downloading result image...');
-  console.log('Result image URL:', resultImageUrl.substring(0, 100) + '...');
+export async function downloadResultImage(imageUrl: string): Promise<ArrayBuffer> {
+  console.log('📥 Downloading result image from URL:', imageUrl);
   
-  if (resultImageUrl.startsWith('data:')) {
-    console.log('Mock mode: Converting data URL to ArrayBuffer');
-    const base64 = resultImageUrl.split(',')[1];
-    const binaryString = atob(base64);
+  // If it's already a data URL, extract the base64 data
+  if (imageUrl.startsWith('data:image/')) {
+    console.log('🔄 Converting data URL to ArrayBuffer');
+    const base64Data = imageUrl.split(',')[1];
+    const binaryString = atob(base64Data);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
@@ -14,20 +13,20 @@ export async function downloadResultImage(resultImageUrl: string): Promise<Array
     return bytes.buffer;
   }
   
+  // Otherwise, fetch the image from the URL
   try {
-    console.log('Downloading image from S2S result URL...');
-    const response = await fetch(resultImageUrl);
-    console.log(`S2S Download response status: ${response.status}`);
+    const response = await fetch(imageUrl);
     
     if (!response.ok) {
-      throw new Error(`S2S Download failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
     
     const arrayBuffer = await response.arrayBuffer();
-    console.log(`Downloaded S2S image size: ${arrayBuffer.byteLength} bytes`);
+    console.log('✅ Image downloaded successfully, size:', arrayBuffer.byteLength, 'bytes');
+    
     return arrayBuffer;
   } catch (error) {
-    console.error('S2S Download error:', error);
-    throw new Error(`S2S Image download failed: ${error.message}`);
+    console.error('❌ Failed to download result image:', error);
+    throw new Error(`Failed to download result image: ${error.message}`);
   }
 }
