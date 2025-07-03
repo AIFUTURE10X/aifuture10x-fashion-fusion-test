@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validateFileUpload } from '@/utils/validation';
 import { ClothingItem } from '../types';
 
 export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
