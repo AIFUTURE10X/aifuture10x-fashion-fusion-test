@@ -53,6 +53,17 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
     }
   }, [isProcessing]);
 
+  // Debug effect to log image state
+  React.useEffect(() => {
+    console.log('🖼️ TryOnResultPanel - Image state:', {
+      hasTryOnResultImage: !!tryOnResultImage,
+      imageLength: tryOnResultImage?.length || 0,
+      imagePrefix: tryOnResultImage?.substring(0, 50) || 'none',
+      isProcessing,
+      error
+    });
+  }, [tryOnResultImage, isProcessing, error]);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="aspect-[3/4] relative bg-gray-50 flex items-center justify-center">
@@ -60,15 +71,6 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
           <div className="absolute inset-0">
             {/* Background overlay */}
             <div className="absolute inset-0 bg-black/60 z-10"></div>
-            
-            {/* Background image (if available) */}
-            {tryOnResultImage && (
-              <img
-                src={tryOnResultImage}
-                alt="Processing"
-                className="w-full h-full object-cover opacity-50"
-              />
-            )}
             
             {/* Processing overlay */}
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-8">
@@ -102,6 +104,13 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
                 transform: `scale(${adjustments.size[0] / 100}) translateY(${
                   (adjustments.position[0] - 50) * 2
                 }px)`,
+              }}
+              onLoad={() => {
+                console.log('✅ Try-on result image loaded successfully');
+              }}
+              onError={(e) => {
+                console.error('❌ Try-on result image failed to load:', e);
+                console.error('Image src:', tryOnResultImage?.substring(0, 100));
               }}
             />
             <div className="absolute top-4 left-4">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -108,22 +109,30 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         throw new Error('No result image returned from API');
       }
 
-      // Validate the base64 image data
-      if (!response.resultImage.startsWith('data:image/')) {
+      // Validate and prepare the base64 image data
+      let imageData = response.resultImage;
+      if (!imageData.startsWith('data:image/')) {
         console.log('🔧 Adding data URL prefix to base64 image');
-        response.resultImage = `data:image/jpeg;base64,${response.resultImage}`;
+        imageData = `data:image/jpeg;base64,${imageData}`;
       }
 
       console.log('✅ Image validation passed');
-      console.log('📊 Result image length:', response.resultImage.length);
-      console.log('🖼️ Image preview:', response.resultImage.substring(0, 100) + '...');
+      console.log('📊 Result image length:', imageData.length);
+      console.log('🖼️ Image preview:', imageData.substring(0, 100) + '...');
       
-      setTryOnResultImage(response.resultImage);
+      // Set the result image
+      console.log('🎯 Setting try-on result image...');
+      setTryOnResultImage(imageData);
       setProcessingTime(response.processingTime || processingTimeSec);
+      
+      // Small delay to ensure state is set
+      setTimeout(() => {
+        console.log('🔍 Final check - tryOnResultImage state:', !!imageData);
+      }, 100);
       
       toast({
         title: "Try-On Complete!",
-        description: "Your virtual try-on has been generated successfully using Perfect Corp AI."
+        description: "Your virtual try-on has been generated successfully."
       });
 
     } catch (err) {
@@ -137,7 +146,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
       // Enhanced error message for common issues
       let enhancedError = errorMessage;
       if (errorMessage.toLowerCase().includes("fetch")) {
-        enhancedError = "Image fetch failed. Please check that your images are accessible.";
+        enhancedError = "Unable to connect to the try-on service. Please check your connection and try again.";
       } else if (errorMessage.toLowerCase().includes("file_id")) {
         enhancedError = "Image processing failed. The clothing image may need to be re-uploaded.";
       } else if (errorMessage.toLowerCase().includes("authentication")) {
@@ -166,19 +175,19 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   // Debug effect to log when tryOnResultImage changes
   useEffect(() => {
     if (tryOnResultImage) {
-      console.log('🖼️ Try-on result image updated:', {
+      console.log('🖼️ Try-on result image updated in TryOnViewer:', {
         length: tryOnResultImage.length,
         isDataUrl: tryOnResultImage.startsWith('data:'),
         preview: tryOnResultImage.substring(0, 100) + '...'
       });
     } else {
-      console.log('🗑️ Try-on result image cleared');
+      console.log('🗑️ Try-on result image cleared in TryOnViewer');
     }
   }, [tryOnResultImage]);
 
   // Debug effect to log processing state changes
   useEffect(() => {
-    console.log('⚙️ Processing state changed:', isProcessing ? 'PROCESSING' : 'IDLE');
+    console.log('⚙️ Processing state changed in TryOnViewer:', isProcessing ? 'PROCESSING' : 'IDLE');
   }, [isProcessing]);
 
   return (
