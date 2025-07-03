@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Share2, Download, RotateCcw, Zap, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { perfectCorpApi, TryOnResponse } from '@/services/perfectCorpApi';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from "@/integrations/supabase/client"; // Import Supabase client
+import { supabase } from "@/integrations/supabase/client";
 import { TryOnAdjustments } from './TryOnAdjustments';
 import { TryOnProductInfo } from './TryOnProductInfo';
 import { TryOnResultPanel } from './TryOnResultPanel';
@@ -71,24 +70,20 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
     const startTime = Date.now();
 
     try {
-      // Check if this is custom clothing with Perfect Corp ref_id
-      const isCustomClothing = !!selectedClothing.perfect_corp_ref_id;
-      
+      // Always treat clothing as custom now since we use Perfect Corp File API
       const payload: any = {
         userPhoto,
-        clothingCategory: selectedClothing.category
+        clothingCategory: selectedClothing.category,
+        clothingImage: selectedClothing.image, // Supabase URL for reference
+        isCustomClothing: true
       };
 
-      if (isCustomClothing) {
-        // Use Perfect Corp ref_id for custom clothing
-        payload.isCustomClothing = true;
+      // If we have a stored Perfect Corp ref_id, use it
+      if (selectedClothing.perfect_corp_ref_id) {
         payload.perfectCorpRefId = selectedClothing.perfect_corp_ref_id;
-        payload.clothingImage = selectedClothing.image; // Still send for logging
-        console.log('🎨 Using custom clothing with ref_id:', selectedClothing.perfect_corp_ref_id);
+        console.log('🎨 Using stored Perfect Corp ref_id:', selectedClothing.perfect_corp_ref_id);
       } else {
-        // Use traditional style_id approach for predefined clothing
-        payload.clothingImage = selectedClothing.image;
-        console.log('📦 Using predefined clothing');
+        console.log('📤 Will upload clothing image to Perfect Corp during try-on');
       }
 
       console.log('📤 Sending try-on request payload:', JSON.stringify(payload, null, 2));
@@ -128,9 +123,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
       
       toast({
         title: "Try-On Complete!",
-        description: isCustomClothing 
-          ? "Your custom clothing try-on has been generated successfully."
-          : "Your virtual try-on has been generated successfully."
+        description: "Your virtual try-on has been generated successfully using Perfect Corp AI."
       });
 
     } catch (err) {
@@ -141,19 +134,21 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
       
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       
-      // Enhanced error message for fetch failures
-      const isFetchError = errorMessage.toLowerCase().includes("fetch");
-      const enhancedError = isFetchError
-        ? "Image fetch failed. Please double-check your uploaded photo and clothing image are public URLs (not local or protected links)."
-        : errorMessage;
+      // Enhanced error message for common issues
+      let enhancedError = errorMessage;
+      if (errorMessage.toLowerCase().includes("fetch")) {
+        enhancedError = "Image fetch failed. Please check that your images are accessible.";
+      } else if (errorMessage.toLowerCase().includes("file_id")) {
+        enhancedError = "Image processing failed. The clothing image may need to be re-uploaded.";
+      } else if (errorMessage.toLowerCase().includes("authentication")) {
+        enhancedError = "Authentication failed. Please try again or contact support.";
+      }
       
       setError(enhancedError);
       
       toast({
         title: "Try-On Failed",
-        description: isFetchError
-          ? "Image fetch failed. Only public image URLs (jpg/png on the internet) are supported for try-on."
-          : errorMessage,
+        description: enhancedError,
         variant: "destructive"
       });
     } finally {

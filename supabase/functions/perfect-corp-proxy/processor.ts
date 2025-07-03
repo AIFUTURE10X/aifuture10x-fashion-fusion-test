@@ -4,6 +4,7 @@ import { startTryOnTask } from './try-on.ts';
 import { pollTaskCompletion } from './polling.ts';
 import { downloadResultImage } from './download.ts';
 import { arrayBufferToBase64 } from './image-utils.ts';
+import { uploadImageToFileAPI } from './file-upload.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 export async function processTryOnRequest(requestData: any, accessToken: string): Promise<any> {
@@ -15,7 +16,8 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     hasUserPhotoStoragePath: !!requestData.userPhotoStoragePath,
     clothingCategory: requestData.clothingCategory,
     isCustomClothing: requestData.isCustomClothing,
-    perfectCorpRefId: requestData.perfectCorpRefId
+    perfectCorpRefId: requestData.perfectCorpRefId,
+    clothingImage: requestData.clothingImage ? 'provided' : 'missing'
   });
 
   try {
@@ -31,56 +33,90 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     
     console.log('✅ Access token validation passed');
 
-    // For custom clothing, we should already have the Perfect Corp file_id
+    let perfectCorpFileId: string;
+
+    // Check if we already have a Perfect Corp file_id for this clothing
     if (requestData.isCustomClothing && requestData.perfectCorpRefId) {
-      console.log('🎨 Using custom clothing with existing Perfect Corp file_id:', requestData.perfectCorpRefId);
+      console.log('🎨 Using existing Perfect Corp file_id:', requestData.perfectCorpRefId);
+      perfectCorpFileId = requestData.perfectCorpRefId;
+    } else if (requestData.clothingImage) {
+      // Need to upload the clothing image to Perfect Corp File API first
+      console.log('📤 Uploading clothing image to Perfect Corp File API...');
+      console.log('🖼️ Clothing image URL:', requestData.clothingImage);
       
-      // Start try-on task directly with the file_id
-      console.log('🎽 Starting S2S try-on task with existing file_id...');
-      const taskId = await startTryOnTask(
-        accessToken, 
-        requestData.perfectCorpRefId, // Use the Perfect Corp file_id directly
-        requestData.clothingImage, 
-        requestData.isCustomClothing, 
-        requestData.perfectCorpRefId,
-        requestData.clothingCategory
-      );
-      console.log(`🚀 S2S Try-on task started with ID: ${taskId}`);
-
-      // Poll for task completion
-      console.log('⏳ Polling for S2S task completion...');
-      const result = await pollTaskCompletion(accessToken, taskId);
-      console.log('✅ S2S Task completed successfully');
-
-      // Download and process result
-      const resultImageUrl = result.result?.output_url || 
-                             result.result?.result_image_url || 
-                             result.output_url || 
-                             result.result_image_url;
-
-      if (!resultImageUrl) {
-        console.error('❌ No result image URL found in S2S response:', JSON.stringify(result, null, 2));
-        throw new Error('No result image URL found in Perfect Corp S2S response');
+      try {
+        perfectCorpFileId = await uploadImageToFileAPI(
+          accessToken, 
+          requestData.clothingImage,
+          'clothing_reference.jpg'
+        );
+        console.log('✅ Successfully uploaded to Perfect Corp, file_id:', perfectCorpFileId);
+      } catch (uploadError) {
+        console.error('❌ Failed to upload clothing image to Perfect Corp:', uploadError);
+        throw new Error(`Failed to upload clothing image to Perfect Corp: ${uploadError.message}`);
       }
-
-      console.log('📥 Downloading result image from S2S API...');
-      const resultImageData = await downloadResultImage(resultImageUrl);
-      const resultImageBase64 = arrayBufferToBase64(resultImageData);
-
-      const totalTime = Date.now() - startTime;
-      console.log(`🎉 S2S Try-on process completed successfully in ${totalTime}ms`);
-      console.log(`📊 Result image base64 length: ${resultImageBase64.length} characters`);
-
-      return {
-        success: true,
-        result_img: resultImageBase64,
-        processing_time: result.processing_time || Math.round(totalTime / 1000),
-        message: "Virtual try-on completed successfully using your custom clothing with Perfect Corp File API"
-      };
-
     } else {
-      throw new Error('Custom clothing requires Perfect Corp file_id. Please re-upload your clothing image.');
+      throw new Error('No clothing image or Perfect Corp file_id provided');
     }
+
+    // Now upload the user photo to Perfect Corp File API
+    console.log('📤 Uploading user photo to Perfect Corp File API...');
+    let userPhotoFileId: string;
+    
+    try {
+      userPhotoFileId = await uploadImageToFileAPI(
+        accessToken, 
+        requestData.userPhoto,
+        'user_photo.jpg'
+      );
+      console.log('✅ Successfully uploaded user photo, file_id:', userPhotoFileId);
+    } catch (uploadError) {
+      console.error('❌ Failed to upload user photo to Perfect Corp:', uploadError);
+      throw new Error(`Failed to upload user photo to Perfect Corp: ${uploadError.message}`);
+    }
+
+    // Start try-on task with Perfect Corp file_ids
+    console.log('🎽 Starting S2S try-on task with Perfect Corp file_ids...');
+    const taskId = await startTryOnTask(
+      accessToken, 
+      userPhotoFileId, // User photo file_id
+      perfectCorpFileId, // Clothing file_id  
+      true, // isCustomClothing (always true now since we use File API)
+      perfectCorpFileId, // perfectCorpRefId
+      requestData.clothingCategory
+    );
+    console.log(`🚀 S2S Try-on task started with ID: ${taskId}`);
+
+    // Poll for task completion
+    console.log('⏳ Polling for S2S task completion...');
+    const result = await pollTaskCompletion(accessToken, taskId);
+    console.log('✅ S2S Task completed successfully');
+
+    // Download and process result
+    const resultImageUrl = result.result?.output_url || 
+                           result.result?.result_image_url || 
+                           result.output_url || 
+                           result.result_image_url;
+
+    if (!resultImageUrl) {
+      console.error('❌ No result image URL found in S2S response:', JSON.stringify(result, null, 2));
+      throw new Error('No result image URL found in Perfect Corp S2S response');
+    }
+
+    console.log('📥 Downloading result image from S2S API...');
+    const resultImageData = await downloadResultImage(resultImageUrl);
+    const resultImageBase64 = arrayBufferToBase64(resultImageData);
+
+    const totalTime = Date.now() - startTime;
+    console.log(`🎉 S2S Try-on process completed successfully in ${totalTime}ms`);
+    console.log(`📊 Result image base64 length: ${resultImageBase64.length} characters`);
+
+    return {
+      success: true,
+      result_img: resultImageBase64,
+      processing_time: result.processing_time || Math.round(totalTime / 1000),
+      message: "Virtual try-on completed successfully using Perfect Corp File API"
+    };
 
   } catch (error) {
     const totalTime = Date.now() - startTime;
@@ -89,8 +125,8 @@ export async function processTryOnRequest(requestData: any, accessToken: string)
     
     // Enhanced error context for debugging
     if (error.message && error.message.includes('file_id')) {
-      console.error('📤 File ID error - clothing may need to be re-uploaded with Perfect Corp File API');
-      console.error('💡 Suggestion: Re-upload the clothing image to get a new Perfect Corp file_id');
+      console.error('📤 File ID error - clothing upload may have failed');
+      console.error('💡 Suggestion: Check Perfect Corp File API upload process');
     }
     
     if (error.message && error.message.includes('Invalid access token')) {

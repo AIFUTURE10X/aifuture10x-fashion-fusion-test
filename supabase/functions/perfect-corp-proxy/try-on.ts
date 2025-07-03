@@ -3,14 +3,15 @@ import { PERFECTCORP_BASE_URL } from './constants.ts';
 
 export async function startTryOnTask(
   accessToken: string, 
-  fileId: string, 
-  clothingImage: string, 
+  userPhotoFileId: string, 
+  clothingFileId: string, 
   isCustomClothing?: boolean, 
   perfectCorpRefId?: string,
   garmentCategory: string = 'upper_body'
 ): Promise<string> {
   console.log('Step 3: Starting try-on task with S2S API...');
-  console.log('Using file_id for try-on:', fileId);
+  console.log('Using user photo file_id:', userPhotoFileId);
+  console.log('Using clothing file_id:', clothingFileId);
   
   if (accessToken === 'mock_token_for_testing') {
     console.log('Mock mode: Simulating try-on task');
@@ -19,20 +20,11 @@ export async function startTryOnTask(
   
   const tryOnUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
   
-  let requestBody: any = {
-    file_id: fileId, // Use the file_id directly from Perfect Corp File API
+  const requestBody = {
+    file_id: userPhotoFileId, // User photo file_id from Perfect Corp File API
     garment_category: garmentCategory,
+    ref_ids: [clothingFileId] // Clothing file_id from Perfect Corp File API
   };
-
-  if (isCustomClothing && perfectCorpRefId) {
-    // For custom clothing, use the Perfect Corp file_id as both file_id and ref_id
-    requestBody.ref_ids = [perfectCorpRefId];
-    console.log('Using custom clothing with Perfect Corp file_id:', perfectCorpRefId);
-  } else {
-    // For predefined clothing (this path should not be used anymore)
-    requestBody.style_id = clothingImage;
-    console.log('Using style_id for S2S API:', clothingImage);
-  }
 
   try {
     console.log('Sending try-on request to S2S endpoint:', tryOnUrl);
