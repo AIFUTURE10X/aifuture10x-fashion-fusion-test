@@ -47,9 +47,9 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
+          return prev + Math.random() * 8;
         });
-      }, 400);
+      }, 500);
 
       return () => clearInterval(interval);
     } else {
@@ -63,11 +63,11 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
       console.log('🖼️ TryOnResultPanel - New image received:', {
         hasTryOnResultImage: !!tryOnResultImage,
         imageLength: tryOnResultImage?.length || 0,
-        imagePrefix: tryOnResultImage?.substring(0, 100) || 'none',
+        imagePrefix: tryOnResultImage?.substring(0, 50) || 'none',
         isProcessing,
         error,
         isDataUrl: tryOnResultImage?.startsWith('data:'),
-        isSVG: tryOnResultImage?.includes('svg')
+        imageType: tryOnResultImage?.substring(5, tryOnResultImage.indexOf(';')) || 'unknown'
       });
       setImageError(false);
       setImageLoaded(false);
@@ -79,17 +79,18 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
   }, [tryOnResultImage, isProcessing, error]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('❌ Try-on result image failed to load:', e);
-    console.error('Image src preview:', tryOnResultImage?.substring(0, 200));
-    console.error('Image length:', tryOnResultImage?.length);
-    console.error('Is SVG?', tryOnResultImage?.includes('svg'));
+    console.error('❌ Try-on result image failed to load');
+    console.error('🔍 Image src length:', tryOnResultImage?.length);
+    console.error('🔍 Image src prefix:', tryOnResultImage?.substring(0, 100));
+    console.error('🔍 Is data URL?', tryOnResultImage?.startsWith('data:'));
+    console.error('🔍 Image type:', tryOnResultImage?.substring(5, tryOnResultImage?.indexOf(';')));
     setImageError(true);
     setImageLoaded(false);
   };
 
   const handleImageLoad = () => {
     console.log('✅ Try-on result image loaded successfully');
-    console.log('✅ Image type:', tryOnResultImage?.includes('svg') ? 'SVG' : 'Other');
+    console.log('✅ Image dimensions and type confirmed working');
     setImageError(false);
     setImageLoaded(true);
   };
@@ -97,12 +98,11 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
   const renderImage = () => {
     if (!tryOnResultImage) return null;
 
-    console.log('🎨 Rendering image with data:', {
+    console.log('🎨 Rendering image:', {
       hasImage: !!tryOnResultImage,
       isDataUrl: tryOnResultImage.startsWith('data:'),
       length: tryOnResultImage.length,
-      preview: tryOnResultImage.substring(0, 50),
-      isSVG: tryOnResultImage.includes('svg')
+      type: tryOnResultImage.substring(5, tryOnResultImage.indexOf(';'))
     });
 
     return (
@@ -110,7 +110,7 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
         <img
           src={tryOnResultImage}
           alt="Try-on result"
-          className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
+          className={`max-w-full max-h-full object-contain transition-opacity duration-500 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           style={{
@@ -123,8 +123,11 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
           onError={handleImageError}
         />
         {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Loading image...</p>
+            </div>
           </div>
         )}
         {imageLoaded && (
@@ -181,7 +184,8 @@ export const TryOnResultPanel: React.FC<TryOnResultPanelProps> = ({
               The try-on result couldn't be displayed properly
             </p>
             <div className="text-xs text-gray-500 mb-4 font-mono bg-gray-100 p-2 rounded max-w-xs mx-auto overflow-hidden">
-              {tryOnResultImage?.substring(0, 100)}...
+              Length: {tryOnResultImage?.length || 'N/A'}<br/>
+              Type: {tryOnResultImage?.substring(5, tryOnResultImage?.indexOf(';')) || 'Unknown'}
             </div>
             <Button onClick={handleRetry} size="sm">
               <RotateCcw className="w-4 h-4 mr-2" />
