@@ -42,10 +42,13 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/jpg': ['.jpg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp']
     },
     multiple: false,
-    maxSize: 10 * 1024 * 1024 // 10MB
+    maxSize: 5 * 1024 * 1024 // 5MB
   });
 
   const handleContinue = () => {
@@ -125,22 +128,32 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
                 </div>
                 
                 {isProcessing ? (
-                  <p className="text-gray-200">Uploading...</p>
+                  <p className="text-gray-200">Uploading and converting to JPG...</p>
                 ) : isDragActive ? (
-                  <p className="text-purple-300 font-medium">Drop the image here</p>
+                  <p className="text-purple-300 font-medium">Drop your photo here</p>
                 ) : (
                   <>
                     <p className="text-white font-medium mb-2">
-                      Click to upload or drag and drop
+                      Upload Your Photo for Virtual Try-On
                     </p>
-                    <p className="text-gray-300">PNG, JPG, WebP up to 10MB</p>
+                    <p className="text-gray-300 mb-1">
+                      <span className="font-semibold text-purple-300">Best: JPG/JPEG format</span>
+                    </p>
+                    <p className="text-gray-300 text-sm">
+                      Also accepts PNG, WebP (auto-converted to JPG) • Max 5MB
+                    </p>
                   </>
                 )}
               </div>
             </div>
 
             {error && (
-              <p className="text-red-300 text-sm mt-3 text-center">{error}</p>
+              <div className="mt-3 p-3 bg-red-500/20 border border-red-400/50 rounded-lg">
+                <p className="text-red-300 text-sm text-center">{error}</p>
+                <p className="text-red-200 text-xs text-center mt-1">
+                  For best results, please use JPG/JPEG format
+                </p>
+              </div>
             )}
           </div>
         )}

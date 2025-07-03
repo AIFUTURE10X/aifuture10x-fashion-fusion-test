@@ -42,6 +42,13 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     setError(null);
     const file = acceptedFiles[0];
     if (file) {
+      // Validate file before processing
+      const validationErrors = validateFileUpload(file);
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join('. '));
+        return;
+      }
+
       setIsProcessing(true);
       try {
         const previewUrl = URL.createObjectURL(file);
@@ -52,12 +59,14 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
         setUploadedPhoto(publicUrl);
         
         toast({
-          title: "Image uploaded!",
-          description: "Ready to add to your catalog"
+          title: "Image uploaded successfully!",
+          description: file.type.includes('jpeg') || file.type.includes('jpg') 
+            ? "JPG format - perfect for AI processing!" 
+            : "Image converted to JPG format for optimal AI processing"
         });
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Upload failed. Please try again."
+          err instanceof Error ? err.message : "Upload failed. Please try again with a JPG image if possible."
         );
         setFilePreview(null);
         setUploadedPhoto(null);

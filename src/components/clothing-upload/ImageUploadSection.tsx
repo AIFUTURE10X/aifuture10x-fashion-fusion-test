@@ -23,7 +23,10 @@ export const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/jpg': ['.jpg'],
+      'image/png': ['.png'], 
+      'image/webp': ['.webp']
     },
     multiple: false,
     maxSize: 10 * 1024 * 1024 // 10MB
@@ -32,8 +35,12 @@ export const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
   return (
     <div>
       <Label className="text-sm font-medium text-gray-700 mb-2 block">
-        Reference Image *
+        Clothing Reference Image *
       </Label>
+      <p className="text-xs text-gray-600 mb-3">
+        <span className="font-semibold text-purple-600">Recommended: JPG/JPEG format</span> for optimal AI processing
+      </p>
+      
       {uploadedPhoto ? (
         <div className="relative">
           <img
@@ -70,15 +77,23 @@ export const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
             </div>
             
             {isProcessing ? (
-              <p className="text-gray-600">Uploading...</p>
+              <div className="text-center">
+                <p className="text-gray-600 font-medium">Processing image...</p>
+                <p className="text-gray-500 text-sm">Converting to JPG format</p>
+              </div>
             ) : isDragActive ? (
-              <p className="text-purple-600 font-medium">Drop the image here</p>
+              <p className="text-purple-600 font-medium">Drop your clothing image here</p>
             ) : (
               <>
-                <p className="text-gray-900 font-medium mb-1">
+                <p className="text-gray-900 font-medium mb-2">
                   Click to upload or drag and drop
                 </p>
-                <p className="text-gray-500 text-sm">PNG, JPG, WebP up to 10MB</p>
+                <p className="text-purple-600 font-semibold mb-1">
+                  Preferred: JPG/JPEG format
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Also accepts PNG, WebP (converted to JPG) • Max 10MB
+                </p>
               </>
             )}
           </div>

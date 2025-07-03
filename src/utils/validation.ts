@@ -1,4 +1,3 @@
-
 // Input validation utilities
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,15 +28,43 @@ export const validatePassword = (password: string): string[] => {
 
 export const validateFileUpload = (file: File): string[] => {
   const errors: string[] = [];
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 10 * 1024 * 1024; // 10MB (increased for clothing images)
+  const preferredTypes = ['image/jpeg', 'image/jpg'];
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   
   if (file.size > maxSize) {
-    errors.push('File size must be less than 5MB');
+    errors.push('File size must be less than 10MB');
   }
   
   if (!allowedTypes.includes(file.type)) {
-    errors.push('File must be a JPEG, PNG, or WebP image');
+    errors.push('File must be a JPG, JPEG, PNG, or WebP image');
+  }
+  
+  // Add recommendation for JPG format
+  if (!preferredTypes.includes(file.type)) {
+    errors.push('For best AI processing results, JPG/JPEG format is recommended (your image will be auto-converted)');
+  }
+  
+  return errors;
+};
+
+export const validateUserPhotoUpload = (file: File): string[] => {
+  const errors: string[] = [];
+  const maxSize = 5 * 1024 * 1024; // 5MB for user photos
+  const preferredTypes = ['image/jpeg', 'image/jpg'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  
+  if (file.size > maxSize) {
+    errors.push('Photo size must be less than 5MB');
+  }
+  
+  if (!allowedTypes.includes(file.type)) {
+    errors.push('Photo must be a JPG, JPEG, PNG, or WebP image');
+  }
+  
+  // Add recommendation for JPG format for user photos
+  if (!preferredTypes.includes(file.type)) {
+    errors.push('For optimal virtual try-on results, JPG/JPEG format is recommended (will be auto-converted)');
   }
   
   return errors;
