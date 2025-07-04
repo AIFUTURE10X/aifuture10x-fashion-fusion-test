@@ -7,7 +7,7 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
   console.log('📤 Trying enhanced minimal headers upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
+  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
   
   return await retryWithBackoff(async () => {
     // Step 1: Request upload URL with minimal headers

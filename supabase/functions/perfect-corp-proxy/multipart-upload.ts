@@ -7,7 +7,7 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
   console.log('📤 Trying enhanced multipart form data upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/upload`;
+  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
   
   return await retryWithBackoff(async () => {
     const formData = new FormData();

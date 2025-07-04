@@ -13,7 +13,7 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     throw new Error('Network connectivity test failed. Please check your internet connection and try again.');
   }
   
-  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
+  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
