@@ -1,5 +1,6 @@
 
 import { PERFECTCORP_BASE_URL } from './constants.ts';
+import { WorkingEndpoints } from './endpoint-discovery.ts';
 
 export async function startTryOnTask(
   accessToken: string, 
@@ -7,7 +8,8 @@ export async function startTryOnTask(
   clothingFileId: string, 
   isCustomClothing?: boolean, 
   perfectCorpRefId?: string,
-  garmentCategory: string = 'upper_body'
+  garmentCategory: string = 'upper_body',
+  workingEndpoints?: WorkingEndpoints
 ): Promise<string> {
   console.log('Step 3: Starting try-on task with S2S API...');
   console.log('Using user photo file_id:', userPhotoFileId);
@@ -18,7 +20,8 @@ export async function startTryOnTask(
     return 'mock_task_id_67890';
   }
   
-  const tryOnUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
+  const tryOnUrl = workingEndpoints?.tryOn || `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
+  console.log('🎯 [Try-On] Using endpoint:', tryOnUrl.substring(0, 50) + '...');
   
   const requestBody = {
     file_id: userPhotoFileId, // User photo file_id from Perfect Corp File API

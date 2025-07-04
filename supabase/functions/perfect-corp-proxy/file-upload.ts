@@ -1,8 +1,9 @@
 
 import { tryReferenceUploadPattern, tryMultipartUpload, tryMinimalUpload } from './upload-strategies.ts';
 import { validateAccessToken, logUploadStart } from './upload-validation.ts';
+import { WorkingEndpoints } from './endpoint-discovery.ts';
 
-export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
+export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayBuffer, workingEndpoints?: WorkingEndpoints): Promise<string> {
   console.log('🚀 [Upload Manager] Starting user photo upload process...');
   logUploadStart(accessToken, userPhotoData);
   
@@ -16,30 +17,30 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   console.log('🔄 [Upload Manager] Attempting upload with multiple strategies...');
   
-  // Strategy 1: Use the enhanced reference upload pattern with File API v1.0
+  // Strategy 1: Use the enhanced reference upload pattern with discovered endpoints
   try {
-    console.log('🎯 [Upload Manager] Strategy 1: Reference upload pattern (File API v1.0)');
-    const result = await tryReferenceUploadPattern(accessToken, userPhotoData);
+    console.log('🎯 [Upload Manager] Strategy 1: Reference upload pattern (discovered endpoints)');
+    const result = await tryReferenceUploadPattern(accessToken, userPhotoData, workingEndpoints);
     console.log('✅ [Upload Manager] Strategy 1 succeeded with file_id:', result);
     return result;
   } catch (primaryError) {
     console.error('❌ [Upload Manager] Strategy 1 failed:', primaryError.message);
     console.error('📋 [Upload Manager] Strategy 1 error details:', primaryError);
     
-    // Strategy 2: Try multipart approach
+    // Strategy 2: Try multipart approach with discovered endpoints
     try {
-      console.log('🔄 [Upload Manager] Strategy 2: Multipart upload approach');
-      const result = await tryMultipartUpload(accessToken, userPhotoData);
+      console.log('🔄 [Upload Manager] Strategy 2: Multipart upload approach (discovered endpoints)');
+      const result = await tryMultipartUpload(accessToken, userPhotoData, workingEndpoints);
       console.log('✅ [Upload Manager] Strategy 2 succeeded with file_id:', result);
       return result;
     } catch (secondaryError) {
       console.error('❌ [Upload Manager] Strategy 2 failed:', secondaryError.message);
       console.error('📋 [Upload Manager] Strategy 2 error details:', secondaryError);
       
-      // Strategy 3: Last resort with minimal headers
+      // Strategy 3: Last resort with minimal headers and discovered endpoints
       try {
-        console.log('🔄 [Upload Manager] Strategy 3: Minimal headers approach');
-        const result = await tryMinimalUpload(accessToken, userPhotoData);
+        console.log('🔄 [Upload Manager] Strategy 3: Minimal headers approach (discovered endpoints)');
+        const result = await tryMinimalUpload(accessToken, userPhotoData, workingEndpoints);
         console.log('✅ [Upload Manager] Strategy 3 succeeded with file_id:', result);
         return result;
       } catch (tertiaryError) {

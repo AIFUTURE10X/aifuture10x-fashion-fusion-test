@@ -2,8 +2,9 @@
 
 import { validateAndProcessImage } from './image-validation.ts';
 import { uploadUserPhoto } from './file-upload.ts';
+import { WorkingEndpoints } from './endpoint-discovery.ts';
 
-export async function uploadImageToFileAPI(accessToken: string, imageUrl: string, fileName: string): Promise<string> {
+export async function uploadImageToFileAPI(accessToken: string, imageUrl: string, fileName: string, workingEndpoints?: WorkingEndpoints): Promise<string> {
   console.log('📤 Uploading image to Perfect Corp File API...');
   console.log('🖼️ Image URL type:', imageUrl.startsWith('data:') ? 'Base64 Data URL' : 'HTTP URL');
   console.log('🖼️ Image URL length:', imageUrl.length);
@@ -84,8 +85,8 @@ export async function uploadImageToFileAPI(accessToken: string, imageUrl: string
     console.log('📊 Final image data size:', imageData.byteLength, 'bytes');
     console.log('📋 File name for upload:', fileName);
     
-    // Upload using the enhanced file upload strategy with retry logic
-    const fileId = await uploadUserPhoto(accessToken, imageData);
+    // Upload using the enhanced file upload strategy with retry logic and discovered endpoints
+    const fileId = await uploadUserPhoto(accessToken, imageData, workingEndpoints);
     console.log('✅ Image uploaded successfully to Perfect Corp, file_id:', fileId);
     
     return fileId;

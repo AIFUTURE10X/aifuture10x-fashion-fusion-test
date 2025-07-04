@@ -1,11 +1,11 @@
 import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { testNetworkConnectivity, fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
-import { discoverWorkingEndpoints } from './endpoint-discovery.ts';
+import { discoverWorkingEndpoints, WorkingEndpoints } from './endpoint-discovery.ts';
 import { validateAccessToken, logTokenInfo } from './auth-validation.ts';
 
 // Strategy 1: Enhanced reference upload pattern with endpoint discovery and authentication validation
-export async function tryReferenceUploadPattern(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
+export async function tryReferenceUploadPattern(accessToken: string, userPhotoData: ArrayBuffer, workingEndpoints?: WorkingEndpoints): Promise<string> {
   console.log('📤 [Reference Upload] Starting enhanced reference upload pattern...');
   console.log('📊 [Reference Upload] Image data size:', userPhotoData.byteLength, 'bytes');
   console.log('🏷️ [Reference Upload] Image type: ArrayBuffer');
@@ -20,23 +20,26 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
   }
   console.log('✅ [Reference Upload] Access token validated successfully');
   
-  // Step 1: Discover working endpoints
-  console.log('🔍 [Reference Upload] Discovering working API endpoints...');
-  const workingEndpoints = await discoverWorkingEndpoints(accessToken);
-  if (!workingEndpoints) {
-    throw new Error('No working Perfect Corp API endpoints found. The service may be unavailable.');
+  // Use provided endpoints or discover them
+  let endpoints = workingEndpoints;
+  if (!endpoints) {
+    console.log('🔍 [Reference Upload] No endpoints provided, discovering working API endpoints...');
+    endpoints = await discoverWorkingEndpoints(accessToken);
+    if (!endpoints) {
+      throw new Error('No working Perfect Corp API endpoints found. The service may be unavailable.');
+    }
   }
   
   console.log('✅ [Reference Upload] Using endpoints:', {
-    baseUrl: workingEndpoints.baseUrl,
-    version: workingEndpoints.version,
-    fileApi: workingEndpoints.fileApi.substring(0, 50) + '...'
+    baseUrl: endpoints.baseUrl,
+    version: endpoints.version,
+    fileApi: endpoints.fileApi.substring(0, 50) + '...'
   });
   
   // Skip network connectivity check since endpoint discovery handles this
   console.log('🔗 [Reference Upload] Network connectivity will be tested during endpoint discovery');
   
-  const uploadRequestUrl = workingEndpoints.fileApi;
+  const uploadRequestUrl = endpoints.fileApi;
   console.log('🎯 [Reference Upload] Using working File API URL:', uploadRequestUrl);
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
@@ -110,7 +113,7 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
         console.error('❌ Primary endpoint failed, testing alternative endpoint...');
         
         // Try alternative endpoint from our working endpoints
-        const altUploadRequestUrl = workingEndpoints.fileApi.replace(`/${workingEndpoints.version}/`, '/v1.1/');
+        const altUploadRequestUrl = endpoints.fileApi.replace(`/${endpoints.version}/`, '/v1.1/');
         console.log('🔗 Testing alternative endpoint:', altUploadRequestUrl);
         
         try {

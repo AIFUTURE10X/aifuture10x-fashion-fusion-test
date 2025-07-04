@@ -1,11 +1,11 @@
 
 import { AuthResult } from './types.ts';
-import { PERFECTCORP_BASE_URL } from './constants.ts';
 import { rsaEncrypt } from './rsa-encryption.ts';
 import { validateCredentials } from './validation.ts';
 import { getCachedToken, cacheToken } from './token-cache.ts';
+import { discoverWorkingEndpoints, WorkingEndpoints } from './endpoint-discovery.ts';
 
-export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
+export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult & { workingEndpoints?: WorkingEndpoints }> {
   console.log('🔐 [Auth] Starting Perfect Corp authentication...');
   console.log('🔐 [Auth] API Key length:', apiKey?.length || 0);
   console.log('🔐 [Auth] API Secret length:', apiSecret?.length || 0);
@@ -47,7 +47,15 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   
   console.log('🔄 [Auth] No valid cached token found, authenticating with Perfect Corp...');
   
-  const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
+  // Discover working endpoints first
+  console.log('🔍 [Auth] Discovering working Perfect Corp endpoints...');
+  const workingEndpoints = await discoverWorkingEndpoints();
+  if (!workingEndpoints) {
+    throw new Error('No working Perfect Corp API endpoints found. Service may be unavailable.');
+  }
+  
+  const authUrl = workingEndpoints.auth;
+  console.log('🎯 [Auth] Using discovered auth endpoint:', authUrl.substring(0, 50) + '...');
   
   try {
     console.log('🚀 [Auth] Starting fresh authentication');
@@ -131,7 +139,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         // Cache the successful token
         await cacheToken(supabase, accessToken, expiresIn);
         
-        return { accessToken };
+        return { accessToken, workingEndpoints };
       } else {
         console.error(`❌ [Auth] No access token in response`);
         console.log(`🔍 [Auth] Available response fields:`, Object.keys(authData));

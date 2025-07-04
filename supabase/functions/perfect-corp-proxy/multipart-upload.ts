@@ -1,10 +1,10 @@
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
-import { discoverWorkingEndpoints } from './endpoint-discovery.ts';
+import { discoverWorkingEndpoints, WorkingEndpoints } from './endpoint-discovery.ts';
 import { validateAccessToken } from './auth-validation.ts';
 
 // Strategy 2: Enhanced multipart form data approach with endpoint discovery
-export async function tryMultipartUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
+export async function tryMultipartUpload(accessToken: string, userPhotoData: ArrayBuffer, workingEndpoints?: WorkingEndpoints): Promise<string> {
   console.log('📤 [Multipart Upload] Starting multipart upload with endpoint discovery...');
   console.log('📊 [Multipart Upload] Image data size:', userPhotoData.byteLength, 'bytes');
   
@@ -14,14 +14,18 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
     throw new Error(`Token validation failed: ${tokenValidation.error}`);
   }
   
-  // Discover working endpoints
-  const workingEndpoints = await discoverWorkingEndpoints(accessToken);
-  if (!workingEndpoints) {
-    throw new Error('No working Perfect Corp API endpoints found for multipart upload');
+  // Use provided endpoints or discover them
+  let endpoints = workingEndpoints;
+  if (!endpoints) {
+    console.log('🔍 [Multipart Upload] No endpoints provided, discovering...');
+    endpoints = await discoverWorkingEndpoints(accessToken);
+    if (!endpoints) {
+      throw new Error('No working Perfect Corp API endpoints found for multipart upload');
+    }
   }
   
-  const fileApiUrl = workingEndpoints.fileApi;
-  console.log('🎯 [Multipart Upload] Using discovered endpoint:', fileApiUrl.substring(0, 50) + '...');
+  const fileApiUrl = endpoints.fileApi;
+  console.log('🎯 [Multipart Upload] Using endpoint:', fileApiUrl.substring(0, 50) + '...');
   
   return await retryWithBackoff(async () => {
     // Step 1: Get upload URL from File API

@@ -1,7 +1,8 @@
 
 import { PERFECTCORP_BASE_URL } from './constants.ts';
+import { WorkingEndpoints } from './endpoint-discovery.ts';
 
-export async function pollTaskCompletion(accessToken: string, taskId: string): Promise<any> {
+export async function pollTaskCompletion(accessToken: string, taskId: string, workingEndpoints?: WorkingEndpoints): Promise<any> {
   console.log('Step 4: Polling for task completion with S2S API...');
   
   if (accessToken === 'mock_token_for_testing') {
@@ -21,7 +22,10 @@ export async function pollTaskCompletion(accessToken: string, taskId: string): P
     };
   }
   
-  const statusUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes/${taskId}`;
+  const baseUrl = workingEndpoints?.baseUrl || PERFECTCORP_BASE_URL;
+  const version = workingEndpoints?.version || 'v1.0';
+  const statusUrl = `${baseUrl}/s2s/${version}/task/clothes/${taskId}`;
+  console.log('🎯 [Polling] Using endpoint:', statusUrl.substring(0, 50) + '...');
   const maxAttempts = 60;
   const pollingInterval = 1000;
   
