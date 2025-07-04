@@ -2,10 +2,11 @@ import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
-// Strategy 2: Enhanced multipart form data approach with retry logic
+// Strategy 2: Enhanced multipart form data approach with comprehensive logging
 export async function tryMultipartUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 Trying File API v1.1 upload...');
-  console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
+  console.log('📤 [Multipart Upload] Starting File API v1.1 multipart upload...');
+  console.log('📊 [Multipart Upload] Image data size:', userPhotoData.byteLength, 'bytes');
+  console.log('🔗 [Multipart Upload] API Version: v1.1');
   
   const fileApiUrl = PERFECTCORP_FILE_API_URL;
   
@@ -33,13 +34,48 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
     }
 
     const fileApiData = await fileApiResponse.json();
-    const uploadResult = fileApiData.result || fileApiData;
-    const files = uploadResult.files || uploadResult;
-    const firstFile = Array.isArray(files) ? files[0] : files;
-    const uploadUrl = firstFile.url;
-    const fileId = firstFile.file_id;
+    console.log('📦 [Multipart Upload] Full API response:', JSON.stringify(fileApiData, null, 2));
+    
+    // Enhanced response parsing with detailed logging
+    console.log('🔍 [Multipart Upload] Parsing response structure...');
+    
+    let uploadUrl: string | undefined;
+    let fileId: string | undefined;
+    
+    if (fileApiData.result) {
+      console.log('📋 [Multipart Upload] Found result object');
+      const result = fileApiData.result;
+      
+      if (result.files && Array.isArray(result.files) && result.files.length > 0) {
+        console.log('📋 [Multipart Upload] Found files array in result');
+        uploadUrl = result.files[0].url;
+        fileId = result.files[0].file_id;
+      } else if (result.url && result.file_id) {
+        console.log('📋 [Multipart Upload] Found direct url/file_id in result');
+        uploadUrl = result.url;
+        fileId = result.file_id;
+      }
+    } else if (fileApiData.files && Array.isArray(fileApiData.files)) {
+      console.log('📋 [Multipart Upload] Found files array at root level');
+      uploadUrl = fileApiData.files[0]?.url;
+      fileId = fileApiData.files[0]?.file_id;
+    } else if (fileApiData.url && fileApiData.file_id) {
+      console.log('📋 [Multipart Upload] Found direct url/file_id at root level');
+      uploadUrl = fileApiData.url;
+      fileId = fileApiData.file_id;
+    }
+
+    console.log('🔍 [Multipart Upload] Extracted values:', { uploadUrl: uploadUrl?.substring(0, 50) + '...', fileId });
 
     if (!uploadUrl || !fileId) {
+      console.error('❌ [Multipart Upload] Missing upload URL or file_id in response');
+      console.error('📋 [Multipart Upload] Response structure analysis:', {
+        hasResult: !!fileApiData.result,
+        hasFiles: !!fileApiData.files,
+        hasDirectUrl: !!fileApiData.url,
+        hasDirectFileId: !!fileApiData.file_id,
+        responseKeys: Object.keys(fileApiData)
+      });
       throw new Error('Missing upload URL or file_id in File API response');
     }
 

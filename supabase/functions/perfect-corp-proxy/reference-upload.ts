@@ -2,10 +2,12 @@ import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { testNetworkConnectivity, fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
-// Strategy 1: Enhanced reference upload pattern with retry logic
+// Strategy 1: Enhanced reference upload pattern with retry logic and comprehensive logging
 export async function tryReferenceUploadPattern(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 Using enhanced reference upload pattern for user photo...');
-  console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
+  console.log('📤 [Reference Upload] Starting enhanced reference upload pattern...');
+  console.log('📊 [Reference Upload] Image data size:', userPhotoData.byteLength, 'bytes');
+  console.log('🏷️ [Reference Upload] Image type: ArrayBuffer');
+  console.log('🔗 [Reference Upload] API Version: v1.1');
   
   // Pre-flight connectivity check
   const networkOk = await testNetworkConnectivity();
@@ -14,6 +16,7 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
   }
   
   const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
+  console.log('🎯 [Reference Upload] File API URL:', uploadRequestUrl);
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
@@ -80,16 +83,49 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     }
 
     const uploadRequestData = await uploadRequestResponse.json();
-    console.log('📦 Upload request response data:', uploadRequestData);
+    console.log('📦 [Reference Upload] Full API response:', JSON.stringify(uploadRequestData, null, 2));
     
-    const uploadResult = uploadRequestData.result || uploadRequestData;
-    const files = uploadResult.files || uploadResult;
-    const firstFile = Array.isArray(files) ? files[0] : files;
-    const uploadUrl = firstFile.url;
-    const fileId = firstFile.file_id;
+    // Enhanced response parsing with detailed logging
+    console.log('🔍 [Reference Upload] Parsing response structure...');
+    
+    // Try multiple response structure patterns for API v1.1
+    let uploadUrl: string | undefined;
+    let fileId: string | undefined;
+    
+    if (uploadRequestData.result) {
+      console.log('📋 [Reference Upload] Found result object');
+      const result = uploadRequestData.result;
+      
+      if (result.files && Array.isArray(result.files) && result.files.length > 0) {
+        console.log('📋 [Reference Upload] Found files array in result');
+        uploadUrl = result.files[0].url;
+        fileId = result.files[0].file_id;
+      } else if (result.url && result.file_id) {
+        console.log('📋 [Reference Upload] Found direct url/file_id in result');
+        uploadUrl = result.url;
+        fileId = result.file_id;
+      }
+    } else if (uploadRequestData.files && Array.isArray(uploadRequestData.files)) {
+      console.log('📋 [Reference Upload] Found files array at root level');
+      uploadUrl = uploadRequestData.files[0]?.url;
+      fileId = uploadRequestData.files[0]?.file_id;
+    } else if (uploadRequestData.url && uploadRequestData.file_id) {
+      console.log('📋 [Reference Upload] Found direct url/file_id at root level');
+      uploadUrl = uploadRequestData.url;
+      fileId = uploadRequestData.file_id;
+    }
+
+    console.log('🔍 [Reference Upload] Extracted values:', { uploadUrl: uploadUrl?.substring(0, 50) + '...', fileId });
 
     if (!uploadUrl || !fileId) {
-      console.error('❌ Missing upload URL or file_id:', uploadRequestData);
+      console.error('❌ [Reference Upload] Missing upload URL or file_id in response');
+      console.error('📋 [Reference Upload] Response structure analysis:', {
+        hasResult: !!uploadRequestData.result,
+        hasFiles: !!uploadRequestData.files,
+        hasDirectUrl: !!uploadRequestData.url,
+        hasDirectFileId: !!uploadRequestData.file_id,
+        responseKeys: Object.keys(uploadRequestData)
+      });
       throw new Error('No upload URL or file_id received from Perfect Corp API');
     }
 
