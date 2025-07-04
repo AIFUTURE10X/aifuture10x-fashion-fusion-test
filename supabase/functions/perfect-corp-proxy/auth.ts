@@ -3,9 +3,9 @@ import { AuthResult } from './types.ts';
 import { rsaEncrypt } from './rsa-encryption.ts';
 import { validateCredentials } from './validation.ts';
 import { getCachedToken, cacheToken } from './token-cache.ts';
-import { discoverWorkingEndpoints, WorkingEndpoints } from './endpoint-discovery.ts';
+import { PERFECTCORP_BASE_URL } from './constants.ts';
 
-export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult & { workingEndpoints?: WorkingEndpoints }> {
+export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
   console.log('🔐 [Auth] Starting Perfect Corp authentication...');
   console.log('🔐 [Auth] API Key length:', apiKey?.length || 0);
   console.log('🔐 [Auth] API Secret length:', apiSecret?.length || 0);
@@ -48,7 +48,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   console.log('🔄 [Auth] No valid cached token found, authenticating with Perfect Corp...');
   
   // Use official Perfect Corp API endpoint
-  const authUrl = `${await import('./constants.ts').then(m => m.PERFECTCORP_BASE_URL)}/auth`;
+  const authUrl = `${PERFECTCORP_BASE_URL}/auth`;
   console.log('🔑 [Auth] Using official Perfect Corp endpoint:', authUrl);
   
   try {
