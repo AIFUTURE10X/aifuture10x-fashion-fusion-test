@@ -192,43 +192,27 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
       );
     }
 
-    // Check API credentials
+    // Check API credentials - REQUIRED for Perfect Corp API
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
-    const useMockMode = !apiKey || !apiSecret || apiKey === 'test_key' || apiSecret === 'test_secret';
 
-    if (useMockMode) {
-      console.log('🧪 Using mock mode - API credentials not configured properly');
+    // Validate credentials are properly configured
+    if (!apiKey || !apiSecret || apiKey === 'test_key' || apiSecret === 'test_secret') {
+      console.error('❌ Perfect Corp API credentials not configured properly');
+      console.error('📋 Credential status:', {
+        hasApiKey: !!apiKey,
+        apiKeyValid: apiKey !== 'test_key',
+        hasApiSecret: !!apiSecret,
+        apiSecretValid: apiSecret !== 'test_secret'
+      });
       
-      // Simulate processing time
-      console.log('⏳ Simulating try-on processing...');
-      await new Promise(resolve => setTimeout(resolve, 4000));
-
-      // Create a proper mock result image
-      const mockImageBase64 = await createMockTryOnImage();
-      
-      // Validate mock image to ensure it meets our standards
-      const mockValidation = validateImageDataIntegrity(mockImageBase64);
-      if (!mockValidation.valid) {
-        console.error('❌ Mock image validation failed:', mockValidation.error);
-        console.error('📊 Mock image stats:', mockValidation.stats);
-        throw new Error(`Mock image generation failed: ${mockValidation.error}`);
-      }
-      
-      console.log('✅ Mock try-on completed successfully');
-      console.log('📊 Mock image stats:', mockValidation.stats);
-
-      const response = {
-        success: true,
-        result_img: mockImageBase64,
-        processing_time: 4,
-        message: "Mock try-on completed successfully"
-      };
-
       return new Response(
-        JSON.stringify(response),
+        JSON.stringify({ 
+          success: false, 
+          error: 'Perfect Corp API credentials not configured. Please configure PERFECTCORP_API_KEY and PERFECTCORP_API_SECRET in Supabase Edge Function secrets.' 
+        }),
         {
-          status: 200,
+          status: 400,
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json' 
@@ -362,70 +346,11 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         errorMessage = 'Image upload failed. Please try again with a different image.';
       }
       
-      // Fallback to mock on API error
-      console.log('🔄 Falling back to mock mode due to API error');
-      try {
-        const mockImageBase64 = await createMockTryOnImage();
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            result_img: mockImageBase64,
-            processing_time: Math.round((Date.now() - startTime) / 1000),
-            message: `Fallback mock try-on (API error: ${errorMessage})`
-          }),
-          {
-            status: 200,
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json' 
-            }
-          }
-        );
-      } catch (fallbackError) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: errorMessage
-          }),
-          {
-            status: 500,
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json' 
-            }
-          }
-        );
-      }
-    }
-
-  } catch (error) {
-    console.error('❌ Perfect Corp Proxy error:', error);
-    console.error('🔥 Error stack:', error.stack);
-    
-    // Final fallback to mock
-    console.log('🔄 Final fallback to mock mode');
-    try {
-      const mockImageBase64 = await createMockTryOnImage();
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          result_img: mockImageBase64,
-          processing_time: Math.round((Date.now() - startTime) / 1000),
-          message: "Fallback mock try-on (server error occurred)"
-        }),
-        {
-          status: 200,
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          }
-        }
-      );
-    } catch (fallbackError) {
+      // Return API error instead of falling back to mock
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Server error: ${error.message}` 
+          error: errorMessage
         }),
         {
           status: 500,
@@ -436,5 +361,24 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         }
       );
     }
+
+  } catch (error) {
+    console.error('❌ Perfect Corp Proxy error:', error);
+    console.error('🔥 Error stack:', error.stack);
+    
+    // Return server error instead of falling back to mock
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: `Server error: ${error.message}` 
+      }),
+      {
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
+      }
+    );
   }
 }
