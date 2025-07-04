@@ -22,10 +22,8 @@ export async function pollTaskCompletion(accessToken: string, taskId: string, wo
     };
   }
   
-  const baseUrl = workingEndpoints?.baseUrl || PERFECTCORP_BASE_URL;
-  const version = workingEndpoints?.version || 'v1.0';
-  const statusUrl = `${baseUrl}/s2s/${version}/task/clothes/${taskId}`;
-  console.log('🎯 [Polling] Using endpoint:', statusUrl.substring(0, 50) + '...');
+  const statusUrl = `${PERFECTCORP_BASE_URL}/task/clothes/${taskId}`;
+  console.log('🎯 [Polling] Using official Perfect Corp endpoint:', statusUrl);
   const maxAttempts = 60;
   const pollingInterval = 1000;
   

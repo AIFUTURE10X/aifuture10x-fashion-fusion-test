@@ -47,15 +47,9 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   
   console.log('🔄 [Auth] No valid cached token found, authenticating with Perfect Corp...');
   
-  // Discover working endpoints first
-  console.log('🔍 [Auth] Discovering working Perfect Corp endpoints...');
-  const workingEndpoints = await discoverWorkingEndpoints();
-  if (!workingEndpoints) {
-    throw new Error('No working Perfect Corp API endpoints found. Service may be unavailable.');
-  }
-  
-  const authUrl = workingEndpoints.auth;
-  console.log('🎯 [Auth] Using discovered auth endpoint:', authUrl.substring(0, 50) + '...');
+  // Use official Perfect Corp API endpoint
+  const authUrl = `${await import('./constants.ts').then(m => m.PERFECTCORP_BASE_URL)}/auth`;
+  console.log('🔑 [Auth] Using official Perfect Corp endpoint:', authUrl);
   
   try {
     console.log('🚀 [Auth] Starting fresh authentication');
@@ -139,7 +133,7 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
         // Cache the successful token
         await cacheToken(supabase, accessToken, expiresIn);
         
-        return { accessToken, workingEndpoints };
+        return { accessToken };
       } else {
         console.error(`❌ [Auth] No access token in response`);
         console.log(`🔍 [Auth] Available response fields:`, Object.keys(authData));

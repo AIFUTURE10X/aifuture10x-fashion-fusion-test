@@ -20,27 +20,9 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
   }
   console.log('✅ [Reference Upload] Access token validated successfully');
   
-  // Use provided endpoints or discover them
-  let endpoints = workingEndpoints;
-  if (!endpoints) {
-    console.log('🔍 [Reference Upload] No endpoints provided, discovering working API endpoints...');
-    endpoints = await discoverWorkingEndpoints(accessToken);
-    if (!endpoints) {
-      throw new Error('No working Perfect Corp API endpoints found. The service may be unavailable.');
-    }
-  }
-  
-  console.log('✅ [Reference Upload] Using endpoints:', {
-    baseUrl: endpoints.baseUrl,
-    version: endpoints.version,
-    fileApi: endpoints.fileApi.substring(0, 50) + '...'
-  });
-  
-  // Skip network connectivity check since endpoint discovery handles this
-  console.log('🔗 [Reference Upload] Network connectivity will be tested during endpoint discovery');
-  
-  const uploadRequestUrl = endpoints.fileApi;
-  console.log('🎯 [Reference Upload] Using working File API URL:', uploadRequestUrl);
+  // Use official Perfect Corp File API endpoint
+  const uploadRequestUrl = `${await import('./constants.ts').then(m => m.PERFECTCORP_BASE_URL)}/file/clothes`;
+  console.log('📤 [Reference Upload] Using official Perfect Corp endpoint:', uploadRequestUrl);
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
@@ -110,41 +92,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
           throw new Error(errorMessage);
         }
       } catch (primaryError) {
-        console.error('❌ Primary endpoint failed, testing alternative endpoint...');
-        
-        // Try alternative endpoint from our working endpoints
-        const altUploadRequestUrl = endpoints.fileApi.replace(`/${endpoints.version}/`, '/v1.1/');
-        console.log('🔗 Testing alternative endpoint:', altUploadRequestUrl);
-        
-        try {
-          uploadRequestResponse = await fetchWithTimeout(altUploadRequestUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
-            },
-            body: JSON.stringify({
-              files: [{
-                content_type: 'image/jpeg',
-                file_name: 'user_photo.jpg',
-                file_size: userPhotoData.byteLength
-              }]
-            }),
-          }, 20000, 'alternative upload request');
-
-          if (!uploadRequestResponse.ok) {
-            const altErrorText = await uploadRequestResponse.text();
-            console.error('❌ Alternative endpoint also failed:', uploadRequestResponse.status, altErrorText);
-            throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${uploadRequestResponse.status} - ${altErrorText}`);
-          }
-          
-          console.log('✅ Alternative endpoint succeeded');
-        } catch (altError) {
-          console.error('❌ All endpoints failed');
-          throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${altError.message}`);
-        }
+        console.error('❌ Primary endpoint failed:', primaryError.message);
+        throw new Error(`Upload request failed: ${primaryError.message}`);
       }
 
       const uploadRequestData = await uploadRequestResponse.json();

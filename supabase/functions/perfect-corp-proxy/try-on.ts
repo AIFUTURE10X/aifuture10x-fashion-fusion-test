@@ -20,8 +20,8 @@ export async function startTryOnTask(
     return 'mock_task_id_67890';
   }
   
-  const tryOnUrl = workingEndpoints?.tryOn || `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
-  console.log('🎯 [Try-On] Using endpoint:', tryOnUrl.substring(0, 50) + '...');
+  const tryOnUrl = `${PERFECTCORP_BASE_URL}/task/clothes`;
+  console.log('🎯 [Try-On] Using official Perfect Corp endpoint:', tryOnUrl);
   
   const requestBody = {
     file_id: userPhotoFileId, // User photo file_id from Perfect Corp File API
