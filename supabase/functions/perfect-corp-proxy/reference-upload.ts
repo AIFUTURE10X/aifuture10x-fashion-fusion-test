@@ -32,8 +32,10 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
       console.log('📋 Requesting upload credentials from Perfect Corp...');
       console.log('🔗 Testing primary endpoint:', uploadRequestUrl);
       
+      let uploadRequestResponse;
+      
       try {
-        const uploadRequestResponse = await fetchWithTimeout(uploadRequestUrl, {
+        uploadRequestResponse = await fetchWithTimeout(uploadRequestUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -53,35 +55,36 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
           }),
         }, 20000, 'upload request');
 
-    console.log(`📥 Upload request response: ${uploadRequestResponse.status} ${uploadRequestResponse.statusText}`);
-    console.log('📋 Response headers:', Object.fromEntries(uploadRequestResponse.headers.entries()));
-    
-    if (!uploadRequestResponse.ok) {
-      const errorText = await uploadRequestResponse.text();
-      console.error('❌ Upload request failed:', uploadRequestResponse.status, errorText);
-      console.error('❌ Full request details:', {
-        url: uploadRequestUrl,
-        method: 'POST',
-        headers: Object.fromEntries([
-          ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
-          ['Content-Type', 'application/json'],
-          ['Accept', 'application/json'],
-          ['User-Agent', 'Perfect-Corp-S2S-Client/1.0']
-        ])
-      });
-      
-      // Enhanced error parsing
-      let errorMessage = `Upload request failed: ${uploadRequestResponse.status}`;
-      try {
-        const errorData = JSON.parse(errorText);
-        console.error('🔍 Parsed error:', errorData);
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch (e) {
-        console.error('🔍 Raw error text:', errorText);
-        errorMessage = errorText || errorMessage;
-      }
-      
-        throw new Error(errorMessage);
+        console.log(`📥 Upload request response: ${uploadRequestResponse.status} ${uploadRequestResponse.statusText}`);
+        console.log('📋 Response headers:', Object.fromEntries(uploadRequestResponse.headers.entries()));
+        
+        if (!uploadRequestResponse.ok) {
+          const errorText = await uploadRequestResponse.text();
+          console.error('❌ Upload request failed:', uploadRequestResponse.status, errorText);
+          console.error('❌ Full request details:', {
+            url: uploadRequestUrl,
+            method: 'POST',
+            headers: Object.fromEntries([
+              ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
+              ['Content-Type', 'application/json'],
+              ['Accept', 'application/json'],
+              ['User-Agent', 'Perfect-Corp-S2S-Client/1.0']
+            ])
+          });
+          
+          // Enhanced error parsing
+          let errorMessage = `Upload request failed: ${uploadRequestResponse.status}`;
+          try {
+            const errorData = JSON.parse(errorText);
+            console.error('🔍 Parsed error:', errorData);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch (e) {
+            console.error('🔍 Raw error text:', errorText);
+            errorMessage = errorText || errorMessage;
+          }
+          
+          throw new Error(errorMessage);
+        }
       } catch (primaryError) {
         console.error('❌ Primary endpoint failed, testing alternative endpoint...');
         
@@ -89,34 +92,38 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
         const altUploadRequestUrl = uploadRequestUrl.replace('/v1.0/', '/v1.1/');
         console.log('🔗 Testing alternative endpoint:', altUploadRequestUrl);
         
-        const altUploadRequestResponse = await fetchWithTimeout(altUploadRequestUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
-          },
-          body: JSON.stringify({
-            files: [{
-              content_type: 'image/jpeg',
-              file_name: 'user_photo.jpg',
-              file_size: userPhotoData.byteLength
-            }]
-          }),
-        }, 20000, 'alternative upload request');
+        try {
+          uploadRequestResponse = await fetchWithTimeout(altUploadRequestUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
+            },
+            body: JSON.stringify({
+              files: [{
+                content_type: 'image/jpeg',
+                file_name: 'user_photo.jpg',
+                file_size: userPhotoData.byteLength
+              }]
+            }),
+          }, 20000, 'alternative upload request');
 
-        if (!altUploadRequestResponse.ok) {
-          const altErrorText = await altUploadRequestResponse.text();
-          console.error('❌ Alternative endpoint also failed:', altUploadRequestResponse.status, altErrorText);
-          throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${altUploadRequestResponse.status} - ${altErrorText}`);
+          if (!uploadRequestResponse.ok) {
+            const altErrorText = await uploadRequestResponse.text();
+            console.error('❌ Alternative endpoint also failed:', uploadRequestResponse.status, altErrorText);
+            throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${uploadRequestResponse.status} - ${altErrorText}`);
+          }
+          
+          console.log('✅ Alternative endpoint succeeded');
+        } catch (altError) {
+          console.error('❌ All endpoints failed');
+          throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${altError.message}`);
         }
-
-        return altUploadRequestResponse;
       }
-    }
 
-    const uploadRequestData = await uploadRequestResponse.json();
+      const uploadRequestData = await uploadRequestResponse.json();
     console.log('📦 [Reference Upload] Full API response:', JSON.stringify(uploadRequestData, null, 2));
     
     // Enhanced response parsing with detailed logging
