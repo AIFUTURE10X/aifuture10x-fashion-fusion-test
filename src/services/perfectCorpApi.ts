@@ -22,35 +22,65 @@ class PerfectCorpApiService {
       console.error('❌ Invalid image data: not a string or empty');
       return { valid: false, error: 'Invalid image data: not a string or empty' };
     }
+
+    // Extract base64 data for validation
+    let base64Data: string;
+    let isDataUrl = false;
     
-    // If it's already a proper data URL, validate and return
     if (imageData.startsWith('data:image/')) {
       if (!imageData.includes('base64,')) {
         return { valid: false, error: 'Invalid data URL: does not contain base64,' };
       }
       
-      const base64Part = imageData.split('base64,')[1];
-      if (!base64Part || base64Part.length < 10) {
-        return { valid: false, error: 'Invalid data URL: base64 part too short or missing' };
-      }
-      
-      console.log('✅ Data URL validation passed');
-      return { valid: true, normalizedData: imageData };
+      base64Data = imageData.split('base64,')[1];
+      isDataUrl = true;
+      console.log('🔍 Processing data URL format');
+    } else {
+      base64Data = imageData;
+      console.log('🔍 Processing raw base64 format');
     }
-    
-    // If it's raw base64, try to normalize it
+
+    // Validate base64 data length and content
+    if (!base64Data || base64Data.length < 1000) {
+      const error = `Image data too short: ${base64Data?.length || 0} characters. This indicates corrupted or incomplete image data.`;
+      console.error('❌', error);
+      return { valid: false, error };
+    }
+
+    // Validate it's proper base64
     try {
-      // Attempt to decode to verify it's valid base64
-      atob(imageData);
-      
-      // Add proper data URL prefix (default to JPEG)
-      const normalizedData = `data:image/jpeg;base64,${imageData}`;
-      console.log('✅ Raw base64 normalized to data URL');
-      return { valid: true, normalizedData };
-    } catch (error) {
-      console.error('❌ Invalid base64 data:', error);
-      return { valid: false, error: 'Invalid base64 data format' };
+      atob(base64Data);
+      console.log('✅ Base64 decode test passed');
+    } catch (decodeError) {
+      console.error('❌ Base64 decode failed:', decodeError);
+      return { valid: false, error: 'Invalid base64 encoding' };
     }
+
+    // Check for minimum realistic image size (50KB = ~67,000 base64 chars)
+    if (base64Data.length < 50000) {
+      const warning = `Warning: Image data unusually short (${base64Data.length} chars). Expected at least 50,000 chars for realistic images.`;
+      console.warn('⚠️', warning);
+      // Don't fail here, but log the concern
+    }
+
+    // Return properly formatted data URL
+    let normalizedData: string;
+    if (isDataUrl) {
+      normalizedData = imageData;
+      console.log('✅ Data URL validation passed');
+    } else {
+      normalizedData = `data:image/jpeg;base64,${base64Data}`;
+      console.log('✅ Raw base64 normalized to data URL');
+    }
+
+    console.log('📊 Final image validation stats:', {
+      originalLength: imageData.length,
+      base64Length: base64Data.length,
+      normalizedLength: normalizedData.length,
+      format: isDataUrl ? 'data-url' : 'raw-base64'
+    });
+
+    return { valid: true, normalizedData };
   }
 
   async tryOnClothing(request: TryOnRequest & { userPhotoStoragePath?: string }): Promise<TryOnResponse> {

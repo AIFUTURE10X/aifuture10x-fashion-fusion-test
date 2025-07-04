@@ -86,3 +86,67 @@ export function detectImageMimeTypeFromBase64(base64Data: string): string {
   // Default fallback
   return 'image/jpeg';
 }
+
+export function validateImageDataIntegrity(imageData: string): { valid: boolean; error?: string; stats?: any } {
+  try {
+    // Extract base64 data if it's a data URL
+    let base64Data: string;
+    if (imageData.startsWith('data:image/')) {
+      const parts = imageData.split(',');
+      if (parts.length !== 2) {
+        return { valid: false, error: 'Invalid data URL format' };
+      }
+      base64Data = parts[1];
+    } else {
+      base64Data = imageData;
+    }
+
+    // Check minimum realistic length for an image (roughly 50KB base64 = ~67,000 chars)
+    const minLength = 50000;
+    if (base64Data.length < minLength) {
+      return { 
+        valid: false, 
+        error: `Image data too short (${base64Data.length} chars). Expected at least ${minLength} chars.`,
+        stats: { length: base64Data.length, minExpected: minLength }
+      };
+    }
+
+    // Attempt to decode base64 to verify it's valid
+    try {
+      atob(base64Data);
+    } catch (decodeError) {
+      return { 
+        valid: false, 
+        error: 'Invalid base64 encoding',
+        stats: { length: base64Data.length, decodeError: decodeError.message }
+      };
+    }
+
+    // Validate image format
+    const arrayBuffer = base64ToArrayBuffer(base64Data);
+    const formatValidation = validateImageFormat(arrayBuffer);
+    
+    if (!formatValidation.valid) {
+      return { 
+        valid: false, 
+        error: formatValidation.error || 'Invalid image format',
+        stats: { length: base64Data.length, formatError: formatValidation.error }
+      };
+    }
+
+    return { 
+      valid: true, 
+      stats: { 
+        length: base64Data.length, 
+        format: formatValidation.format,
+        sizeBytes: arrayBuffer.byteLength 
+      }
+    };
+  } catch (error) {
+    return { 
+      valid: false, 
+      error: `Image validation failed: ${error.message}`,
+      stats: { error: error.message }
+    };
+  }
+}

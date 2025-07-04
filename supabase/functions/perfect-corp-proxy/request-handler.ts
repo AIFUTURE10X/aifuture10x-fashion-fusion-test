@@ -5,7 +5,7 @@ import { uploadUserPhoto } from './file-upload.ts';
 import { startTryOnTask } from './try-on.ts';
 import { pollTaskCompletion } from './polling.ts';
 import { downloadResultImage } from './download.ts';
-import { arrayBufferToBase64, ensureDataUrlFormat, detectImageMimeTypeFromBase64 } from './image-utils.ts';
+import { arrayBufferToBase64, ensureDataUrlFormat, detectImageMimeTypeFromBase64, validateImageDataIntegrity } from './image-utils.ts';
 import { createMockTryOnImage } from './mock-image.ts';
 
 interface ImageValidationResult {
@@ -207,7 +207,16 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
       // Create a proper mock result image
       const mockImageBase64 = await createMockTryOnImage();
       
+      // Validate mock image to ensure it meets our standards
+      const mockValidation = validateImageDataIntegrity(mockImageBase64);
+      if (!mockValidation.valid) {
+        console.error('❌ Mock image validation failed:', mockValidation.error);
+        console.error('📊 Mock image stats:', mockValidation.stats);
+        throw new Error(`Mock image generation failed: ${mockValidation.error}`);
+      }
+      
       console.log('✅ Mock try-on completed successfully');
+      console.log('📊 Mock image stats:', mockValidation.stats);
 
       const response = {
         success: true,
@@ -290,17 +299,32 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         throw new Error('No result image URL found in Perfect Corp response');
       }
 
-      console.log('📥 Downloading result image...');
+      console.log('📥 Downloading result image from:', resultImageUrl);
       const resultImageData = await downloadResultImage(resultImageUrl);
       const resultImageBase64 = arrayBufferToBase64(resultImageData);
+
+      console.log('🔍 Validating downloaded image data...');
+      console.log('📊 Raw base64 length:', resultImageBase64.length);
 
       // Detect the actual image format and ensure proper data URL format
       const mimeType = detectImageMimeTypeFromBase64(resultImageBase64);
       const formattedImageData = ensureDataUrlFormat(resultImageBase64, mimeType);
 
+      console.log('🖼️ Image formatted as:', mimeType);
+      console.log('📏 Final data URL length:', formattedImageData.length);
+
+      // Validate image data integrity
+      const validation = validateImageDataIntegrity(formattedImageData);
+      if (!validation.valid) {
+        console.error('❌ Downloaded image failed validation:', validation.error);
+        console.error('📊 Image stats:', validation.stats);
+        throw new Error(`Downloaded image is corrupted or incomplete: ${validation.error}`);
+      }
+
+      console.log('✅ Image validation passed:', validation.stats);
+
       const totalTime = Date.now() - startTime;
       console.log(`🎉 Try-on process completed successfully in ${totalTime}ms`);
-      console.log('🖼️ Result image format:', mimeType, 'Length:', formattedImageData.length);
 
       const response = {
         success: true,
