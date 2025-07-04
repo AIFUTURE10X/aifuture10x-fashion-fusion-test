@@ -1,4 +1,4 @@
-import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
+import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { testNetworkConnectivity, fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
@@ -13,7 +13,7 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     throw new Error('Network connectivity test failed. Please check your internet connection and try again.');
   }
   
-  const uploadRequestUrl = PERFECTCORP_USER_PHOTO_URL;
+  const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
@@ -40,12 +40,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
         'Connection': 'keep-alive'
       },
       body: JSON.stringify({
-        files: [
-          {
-            content_type: 'image/jpeg',
-            file_name: 'user_photo.jpg'
-          }
-        ]
+        content_type: 'image/jpeg',
+        file_name: 'user_photo.jpg'
       }),
     }, 20000, 'upload request');
 
@@ -84,8 +80,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     console.log('📦 Upload request response data:', uploadRequestData);
     
     const uploadResult = uploadRequestData.result || uploadRequestData;
-    const uploadUrl = uploadResult.files?.[0]?.url;
-    const fileId = uploadResult.files?.[0]?.file_id;
+    const uploadUrl = uploadResult.url;
+    const fileId = uploadResult.file_id;
 
     if (!uploadUrl || !fileId) {
       console.error('❌ Missing upload URL or file_id:', uploadRequestData);

@@ -1,16 +1,16 @@
-import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
+import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
 // Strategy 3: Enhanced minimal headers approach with retry logic
 export async function tryMinimalUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 Trying enhanced minimal headers upload...');
+  console.log('📤 Trying File API v1.1 minimal upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadRequestUrl = PERFECTCORP_USER_PHOTO_URL;
+  const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
   
   return await retryWithBackoff(async () => {
-    // Step 1: Request upload URL with minimal headers
+    // Step 1: Request upload URL from File API
     const uploadRequestResponse = await fetchWithTimeout(uploadRequestUrl, {
       method: 'POST',
       headers: {
@@ -18,12 +18,10 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        files: [{
-          content_type: 'image/jpeg',
-          file_name: 'photo.jpg'
-        }]
+        content_type: 'image/jpeg',
+        file_name: 'photo.jpg'
       }),
-    }, 15000, 'minimal upload request');
+    }, 15000, 'file API request');
 
     if (!uploadRequestResponse.ok) {
       const errorText = await uploadRequestResponse.text();
@@ -40,8 +38,9 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
     }
 
     const uploadData = await uploadRequestResponse.json();
-    const uploadUrl = uploadData.result?.files?.[0]?.url;
-    const fileId = uploadData.result?.files?.[0]?.file_id;
+    const uploadResult = uploadData.result || uploadData;
+    const uploadUrl = uploadResult.url;
+    const fileId = uploadResult.file_id;
 
     if (!uploadUrl || !fileId) {
       throw new Error('Missing upload URL or file_id in minimal response');

@@ -1,57 +1,61 @@
-import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
+import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
 // Strategy 2: Enhanced multipart form data approach with retry logic
 export async function tryMultipartUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 Trying enhanced multipart form data upload...');
+  console.log('📤 Trying File API v1.1 upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadUrl = PERFECTCORP_USER_PHOTO_URL;
+  const fileApiUrl = PERFECTCORP_FILE_API_URL;
   
   return await retryWithBackoff(async () => {
-    const formData = new FormData();
-    formData.append('file', new Blob([userPhotoData], { type: 'image/jpeg' }), 'user_photo.jpg');
-    
-    const uploadResponse = await fetchWithTimeout(uploadUrl, {
+    // Step 1: Get upload URL from File API
+    const fileApiResponse = await fetchWithTimeout(fileApiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
-        'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
+        'Content-Type': 'application/json'
       },
-      body: formData,
-    }, 25000, 'multipart upload');
+      body: JSON.stringify({
+        content_type: 'image/jpeg',
+        file_name: 'user_photo.jpg'
+      }),
+    }, 15000, 'file API request');
 
-    console.log(`📥 Multipart upload response: ${uploadResponse.status} ${uploadResponse.statusText}`);
-    console.log('📋 Response headers:', Object.fromEntries(uploadResponse.headers.entries()));
+    if (!fileApiResponse.ok) {
+      const errorText = await fileApiResponse.text();
+      console.error('❌ File API request failed:', fileApiResponse.status, errorText);
+      throw new Error(`File API request failed: ${fileApiResponse.status} - ${errorText}`);
+    }
+
+    const fileApiData = await fileApiResponse.json();
+    const uploadResult = fileApiData.result || fileApiData;
+    const uploadUrl = uploadResult.url;
+    const fileId = uploadResult.file_id;
+
+    if (!uploadUrl || !fileId) {
+      throw new Error('Missing upload URL or file_id in File API response');
+    }
+
+    // Step 2: Upload file to the provided URL
+    const uploadResponse = await fetchWithTimeout(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'image/jpeg',
+      },
+      body: userPhotoData,
+    }, 25000, 'file upload to signed URL');
+
+    console.log(`📥 File upload response: ${uploadResponse.status} ${uploadResponse.statusText}`);
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
-      console.error('❌ Multipart upload failed:', uploadResponse.status, errorText);
-      console.error('❌ Full request details:', {
-        url: uploadUrl,
-        method: 'POST',
-        headers: Object.fromEntries([
-          ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
-          ['Accept', 'application/json'],
-          ['User-Agent', 'Perfect-Corp-S2S-Client/1.0']
-        ])
-      });
-      throw new Error(`Multipart upload failed: ${uploadResponse.status} - ${errorText}`);
+      console.error('❌ File upload failed:', uploadResponse.status, errorText);
+      throw new Error(`File upload failed: ${uploadResponse.status} - ${errorText}`);
     }
 
-    const uploadResult = await uploadResponse.json();
-    console.log('📦 Multipart upload response:', uploadResult);
-    
-    const fileId = uploadResult.file_id || uploadResult.result?.file_id || uploadResult.id;
-    
-    if (!fileId) {
-      console.error('❌ No file_id in multipart response:', uploadResult);
-      throw new Error('No file_id received from multipart upload');
-    }
-
-    console.log('🎉 Multipart upload successful, file_id:', fileId);
+    console.log('🎉 File uploaded successfully, file_id:', fileId);
     return fileId;
   }, 3, 2000, 'multipart upload');
 }
