@@ -1,4 +1,4 @@
-import { PERFECTCORP_BASE_URL } from './constants.ts';
+import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
 import { testNetworkConnectivity, fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
@@ -13,10 +13,16 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     throw new Error('Network connectivity test failed. Please check your internet connection and try again.');
   }
   
-  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
+  const uploadRequestUrl = PERFECTCORP_USER_PHOTO_URL;
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
+  console.log('📋 Request body preview:', JSON.stringify({
+    files: [{
+      content_type: 'image/jpeg',
+      file_name: 'user_photo.jpg'
+    }]
+  }, null, 2));
   
   // Step 1: Request upload URL with retry logic
   const uploadCredentials = await retryWithBackoff(async () => {
@@ -44,10 +50,21 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     }, 20000, 'upload request');
 
     console.log(`📥 Upload request response: ${uploadRequestResponse.status} ${uploadRequestResponse.statusText}`);
+    console.log('📋 Response headers:', Object.fromEntries(uploadRequestResponse.headers.entries()));
     
     if (!uploadRequestResponse.ok) {
       const errorText = await uploadRequestResponse.text();
       console.error('❌ Upload request failed:', uploadRequestResponse.status, errorText);
+      console.error('❌ Full request details:', {
+        url: uploadRequestUrl,
+        method: 'POST',
+        headers: Object.fromEntries([
+          ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
+          ['Content-Type', 'application/json'],
+          ['Accept', 'application/json'],
+          ['User-Agent', 'Perfect-Corp-S2S-Client/1.0']
+        ])
+      });
       
       // Enhanced error parsing
       let errorMessage = `Upload request failed: ${uploadRequestResponse.status}`;

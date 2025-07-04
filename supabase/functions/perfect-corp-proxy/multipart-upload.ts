@@ -1,4 +1,4 @@
-import { PERFECTCORP_BASE_URL } from './constants.ts';
+import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
@@ -7,7 +7,7 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
   console.log('📤 Trying enhanced multipart form data upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
+  const uploadUrl = PERFECTCORP_USER_PHOTO_URL;
   
   return await retryWithBackoff(async () => {
     const formData = new FormData();
@@ -24,10 +24,20 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
     }, 25000, 'multipart upload');
 
     console.log(`📥 Multipart upload response: ${uploadResponse.status} ${uploadResponse.statusText}`);
+    console.log('📋 Response headers:', Object.fromEntries(uploadResponse.headers.entries()));
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
       console.error('❌ Multipart upload failed:', uploadResponse.status, errorText);
+      console.error('❌ Full request details:', {
+        url: uploadUrl,
+        method: 'POST',
+        headers: Object.fromEntries([
+          ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
+          ['Accept', 'application/json'],
+          ['User-Agent', 'Perfect-Corp-S2S-Client/1.0']
+        ])
+      });
       throw new Error(`Multipart upload failed: ${uploadResponse.status} - ${errorText}`);
     }
 

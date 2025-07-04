@@ -2,6 +2,8 @@
 export const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
 export const PERFECTCORP_AUTH_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
 export const PERFECTCORP_FILE_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
+export const PERFECTCORP_USER_PHOTO_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes-tryon`;
+export const PERFECTCORP_CLOTHING_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes-tryon`;
 export const PERFECTCORP_TRYON_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
 
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB

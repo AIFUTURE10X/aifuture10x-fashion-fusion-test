@@ -1,4 +1,4 @@
-import { PERFECTCORP_BASE_URL } from './constants.ts';
+import { PERFECTCORP_USER_PHOTO_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
 
@@ -7,7 +7,7 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
   console.log('📤 Trying enhanced minimal headers upload...');
   console.log('📊 Image data size:', userPhotoData.byteLength, 'bytes');
   
-  const uploadRequestUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/user-photo`;
+  const uploadRequestUrl = PERFECTCORP_USER_PHOTO_URL;
   
   return await retryWithBackoff(async () => {
     // Step 1: Request upload URL with minimal headers
@@ -27,6 +27,15 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
 
     if (!uploadRequestResponse.ok) {
       const errorText = await uploadRequestResponse.text();
+      console.error('❌ Minimal upload request failed:', uploadRequestResponse.status, errorText);
+      console.error('❌ Full request details:', {
+        url: uploadRequestUrl,
+        method: 'POST',
+        headers: Object.fromEntries([
+          ['Authorization', `Bearer ${accessToken.substring(0, 15)}...`],
+          ['Content-Type', 'application/json']
+        ])
+      });
       throw new Error(`Minimal upload request failed: ${uploadRequestResponse.status} - ${errorText}`);
     }
 
