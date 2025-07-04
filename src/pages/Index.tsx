@@ -125,7 +125,7 @@ const Index = () => {
               <p className="text-2xl text-white font-semibold drop-shadow-lg -mt-2">Your Fashion Reveal</p>
             </div>
             
-            <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-white drop-shadow-lg">
+            <h2 className="text-4xl mb-6 font-bold sm:text-6xl text-white drop-shadow-lg font-poppins">
               Try On Clothes
               <span className="block bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-purple-600">Virtually, Instantly, AI</span>
             </h2>
