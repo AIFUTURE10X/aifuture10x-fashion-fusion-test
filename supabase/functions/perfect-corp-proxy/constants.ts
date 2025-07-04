@@ -1,5 +1,5 @@
 
-export const PERFECTCORP_BASE_URL = 'https://api.perfectcorp.com';
+export const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
 export const PERFECTCORP_AUTH_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
 export const PERFECTCORP_FILE_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
 export const PERFECTCORP_TRYON_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes`;
