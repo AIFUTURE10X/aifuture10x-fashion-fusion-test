@@ -27,29 +27,31 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     }]
   }, null, 2));
   
-  // Step 1: Request upload URL with retry logic
-  const uploadCredentials = await retryWithBackoff(async () => {
-    console.log('📋 Requesting upload credentials from Perfect Corp...');
-    
-    const uploadRequestResponse = await fetchWithTimeout(uploadRequestUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'User-Agent': 'Perfect-Corp-S2S-Client/1.0',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      },
-      body: JSON.stringify({
-        files: [{
-          content_type: 'image/jpeg',
-          file_name: 'user_photo.jpg',
-          file_size: userPhotoData.byteLength
-        }]
-      }),
-    }, 20000, 'upload request');
+    // Step 1: Request upload URL with retry logic - Enhanced with endpoint testing
+    const uploadCredentials = await retryWithBackoff(async () => {
+      console.log('📋 Requesting upload credentials from Perfect Corp...');
+      console.log('🔗 Testing primary endpoint:', uploadRequestUrl);
+      
+      try {
+        const uploadRequestResponse = await fetchWithTimeout(uploadRequestUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'User-Agent': 'Perfect-Corp-S2S-Client/1.0',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+          },
+          body: JSON.stringify({
+            files: [{
+              content_type: 'image/jpeg',
+              file_name: 'user_photo.jpg',
+              file_size: userPhotoData.byteLength
+            }]
+          }),
+        }, 20000, 'upload request');
 
     console.log(`📥 Upload request response: ${uploadRequestResponse.status} ${uploadRequestResponse.statusText}`);
     console.log('📋 Response headers:', Object.fromEntries(uploadRequestResponse.headers.entries()));
@@ -79,7 +81,39 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
         errorMessage = errorText || errorMessage;
       }
       
-      throw new Error(errorMessage);
+        throw new Error(errorMessage);
+      } catch (primaryError) {
+        console.error('❌ Primary endpoint failed, testing alternative endpoint...');
+        
+        // Try alternative v1.1 endpoint
+        const altUploadRequestUrl = uploadRequestUrl.replace('/v1.0/', '/v1.1/');
+        console.log('🔗 Testing alternative endpoint:', altUploadRequestUrl);
+        
+        const altUploadRequestResponse = await fetchWithTimeout(altUploadRequestUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
+          },
+          body: JSON.stringify({
+            files: [{
+              content_type: 'image/jpeg',
+              file_name: 'user_photo.jpg',
+              file_size: userPhotoData.byteLength
+            }]
+          }),
+        }, 20000, 'alternative upload request');
+
+        if (!altUploadRequestResponse.ok) {
+          const altErrorText = await altUploadRequestResponse.text();
+          console.error('❌ Alternative endpoint also failed:', altUploadRequestResponse.status, altErrorText);
+          throw new Error(`Both v1.0 and v1.1 endpoints failed. Primary: ${primaryError.message}, Alt: ${altUploadRequestResponse.status} - ${altErrorText}`);
+        }
+
+        return altUploadRequestResponse;
+      }
     }
 
     const uploadRequestData = await uploadRequestResponse.json();

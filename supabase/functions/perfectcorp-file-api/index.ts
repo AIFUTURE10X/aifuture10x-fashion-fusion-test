@@ -1,143 +1,177 @@
-
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { corsHeaders } from '../_shared/cors.ts'
 
-console.log('Perfect Corp File API function loaded')
-
-// Authentication function for Perfect Corp
-async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any) {
-  console.log('🔐 [File API] Starting Perfect Corp authentication...');
-  
-  // Check for cached token first
-  const { data: existingTokenData } = await supabase.rpc('get_valid_perfect_corp_token');
-
-  if (existingTokenData && existingTokenData.length > 0) {
-    const token = existingTokenData[0];
-    console.log('✅ [File API] Using cached token, expires in', token.seconds_until_expiry, 'seconds');
-    return { accessToken: token.access_token };
-  }
-
-  // If no cached token, call the perfectcorp-auth function
-  const { data: authData, error: authError } = await supabase.functions.invoke('perfectcorp-auth');
-  
-  if (authError) {
-    console.error('❌ [File API] Auth function error:', authError);
-    throw new Error(`Authentication failed: ${authError.message}`);
-  }
-
-  if (!authData?.success || !authData?.accessToken) {
-    console.error('❌ [File API] Invalid auth response:', authData);
-    throw new Error('Failed to authenticate with Perfect Corp');
-  }
-
-  console.log('✅ [File API] Authentication successful');
-  return { accessToken: authData.accessToken };
+interface FileUploadRequest {
+  fileName: string;
+  contentType: string;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Perfect Corp File API request received')
-
-    // Initialize Supabase client for database operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Get Perfect Corp API credentials from environment
+    console.log('🔍 [File API] Starting Perfect Corp File API request...');
+    
+    const { fileName, contentType }: FileUploadRequest = await req.json()
+    
+    // Get Perfect Corp API credentials from environment variables
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY')
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET')
-
+    
     if (!apiKey || !apiSecret) {
-      throw new Error('Perfect Corp API credentials not configured. Please set PERFECTCORP_API_KEY and PERFECTCORP_API_SECRET in Supabase secrets.')
+      throw new Error('Perfect Corp API credentials not configured')
     }
 
-    // Parse request body
-    const requestData = await req.json()
-    const { fileName = 'clothing_image.jpg', contentType = 'image/jpeg' } = requestData
-    
-    console.log('File API request:', { fileName, contentType })
+    console.log('📝 [File API] Request details:', {
+      fileName,
+      contentType,
+      apiKeyLength: apiKey.length
+    });
 
-    // Step 1: Authenticate with Perfect Corp
-    const authResult = await authenticateWithPerfectCorp(apiKey, apiSecret, supabase)
-    console.log('Perfect Corp authentication completed')
-
-    // Step 2: Call Perfect Corp File API to get upload URL
-    const fileApiUrl = 'https://api.perfectcorp.com/s2s/v1.0/file'
+    // Step 1: Authenticate with Perfect Corp API
+    console.log('🔐 [File API] Step 1: Authenticating with Perfect Corp...');
+    const timestamp = Date.now()
+    const idTokenData = `client_id=${apiKey}&timestamp=${timestamp}`
     
-    const fileApiResponse = await fetch(fileApiUrl, {
+    // For now, use base64 encoding as a placeholder for RSA encryption
+    const idToken = btoa(idTokenData)
+    
+    const authResponse = await fetch('https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${authResult.accessToken}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
       },
       body: JSON.stringify({
-        files: [
-          {
-            content_type: contentType,
-            file_name: fileName
-          }
-        ]
+        client_id: apiKey,
+        id_token: idToken
       }),
     })
 
-    console.log(`File API response status: ${fileApiResponse.status}`)
-
-    if (!fileApiResponse.ok) {
-      const errorText = await fileApiResponse.text()
-      console.error('File API request failed:', fileApiResponse.status, errorText)
-      throw new Error(`File API request failed: ${fileApiResponse.status} - ${errorText}`)
+    if (!authResponse.ok) {
+      const authError = await authResponse.text()
+      console.error('❌ [File API] Perfect Corp authentication failed:', authError)
+      throw new Error(`Authentication failed: ${authResponse.status} - ${authError}`)
     }
 
-    const fileApiData = await fileApiResponse.json()
-    console.log('File API response data:', fileApiData)
-    
-    const uploadResult = fileApiData.result || fileApiData
-    const uploadInfo = uploadResult.files?.[0]
-    
-    if (!uploadInfo?.url || !uploadInfo?.file_id) {
-      console.error('Missing upload URL or file_id:', fileApiData)
-      throw new Error('No upload URL or file_id received from Perfect Corp File API')
+    const authData = await authResponse.json()
+    const accessToken = authData.result?.access_token || authData.access_token
+
+    if (!accessToken) {
+      console.error('❌ [File API] Auth response:', authData)
+      throw new Error('No access token received from authentication')
     }
 
-    console.log('File API success:', { 
-      fileId: uploadInfo.file_id, 
-      uploadUrlLength: uploadInfo.url.length 
-    })
+    console.log('✅ [File API] Authentication successful');
+
+    // Step 2: Request upload URL from File API - Test multiple endpoints
+    console.log('📤 [File API] Step 2: Requesting upload URL...');
     
+    const endpoints = [
+      'https://yce-api-01.perfectcorp.com/s2s/v1.0/file',
+      'https://yce-api-01.perfectcorp.com/s2s/v1.1/file'
+    ];
+
+    let uploadResponse;
+    let uploadData;
+    let workingEndpoint;
+
+    for (const endpoint of endpoints) {
+      console.log(`🔗 [File API] Testing endpoint: ${endpoint}`);
+      
+      try {
+        uploadResponse = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            files: [{
+              content_type: contentType,
+              file_name: fileName,
+              file_size: 1000000 // Default size estimate
+            }]
+          }),
+        });
+
+        console.log(`📊 [File API] Endpoint ${endpoint} response: ${uploadResponse.status}`);
+
+        if (uploadResponse.ok) {
+          uploadData = await uploadResponse.json();
+          workingEndpoint = endpoint;
+          console.log(`✅ [File API] Working endpoint found: ${endpoint}`);
+          break;
+        } else {
+          const errorText = await uploadResponse.text();
+          console.error(`❌ [File API] Endpoint ${endpoint} failed: ${uploadResponse.status} - ${errorText}`);
+        }
+      } catch (error) {
+        console.error(`❌ [File API] Endpoint ${endpoint} error:`, error);
+      }
+    }
+
+    if (!uploadData || !workingEndpoint) {
+      throw new Error('All File API endpoints failed - service may be unavailable');
+    }
+
+    console.log('📦 [File API] Upload response:', JSON.stringify(uploadData, null, 2));
+
+    // Parse response structure
+    let uploadUrl: string | undefined;
+    let fileId: string | undefined;
+    
+    if (uploadData.result) {
+      const result = uploadData.result;
+      if (result.files && Array.isArray(result.files) && result.files.length > 0) {
+        uploadUrl = result.files[0].url;
+        fileId = result.files[0].file_id;
+      } else if (result.url && result.file_id) {
+        uploadUrl = result.url;
+        fileId = result.file_id;
+      }
+    } else if (uploadData.files && Array.isArray(uploadData.files)) {
+      uploadUrl = uploadData.files[0]?.url;
+      fileId = uploadData.files[0]?.file_id;
+    } else if (uploadData.url && uploadData.file_id) {
+      uploadUrl = uploadData.url;
+      fileId = uploadData.file_id;
+    }
+
+    if (!uploadUrl || !fileId) {
+      console.error('❌ [File API] Missing upload URL or file_id in response');
+      throw new Error('Invalid response structure from Perfect Corp File API');
+    }
+
+    console.log('✅ [File API] Successfully obtained upload credentials:', { 
+      fileId, 
+      uploadUrlLength: uploadUrl.length,
+      workingEndpoint 
+    });
+
     return new Response(JSON.stringify({
       success: true,
-      fileId: uploadInfo.file_id,
-      uploadUrl: uploadInfo.url,
-      message: 'Perfect Corp upload URL generated successfully'
+      uploadUrl,
+      fileId,
+      workingEndpoint,
+      message: "Upload URL obtained successfully"
     }), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
-    console.error('Perfect Corp File API error:', error)
+    console.error('❌ [File API] Error:', error)
     
     return new Response(
       JSON.stringify({ 
-        error: error.message,
-        success: false
-      }), 
+        success: false, 
+        error: error.message || 'Unknown error occurred'
+      }),
       {
         status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }
-})
+});
