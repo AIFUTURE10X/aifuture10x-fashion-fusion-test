@@ -18,8 +18,10 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        content_type: 'image/jpeg',
-        file_name: 'photo.jpg'
+        files: [{
+          content_type: 'image/jpeg',
+          file_name: 'photo.jpg'
+        }]
       }),
     }, 15000, 'file API request');
 
@@ -39,8 +41,10 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
 
     const uploadData = await uploadRequestResponse.json();
     const uploadResult = uploadData.result || uploadData;
-    const uploadUrl = uploadResult.url;
-    const fileId = uploadResult.file_id;
+    const files = uploadResult.files || uploadResult;
+    const firstFile = Array.isArray(files) ? files[0] : files;
+    const uploadUrl = firstFile.url;
+    const fileId = firstFile.file_id;
 
     if (!uploadUrl || !fileId) {
       throw new Error('Missing upload URL or file_id in minimal response');

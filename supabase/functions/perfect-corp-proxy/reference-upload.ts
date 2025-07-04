@@ -40,8 +40,10 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
         'Connection': 'keep-alive'
       },
       body: JSON.stringify({
-        content_type: 'image/jpeg',
-        file_name: 'user_photo.jpg'
+        files: [{
+          content_type: 'image/jpeg',
+          file_name: 'user_photo.jpg'
+        }]
       }),
     }, 20000, 'upload request');
 
@@ -80,8 +82,10 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     console.log('📦 Upload request response data:', uploadRequestData);
     
     const uploadResult = uploadRequestData.result || uploadRequestData;
-    const uploadUrl = uploadResult.url;
-    const fileId = uploadResult.file_id;
+    const files = uploadResult.files || uploadResult;
+    const firstFile = Array.isArray(files) ? files[0] : files;
+    const uploadUrl = firstFile.url;
+    const fileId = firstFile.file_id;
 
     if (!uploadUrl || !fileId) {
       console.error('❌ Missing upload URL or file_id:', uploadRequestData);
