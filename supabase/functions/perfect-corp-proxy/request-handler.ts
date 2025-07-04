@@ -196,14 +196,23 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
     const apiKey = Deno.env.get('PERFECTCORP_API_KEY');
     const apiSecret = Deno.env.get('PERFECTCORP_API_SECRET');
 
+    console.log('🔍 [Credentials] Checking Perfect Corp API credentials...');
+    console.log('🔑 [Credentials] API Key present:', !!apiKey);
+    console.log('🔑 [Credentials] API Key length:', apiKey?.length || 0);
+    console.log('🔐 [Credentials] API Secret present:', !!apiSecret);
+    console.log('🔐 [Credentials] API Secret length:', apiSecret?.length || 0);
+    console.log('🔐 [Credentials] API Secret format:', apiSecret?.includes('BEGIN') ? 'PEM' : 'Raw Base64');
+
     // Validate credentials are properly configured
     if (!apiKey || !apiSecret || apiKey === 'test_key' || apiSecret === 'test_secret') {
-      console.error('❌ Perfect Corp API credentials not configured properly');
-      console.error('📋 Credential status:', {
+      console.error('❌ [Credentials] Perfect Corp API credentials not configured properly');
+      console.error('📋 [Credentials] Credential status:', {
         hasApiKey: !!apiKey,
-        apiKeyValid: apiKey !== 'test_key',
+        apiKeyValid: apiKey && apiKey !== 'test_key',
         hasApiSecret: !!apiSecret,
-        apiSecretValid: apiSecret !== 'test_secret'
+        apiSecretValid: apiSecret && apiSecret !== 'test_secret',
+        apiKeyLength: apiKey?.length || 0,
+        apiSecretLength: apiSecret?.length || 0
       });
       
       return new Response(
@@ -221,15 +230,26 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
       );
     }
 
+    console.log('✅ [Credentials] Perfect Corp API credentials validated successfully');
+
     // Real API mode - implement the complete flow
-    console.log('🔗 API credentials found - using real Perfect Corp API');
-    console.log('🔐 Starting authentication...');
+    console.log('🔗 [Main] API credentials found - using real Perfect Corp API');
+    console.log('🔐 [Main] Starting authentication...');
     
     try {
+      // Create Supabase client for token caching
+      console.log('🔗 [Main] Creating Supabase client...');
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      
       // Step 1: Authenticate with Perfect Corp
-      const authResult = await authenticateWithPerfectCorp(apiKey, apiSecret, null);
+      console.log('🔐 [Main] Calling authenticateWithPerfectCorp...');
+      const authResult = await authenticateWithPerfectCorp(apiKey, apiSecret, supabase);
       const accessToken = authResult.accessToken;
-      console.log('✅ Authentication successful');
+      console.log('✅ [Main] Authentication successful, token length:', accessToken?.length || 0);
 
       // Step 2: Upload user photo
       console.log('📤 Uploading user photo...');

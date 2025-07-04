@@ -7,6 +7,9 @@ import { getCachedToken, cacheToken } from './token-cache.ts';
 
 export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: string, supabase: any): Promise<AuthResult> {
   console.log('🔐 [Auth] Starting Perfect Corp authentication...');
+  console.log('🔐 [Auth] API Key length:', apiKey?.length || 0);
+  console.log('🔐 [Auth] API Secret length:', apiSecret?.length || 0);
+  console.log('🔐 [Auth] API Secret format:', apiSecret?.includes('BEGIN') ? 'PEM format' : 'Raw base64');
   
   const mockMode = Deno.env.get('PERFECTCORP_MOCK_MODE') === 'true';
   
@@ -24,11 +27,25 @@ export async function authenticateWithPerfectCorp(apiKey: string, apiSecret: str
   
   console.log('✅ [Auth] Credential validation passed');
 
+  // Create Supabase client for token caching if not provided
+  if (!supabase) {
+    console.log('🔗 [Auth] Creating Supabase client for token caching...');
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+  }
+
   // Check for cached token first
+  console.log('🔍 [Auth] Checking for cached token...');
   const cachedToken = await getCachedToken(supabase);
   if (cachedToken) {
+    console.log('✅ [Auth] Using cached token');
     return { accessToken: cachedToken };
   }
+  
+  console.log('🔄 [Auth] No valid cached token found, authenticating with Perfect Corp...');
   
   const authUrl = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
   

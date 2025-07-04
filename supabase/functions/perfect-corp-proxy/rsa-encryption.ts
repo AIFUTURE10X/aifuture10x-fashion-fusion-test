@@ -31,9 +31,11 @@ export async function rsaEncrypt(payload: string, publicKeyPem: string): Promise
     console.log('🔐 [RSA] Starting Perfect Corp RSA encryption with JSEncrypt...');
     console.log('🔐 [RSA] Payload:', payload);
     console.log('🔐 [RSA] Payload length:', payload.length);
-    console.log('🔐 [RSA] Key preview (first 50):', publicKeyPem.substring(0, 50) + '...');
-    console.log('🔐 [RSA] Key preview (last 50):', '...' + publicKeyPem.substring(publicKeyPem.length - 50));
+    console.log('🔐 [RSA] Key preview (first 100):', publicKeyPem.substring(0, 100) + '...');
+    console.log('🔐 [RSA] Key preview (last 100):', '...' + publicKeyPem.substring(publicKeyPem.length - 100));
     console.log('🔐 [RSA] Full key length:', publicKeyPem.length);
+    console.log('🔐 [RSA] Key contains BEGIN marker:', publicKeyPem.includes('-----BEGIN'));
+    console.log('🔐 [RSA] Key contains END marker:', publicKeyPem.includes('-----END'));
     
     // Clean and format the public key properly
     let cleanKey = publicKeyPem.trim();
