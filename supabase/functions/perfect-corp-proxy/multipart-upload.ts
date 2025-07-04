@@ -20,7 +20,8 @@ export async function tryMultipartUpload(accessToken: string, userPhotoData: Arr
       body: JSON.stringify({
         files: [{
           content_type: 'image/jpeg',
-          file_name: 'user_photo.jpg'
+          file_name: 'user_photo.jpg',
+          file_size: userPhotoData.byteLength
         }]
       }),
     }, 15000, 'file API request');

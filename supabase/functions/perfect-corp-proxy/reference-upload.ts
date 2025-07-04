@@ -42,7 +42,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
       body: JSON.stringify({
         files: [{
           content_type: 'image/jpeg',
-          file_name: 'user_photo.jpg'
+          file_name: 'user_photo.jpg',
+          file_size: userPhotoData.byteLength
         }]
       }),
     }, 20000, 'upload request');

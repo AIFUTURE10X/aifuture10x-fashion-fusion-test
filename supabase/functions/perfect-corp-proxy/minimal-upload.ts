@@ -20,7 +20,8 @@ export async function tryMinimalUpload(accessToken: string, userPhotoData: Array
       body: JSON.stringify({
         files: [{
           content_type: 'image/jpeg',
-          file_name: 'photo.jpg'
+          file_name: 'photo.jpg',
+          file_size: userPhotoData.byteLength
         }]
       }),
     }, 15000, 'file API request');
