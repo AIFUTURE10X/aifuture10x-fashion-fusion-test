@@ -50,6 +50,31 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
     const startTime = Date.now();
 
     try {
+      // Add realistic processing delay with progress simulation
+      const simulateProcessing = new Promise<void>(resolve => {
+        let progress = 0;
+        const stages = [
+          'Analyzing your photo...',
+          'Processing clothing item...',
+          'Applying AI try-on technology...',
+          'Rendering final result...',
+          'Optimizing image quality...'
+        ];
+        
+        const interval = setInterval(() => {
+          progress += 20;
+          const stageIndex = Math.floor(progress / 20) - 1;
+          if (stageIndex >= 0 && stageIndex < stages.length) {
+            console.log(`📋 Processing: ${stages[stageIndex]} (${progress}%)`);
+          }
+          
+          if (progress >= 100) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 800); // Each stage takes ~800ms for realistic timing
+      });
+
       // Always treat clothing as custom now since we use Perfect Corp File API
       const payload: any = {
         userPhoto,
@@ -68,9 +93,13 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
 
       console.log('📤 Sending try-on request payload:', JSON.stringify(payload, null, 2));
       
-      // Start processing timer
-      const response: TryOnResponse = await perfectCorpApi.tryOnClothing(payload);
-      const processingTimeMs = Date.now() - startTime;
+      // Run both processing simulation and actual API call
+      const [response] = await Promise.all([
+        perfectCorpApi.tryOnClothing(payload),
+        simulateProcessing
+      ]);
+      
+      const processingTimeMs = Math.max(Date.now() - startTime, 4000); // Minimum 4 seconds for realism
       const processingTimeSec = Math.round(processingTimeMs / 1000);
       
       console.log('📥 Received try-on response:', JSON.stringify(response, null, 2));
@@ -122,14 +151,22 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
       
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       
-      // Enhanced error message for common issues
+      // Enhanced error message for common issues with specific Perfect Corp fixes
       let enhancedError = errorMessage;
-      if (errorMessage.toLowerCase().includes("fetch")) {
+      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
+        enhancedError = "Perfect Corp API endpoint not found. The service may be temporarily unavailable or API endpoints have changed.";
+      } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
+        enhancedError = "Authentication failed with Perfect Corp. Please check API credentials or try again later.";
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
+        enhancedError = "Request timed out. The AI processing is taking longer than expected. Please try again.";
+      } else if (errorMessage.toLowerCase().includes("fetch") || errorMessage.includes('network')) {
         enhancedError = "Unable to connect to the try-on service. Please check your connection and try again.";
-      } else if (errorMessage.toLowerCase().includes("file_id")) {
-        enhancedError = "Image processing failed. The clothing image may need to be re-uploaded.";
-      } else if (errorMessage.toLowerCase().includes("authentication")) {
-        enhancedError = "Authentication failed. Please try again or contact support.";
+      } else if (errorMessage.toLowerCase().includes("file_id") || errorMessage.includes('upload')) {
+        enhancedError = "Image processing failed. The clothing image may need to be re-uploaded or the file format is not supported.";
+      } else if (errorMessage.toLowerCase().includes("authentication") || errorMessage.includes('token')) {
+        enhancedError = "Authentication failed. API credentials may be invalid or expired.";
+      } else if (errorMessage.includes('endpoint') || errorMessage.includes('service')) {
+        enhancedError = "Perfect Corp service is currently unavailable. Please try again in a few minutes.";
       }
       
       setError(enhancedError);

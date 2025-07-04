@@ -4,7 +4,13 @@ import { rsaEncrypt } from './rsa-encryption.ts';
 import { validateCredentials } from './validation.ts';
 import { AuthResponse, PerfectCorpAuthResponse } from './types.ts';
 
-const PERFECTCORP_AUTH_URL = 'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth';
+// Multiple auth endpoints to test - Perfect Corp may have changed their infrastructure
+const PERFECTCORP_AUTH_ENDPOINTS = [
+  'https://yce-api-01.perfectcorp.com/s2s/v1.0/client/auth',
+  'https://api.perfectcorp.com/s2s/v1.0/client/auth',
+  'https://yce-api.perfectcorp.com/s2s/v1.0/client/auth',
+  'https://s2s-api.perfectcorp.com/s2s/v1.0/client/auth'
+];
 
 export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
   try {
@@ -76,28 +82,55 @@ export async function authenticateWithPerfectCorp(): Promise<AuthResponse> {
             id_token: idToken
           };
           
-          console.log('📤 [Auth] Sending request to:', PERFECTCORP_AUTH_URL);
+          console.log('📤 [Auth] Testing auth endpoints...');
           console.log('📤 [Auth] Request body structure:', Object.keys(requestBody));
           console.log('📤 [Auth] Content-Type: application/json');
           console.log('📤 [Auth] User-Agent: Perfect-Corp-S2S-Client/1.0');
           
-          const authResponse = await fetch(PERFECTCORP_AUTH_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
-            },
-            body: JSON.stringify(requestBody),
-          });
+          // Try each auth endpoint until one works
+          let authResponse: Response | null = null;
+          let workingEndpoint = '';
+          
+          for (const authUrl of PERFECTCORP_AUTH_ENDPOINTS) {
+            console.log(`🔗 [Auth] Trying endpoint: ${authUrl}`);
+            
+            try {
+              authResponse = await fetch(authUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'User-Agent': 'Perfect-Corp-S2S-Client/1.0'
+                },
+                body: JSON.stringify(requestBody),
+              });
 
-          console.log(`📥 [Auth] Response status: ${authResponse.status} ${authResponse.statusText}`);
+              console.log(`📥 [Auth] ${authUrl} response: ${authResponse.status} ${authResponse.statusText}`);
+
+              if (authResponse.ok) {
+                workingEndpoint = authUrl;
+                console.log(`✅ [Auth] Working endpoint found: ${authUrl}`);
+                break;
+              } else {
+                const errorText = await authResponse.text();
+                console.log(`❌ [Auth] ${authUrl} failed: ${authResponse.status} - ${errorText}`);
+                authResponse = null;
+              }
+            } catch (endpointError) {
+              console.log(`❌ [Auth] ${authUrl} network error: ${endpointError.message}`);
+            }
+          }
+
+          if (!authResponse || !authResponse.ok) {
+            console.log(`❌ [Auth] All endpoints failed for ${timestampFormat.description} timestamp format`);
+            continue;
+          }
+
           console.log('📥 [Auth] Response headers:', Object.fromEntries(authResponse.headers.entries()));
-
           const responseText = await authResponse.text();
-          console.log(`📄 [Auth] Raw response:`, responseText);
+          console.log(`📄 [Auth] Raw response from ${workingEndpoint}:`, responseText);
 
-          if (authResponse.ok) {
+          if (true) { // Always true since we check authResponse.ok above
             const authData: PerfectCorpAuthResponse = JSON.parse(responseText);
             console.log(`📦 [Auth] Parsed response:`, authData);
 

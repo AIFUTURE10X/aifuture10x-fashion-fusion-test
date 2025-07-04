@@ -1,22 +1,46 @@
 import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { testNetworkConnectivity, fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
+import { discoverWorkingEndpoints } from './endpoint-discovery.ts';
+import { validateAccessToken, logTokenInfo } from './auth-validation.ts';
 
-// Strategy 1: Enhanced reference upload pattern with retry logic and comprehensive logging
+// Strategy 1: Enhanced reference upload pattern with endpoint discovery and authentication validation
 export async function tryReferenceUploadPattern(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
   console.log('📤 [Reference Upload] Starting enhanced reference upload pattern...');
   console.log('📊 [Reference Upload] Image data size:', userPhotoData.byteLength, 'bytes');
   console.log('🏷️ [Reference Upload] Image type: ArrayBuffer');
-  console.log('🔗 [Reference Upload] API Version: v1.0');
   
-  // Pre-flight connectivity check
+  // Step 0: Validate access token first
+  console.log('🔐 [Reference Upload] Validating access token...');
+  logTokenInfo(accessToken);
+  
+  const tokenValidation = await validateAccessToken(accessToken);
+  if (!tokenValidation.isValid) {
+    throw new Error(`Token validation failed: ${tokenValidation.error}`);
+  }
+  console.log('✅ [Reference Upload] Access token validated successfully');
+  
+  // Step 1: Discover working endpoints
+  console.log('🔍 [Reference Upload] Discovering working API endpoints...');
+  const workingEndpoints = await discoverWorkingEndpoints(accessToken);
+  if (!workingEndpoints) {
+    throw new Error('No working Perfect Corp API endpoints found. The service may be unavailable.');
+  }
+  
+  console.log('✅ [Reference Upload] Using endpoints:', {
+    baseUrl: workingEndpoints.baseUrl,
+    version: workingEndpoints.version,
+    fileApi: workingEndpoints.fileApi.substring(0, 50) + '...'
+  });
+  
+  // Network connectivity check with discovered endpoint
   const networkOk = await testNetworkConnectivity();
   if (!networkOk) {
     throw new Error('Network connectivity test failed. Please check your internet connection and try again.');
   }
   
-  const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
-  console.log('🎯 [Reference Upload] File API URL:', uploadRequestUrl);
+  const uploadRequestUrl = workingEndpoints.fileApi;
+  console.log('🎯 [Reference Upload] Using working File API URL:', uploadRequestUrl);
   
   console.log('🔗 Upload request endpoint:', uploadRequestUrl);
   console.log('🔑 Token preview:', accessToken.substring(0, 15) + '...');
@@ -88,8 +112,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
       } catch (primaryError) {
         console.error('❌ Primary endpoint failed, testing alternative endpoint...');
         
-        // Try alternative v1.1 endpoint
-        const altUploadRequestUrl = uploadRequestUrl.replace('/v1.0/', '/v1.1/');
+        // Try alternative endpoint from our working endpoints
+        const altUploadRequestUrl = workingEndpoints.fileApi.replace(`/${workingEndpoints.version}/`, '/v1.1/');
         console.log('🔗 Testing alternative endpoint:', altUploadRequestUrl);
         
         try {
