@@ -5,4 +5,4 @@ export const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
   'Access-Control-Max-Age': '3600',
   'Access-Control-Allow-Credentials': 'false'
-}
+};
