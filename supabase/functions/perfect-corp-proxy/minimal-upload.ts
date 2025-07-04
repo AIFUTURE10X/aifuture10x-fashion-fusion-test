@@ -1,14 +1,27 @@
-import { PERFECTCORP_FILE_API_URL } from './constants.ts';
 import { fetchWithTimeout } from './network-utils.ts';
 import { retryWithBackoff } from './retry-utils.ts';
+import { discoverWorkingEndpoints } from './endpoint-discovery.ts';
+import { validateAccessToken } from './auth-validation.ts';
 
-// Strategy 3: Enhanced minimal headers approach with comprehensive logging
+// Strategy 3: Enhanced minimal headers approach with endpoint discovery
 export async function tryMinimalUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 [Minimal Upload] Starting File API v1.0 minimal upload...');
+  console.log('📤 [Minimal Upload] Starting minimal upload with endpoint discovery...');
   console.log('📊 [Minimal Upload] Image data size:', userPhotoData.byteLength, 'bytes');
-  console.log('🔗 [Minimal Upload] API Version: v1.0');
   
-  const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
+  // Validate token first
+  const tokenValidation = await validateAccessToken(accessToken);
+  if (!tokenValidation.isValid) {
+    throw new Error(`Token validation failed: ${tokenValidation.error}`);
+  }
+  
+  // Discover working endpoints
+  const workingEndpoints = await discoverWorkingEndpoints(accessToken);
+  if (!workingEndpoints) {
+    throw new Error('No working Perfect Corp API endpoints found for minimal upload');
+  }
+  
+  const uploadRequestUrl = workingEndpoints.fileApi;
+  console.log('🎯 [Minimal Upload] Using discovered endpoint:', uploadRequestUrl.substring(0, 50) + '...');
   
   return await retryWithBackoff(async () => {
     // Step 1: Request upload URL from File API

@@ -33,11 +33,8 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
     fileApi: workingEndpoints.fileApi.substring(0, 50) + '...'
   });
   
-  // Network connectivity check with discovered endpoint
-  const networkOk = await testNetworkConnectivity();
-  if (!networkOk) {
-    throw new Error('Network connectivity test failed. Please check your internet connection and try again.');
-  }
+  // Skip network connectivity check since endpoint discovery handles this
+  console.log('🔗 [Reference Upload] Network connectivity will be tested during endpoint discovery');
   
   const uploadRequestUrl = workingEndpoints.fileApi;
   console.log('🎯 [Reference Upload] Using working File API URL:', uploadRequestUrl);

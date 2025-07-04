@@ -50,29 +50,34 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
     const startTime = Date.now();
 
     try {
-      // Add realistic processing delay with progress simulation
+      // Add realistic processing delay with progress simulation (4-7 seconds)
       const simulateProcessing = new Promise<void>(resolve => {
         let progress = 0;
         const stages = [
-          'Analyzing your photo...',
-          'Processing clothing item...',
+          'Authenticating with Perfect Corp...',
+          'Uploading and analyzing your photo...',
+          'Processing clothing reference...',
           'Applying AI try-on technology...',
-          'Rendering final result...',
-          'Optimizing image quality...'
+          'Rendering realistic fit...',
+          'Optimizing final image quality...'
         ];
         
+        // Random timing between 4-7 seconds total
+        const totalTime = 4000 + Math.random() * 3000;
+        const stageTime = totalTime / stages.length;
+        
         const interval = setInterval(() => {
-          progress += 20;
-          const stageIndex = Math.floor(progress / 20) - 1;
+          progress += (100 / stages.length);
+          const stageIndex = Math.floor(progress / (100 / stages.length)) - 1;
           if (stageIndex >= 0 && stageIndex < stages.length) {
-            console.log(`📋 Processing: ${stages[stageIndex]} (${progress}%)`);
+            console.log(`📋 Processing: ${stages[stageIndex]} (${Math.round(progress)}%)`);
           }
           
           if (progress >= 100) {
             clearInterval(interval);
             resolve();
           }
-        }, 800); // Each stage takes ~800ms for realistic timing
+        }, stageTime);
       });
 
       // Always treat clothing as custom now since we use Perfect Corp File API
@@ -99,7 +104,7 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
         simulateProcessing
       ]);
       
-      const processingTimeMs = Math.max(Date.now() - startTime, 4000); // Minimum 4 seconds for realism
+      const processingTimeMs = Math.max(Date.now() - startTime, 5000); // Minimum 5 seconds for realism
       const processingTimeSec = Math.round(processingTimeMs / 1000);
       
       console.log('📥 Received try-on response:', JSON.stringify(response, null, 2));
