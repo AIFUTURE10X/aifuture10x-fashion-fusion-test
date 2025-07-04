@@ -5,7 +5,7 @@ import { uploadUserPhoto } from './file-upload.ts';
 import { startTryOnTask } from './try-on.ts';
 import { pollTaskCompletion } from './polling.ts';
 import { downloadResultImage } from './download.ts';
-import { arrayBufferToBase64 } from './image-utils.ts';
+import { arrayBufferToBase64, ensureDataUrlFormat, detectImageMimeTypeFromBase64 } from './image-utils.ts';
 import { createMockTryOnImage } from './mock-image.ts';
 
 interface ImageValidationResult {
@@ -294,12 +294,17 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
       const resultImageData = await downloadResultImage(resultImageUrl);
       const resultImageBase64 = arrayBufferToBase64(resultImageData);
 
+      // Detect the actual image format and ensure proper data URL format
+      const mimeType = detectImageMimeTypeFromBase64(resultImageBase64);
+      const formattedImageData = ensureDataUrlFormat(resultImageBase64, mimeType);
+
       const totalTime = Date.now() - startTime;
       console.log(`🎉 Try-on process completed successfully in ${totalTime}ms`);
+      console.log('🖼️ Result image format:', mimeType, 'Length:', formattedImageData.length);
 
       const response = {
         success: true,
-        result_img: `data:image/jpeg;base64,${resultImageBase64}`,
+        result_img: formattedImageData,
         processing_time: Math.round(totalTime / 1000),
         message: "Virtual try-on completed successfully using Perfect Corp API"
       };

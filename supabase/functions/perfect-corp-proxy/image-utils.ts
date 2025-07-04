@@ -43,3 +43,46 @@ export function validateImageFormat(arrayBuffer: ArrayBuffer): { valid: boolean;
   
   return { valid: false, error: 'Unsupported image format. Please use JPEG, PNG, or WebP.' };
 }
+
+export function ensureDataUrlFormat(imageData: string, mimeType: string = 'image/jpeg'): string {
+  // If it's already a data URL, return as is
+  if (imageData.startsWith('data:image/')) {
+    return imageData;
+  }
+  
+  // If it's raw base64, add the proper prefix
+  return `data:${mimeType};base64,${imageData}`;
+}
+
+export function extractBase64FromDataUrl(dataUrl: string): string {
+  if (dataUrl.startsWith('data:image/')) {
+    const base64Part = dataUrl.split(',')[1];
+    return base64Part || dataUrl;
+  }
+  return dataUrl;
+}
+
+export function detectImageMimeTypeFromBase64(base64Data: string): string {
+  try {
+    const arrayBuffer = base64ToArrayBuffer(base64Data);
+    const validation = validateImageFormat(arrayBuffer);
+    
+    if (validation.valid && validation.format) {
+      switch (validation.format) {
+        case 'jpeg':
+          return 'image/jpeg';
+        case 'png':
+          return 'image/png';
+        case 'webp':
+          return 'image/webp';
+        default:
+          return 'image/jpeg';
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to detect image MIME type:', error);
+  }
+  
+  // Default fallback
+  return 'image/jpeg';
+}

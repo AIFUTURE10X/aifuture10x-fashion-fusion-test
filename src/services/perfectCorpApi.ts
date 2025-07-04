@@ -16,34 +16,41 @@ class PerfectCorpApiService {
   private supabaseUrl = "https://bpjlxtjbrunzibehbyrk.supabase.co";
   private supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwamx4dGpicnVuemliZWhieXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjE1NTcsImV4cCI6MjA2NTUzNzU1N30.w3_oTurN_UesG_DpwNU67f216flzYmOnDo-lrEMLYDw";
 
-  // Validate if a string is a valid base64 data URL
-  private isValidDataUrl(dataUrl: string): boolean {
-    if (!dataUrl || typeof dataUrl !== 'string') {
-      console.error('❌ Invalid data URL: not a string or empty');
-      return false;
+  // Validate and normalize image data format
+  private validateAndNormalizeImageData(imageData: string): { valid: boolean; normalizedData?: string; error?: string } {
+    if (!imageData || typeof imageData !== 'string') {
+      console.error('❌ Invalid image data: not a string or empty');
+      return { valid: false, error: 'Invalid image data: not a string or empty' };
     }
     
-    // Check if it starts with data:image
-    if (!dataUrl.startsWith('data:image/')) {
-      console.error('❌ Invalid data URL: does not start with data:image/');
-      return false;
+    // If it's already a proper data URL, validate and return
+    if (imageData.startsWith('data:image/')) {
+      if (!imageData.includes('base64,')) {
+        return { valid: false, error: 'Invalid data URL: does not contain base64,' };
+      }
+      
+      const base64Part = imageData.split('base64,')[1];
+      if (!base64Part || base64Part.length < 10) {
+        return { valid: false, error: 'Invalid data URL: base64 part too short or missing' };
+      }
+      
+      console.log('✅ Data URL validation passed');
+      return { valid: true, normalizedData: imageData };
     }
     
-    // Check if it contains base64 indicator
-    if (!dataUrl.includes('base64,')) {
-      console.error('❌ Invalid data URL: does not contain base64,');
-      return false;
+    // If it's raw base64, try to normalize it
+    try {
+      // Attempt to decode to verify it's valid base64
+      atob(imageData);
+      
+      // Add proper data URL prefix (default to JPEG)
+      const normalizedData = `data:image/jpeg;base64,${imageData}`;
+      console.log('✅ Raw base64 normalized to data URL');
+      return { valid: true, normalizedData };
+    } catch (error) {
+      console.error('❌ Invalid base64 data:', error);
+      return { valid: false, error: 'Invalid base64 data format' };
     }
-    
-    // Extract base64 part
-    const base64Part = dataUrl.split('base64,')[1];
-    if (!base64Part || base64Part.length < 10) {
-      console.error('❌ Invalid data URL: base64 part too short or missing');
-      return false;
-    }
-    
-    console.log('✅ Data URL validation passed');
-    return true;
   }
 
   async tryOnClothing(request: TryOnRequest & { userPhotoStoragePath?: string }): Promise<TryOnResponse> {
@@ -124,10 +131,11 @@ class PerfectCorpApiService {
           console.log('🖼️ Result image received, validating...');
           console.log('🔍 Image preview:', data.result_img.substring(0, 100));
           
-          // Validate the image data
-          if (!this.isValidDataUrl(data.result_img)) {
-            console.error('❌ Invalid image data received');
-            throw new Error('Invalid image data received from server');
+          // Validate and normalize the image data
+          const validation = this.validateAndNormalizeImageData(data.result_img);
+          if (!validation.valid) {
+            console.error('❌ Invalid image data received:', validation.error);
+            throw new Error(`Invalid image data received from server: ${validation.error}`);
           }
           
           console.log('✅ Image validation passed');
@@ -138,7 +146,7 @@ class PerfectCorpApiService {
           
           return {
             success: true,
-            resultImage: data.result_img,
+            resultImage: validation.normalizedData || data.result_img,
             processingTime: data.processing_time
           };
         } else if (data && data.error) {
