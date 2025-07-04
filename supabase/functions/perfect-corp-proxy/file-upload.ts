@@ -16,9 +16,9 @@ export async function uploadUserPhoto(accessToken: string, userPhotoData: ArrayB
   
   console.log('🔄 [Upload Manager] Attempting upload with multiple strategies...');
   
-  // Strategy 1: Use the enhanced reference upload pattern with File API v1.1
+  // Strategy 1: Use the enhanced reference upload pattern with File API v1.0
   try {
-    console.log('🎯 [Upload Manager] Strategy 1: Reference upload pattern (File API v1.1)');
+    console.log('🎯 [Upload Manager] Strategy 1: Reference upload pattern (File API v1.0)');
     const result = await tryReferenceUploadPattern(accessToken, userPhotoData);
     console.log('✅ [Upload Manager] Strategy 1 succeeded with file_id:', result);
     return result;

@@ -1,11 +1,11 @@
 
 export const PERFECTCORP_BASE_URL = 'https://yce-api-01.perfectcorp.com';
 export const PERFECTCORP_AUTH_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/client/auth`;
-// File API v1.1 endpoints - using the correct path for user photo uploads
-export const PERFECTCORP_FILE_API_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.1/file`;
-export const PERFECTCORP_USER_PHOTO_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.1/file`;
-export const PERFECTCORP_CLOTHING_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.1/file/cloth`;
-export const PERFECTCORP_TRYON_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.1/task/clothes`;
+// Fixed File API endpoints - using correct v1.0 paths that actually exist
+export const PERFECTCORP_FILE_API_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
+export const PERFECTCORP_USER_PHOTO_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file`;
+export const PERFECTCORP_CLOTHING_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/file/clothes-tryon`;
+export const PERFECTCORP_TRYON_URL = `${PERFECTCORP_BASE_URL}/s2s/v1.0/task/clothes-tryon`;
 
 export const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 export const MIN_IMAGE_SIZE = 1024; // 1KB

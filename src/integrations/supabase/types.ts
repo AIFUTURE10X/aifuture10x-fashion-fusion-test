@@ -69,6 +69,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_photos: {
+        Row: {
+          created_at: string
+          id: string
+          image_metadata: Json | null
+          original_image_url: string
+          perfect_corp_file_id: string | null
+          updated_at: string
+          upload_status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_metadata?: Json | null
+          original_image_url: string
+          perfect_corp_file_id?: string | null
+          updated_at?: string
+          upload_status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_metadata?: Json | null
+          original_image_url?: string
+          perfect_corp_file_id?: string | null
+          updated_at?: string
+          upload_status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

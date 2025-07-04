@@ -7,7 +7,7 @@ export async function tryReferenceUploadPattern(accessToken: string, userPhotoDa
   console.log('📤 [Reference Upload] Starting enhanced reference upload pattern...');
   console.log('📊 [Reference Upload] Image data size:', userPhotoData.byteLength, 'bytes');
   console.log('🏷️ [Reference Upload] Image type: ArrayBuffer');
-  console.log('🔗 [Reference Upload] API Version: v1.1');
+  console.log('🔗 [Reference Upload] API Version: v1.0');
   
   // Pre-flight connectivity check
   const networkOk = await testNetworkConnectivity();

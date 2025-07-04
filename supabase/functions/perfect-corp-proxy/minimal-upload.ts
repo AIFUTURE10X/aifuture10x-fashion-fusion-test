@@ -4,9 +4,9 @@ import { retryWithBackoff } from './retry-utils.ts';
 
 // Strategy 3: Enhanced minimal headers approach with comprehensive logging
 export async function tryMinimalUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 [Minimal Upload] Starting File API v1.1 minimal upload...');
+  console.log('📤 [Minimal Upload] Starting File API v1.0 minimal upload...');
   console.log('📊 [Minimal Upload] Image data size:', userPhotoData.byteLength, 'bytes');
-  console.log('🔗 [Minimal Upload] API Version: v1.1');
+  console.log('🔗 [Minimal Upload] API Version: v1.0');
   
   const uploadRequestUrl = PERFECTCORP_FILE_API_URL;
   

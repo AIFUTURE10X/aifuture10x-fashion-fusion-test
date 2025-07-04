@@ -4,9 +4,9 @@ import { retryWithBackoff } from './retry-utils.ts';
 
 // Strategy 2: Enhanced multipart form data approach with comprehensive logging
 export async function tryMultipartUpload(accessToken: string, userPhotoData: ArrayBuffer): Promise<string> {
-  console.log('📤 [Multipart Upload] Starting File API v1.1 multipart upload...');
+  console.log('📤 [Multipart Upload] Starting File API v1.0 multipart upload...');
   console.log('📊 [Multipart Upload] Image data size:', userPhotoData.byteLength, 'bytes');
-  console.log('🔗 [Multipart Upload] API Version: v1.1');
+  console.log('🔗 [Multipart Upload] API Version: v1.0');
   
   const fileApiUrl = PERFECTCORP_FILE_API_URL;
   

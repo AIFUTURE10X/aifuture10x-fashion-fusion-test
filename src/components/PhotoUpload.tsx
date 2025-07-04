@@ -4,6 +4,7 @@ import { Upload, X, Check, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { uploadPhotoToSupabase } from '@/lib/supabase-upload';
+import { useUserPhotos } from '@/hooks/useUserPhotos';
 
 interface PhotoUploadProps {
   onPhotoUpload: (photoUrl: string) => void;
@@ -14,6 +15,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { savePhoto } = useUserPhotos();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setError(null);
@@ -27,6 +29,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onPhotoUpload }) => {
         // Upload image to Supabase Storage
         const publicUrl = await uploadPhotoToSupabase(file);
         setUploadedPhoto(publicUrl);
+        
+        // Save to user_photos table
+        await savePhoto(publicUrl);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Upload failed. Please try again."
