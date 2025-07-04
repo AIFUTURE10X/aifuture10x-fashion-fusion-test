@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import { perfectCorpApi, TryOnResponse } from '@/services/perfectCorpApi';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from "@/integrations/supabase/client";
+import { createProcessingSimulation } from './useTryOnProcess/processingSimulation';
+import { enhanceErrorMessage } from './useTryOnProcess/errorHandling';
+import { validateAndPrepareImage, logImageDetails } from './useTryOnProcess/imageValidation';
+import { PROCESSING_TIME_RANGE } from './useTryOnProcess/constants';
 
 interface UseTryOnProcessProps {
   userPhoto: string;
@@ -51,34 +55,7 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
 
     try {
       // Add realistic processing delay with progress simulation (4-7 seconds)
-      const simulateProcessing = new Promise<void>(resolve => {
-        let progress = 0;
-        const stages = [
-          'Authenticating with Perfect Corp...',
-          'Uploading and analyzing your photo...',
-          'Processing clothing reference...',
-          'Applying AI try-on technology...',
-          'Rendering realistic fit...',
-          'Optimizing final image quality...'
-        ];
-        
-        // Random timing between 4-7 seconds total
-        const totalTime = 4000 + Math.random() * 3000;
-        const stageTime = totalTime / stages.length;
-        
-        const interval = setInterval(() => {
-          progress += (100 / stages.length);
-          const stageIndex = Math.floor(progress / (100 / stages.length)) - 1;
-          if (stageIndex >= 0 && stageIndex < stages.length) {
-            console.log(`📋 Processing: ${stages[stageIndex]} (${Math.round(progress)}%)`);
-          }
-          
-          if (progress >= 100) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, stageTime);
-      });
+      const simulateProcessing = createProcessingSimulation();
 
       // Always treat clothing as custom now since we use Perfect Corp File API
       const payload: any = {
@@ -104,7 +81,7 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
         simulateProcessing
       ]);
       
-      const processingTimeMs = Math.max(Date.now() - startTime, 5000); // Minimum 5 seconds for realism
+      const processingTimeMs = Math.max(Date.now() - startTime, PROCESSING_TIME_RANGE.MINIMUM_REALISTIC); // Minimum 5 seconds for realism
       const processingTimeSec = Math.round(processingTimeMs / 1000);
       
       console.log('📥 Received try-on response:', JSON.stringify(response, null, 2));
@@ -123,15 +100,8 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
       }
 
       // Validate and prepare the base64 image data
-      let imageData = response.resultImage;
-      if (!imageData.startsWith('data:image/')) {
-        console.log('🔧 Adding data URL prefix to base64 image');
-        imageData = `data:image/jpeg;base64,${imageData}`;
-      }
-
-      console.log('✅ Image validation passed');
-      console.log('📊 Result image length:', imageData.length);
-      console.log('🖼️ Image preview:', imageData.substring(0, 100) + '...');
+      const imageData = validateAndPrepareImage(response.resultImage);
+      logImageDetails(imageData);
       
       // Set the result image
       console.log('🎯 Setting try-on result image...');
@@ -155,24 +125,7 @@ export const useTryOnProcess = ({ userPhoto, selectedClothing }: UseTryOnProcess
       console.error('❌ Try-on error after', processingTimeSec, 'seconds:', err);
       
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      
-      // Enhanced error message for common issues with specific Perfect Corp fixes
-      let enhancedError = errorMessage;
-      if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
-        enhancedError = "Perfect Corp API endpoint not found. The service may be temporarily unavailable or API endpoints have changed.";
-      } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
-        enhancedError = "Authentication failed with Perfect Corp. Please check API credentials or try again later.";
-      } else if (errorMessage.includes('timeout') || errorMessage.includes('TIMEOUT')) {
-        enhancedError = "Request timed out. The AI processing is taking longer than expected. Please try again.";
-      } else if (errorMessage.toLowerCase().includes("fetch") || errorMessage.includes('network')) {
-        enhancedError = "Unable to connect to the try-on service. Please check your connection and try again.";
-      } else if (errorMessage.toLowerCase().includes("file_id") || errorMessage.includes('upload')) {
-        enhancedError = "Image processing failed. The clothing image may need to be re-uploaded or the file format is not supported.";
-      } else if (errorMessage.toLowerCase().includes("authentication") || errorMessage.includes('token')) {
-        enhancedError = "Authentication failed. API credentials may be invalid or expired.";
-      } else if (errorMessage.includes('endpoint') || errorMessage.includes('service')) {
-        enhancedError = "Perfect Corp service is currently unavailable. Please try again in a few minutes.";
-      }
+      const enhancedError = enhanceErrorMessage(errorMessage);
       
       setError(enhancedError);
       
