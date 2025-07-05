@@ -82,21 +82,18 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
       
-      // Step 1: Authenticate with Perfect Corp and discover endpoints
+      // Step 1: Authenticate with Perfect Corp
       console.log('🔐 [Main] Calling authenticateWithPerfectCorp...');
       const authResult = await authenticateWithPerfectCorp(apiKey!, apiSecret!, supabase);
       const accessToken = authResult.accessToken;
-      const workingEndpoints = authResult.workingEndpoints;
       console.log('✅ [Main] Authentication successful, token length:', accessToken?.length || 0);
-      console.log('🎯 [Main] Using discovered endpoints:', workingEndpoints ? 'available' : 'using defaults');
 
-      // Step 2: Upload user photo with discovered endpoints
+      // Step 2: Upload user photo
       console.log('📤 Uploading user photo...');
       const userPhotoFileId = await uploadImageToFileAPI(
         accessToken,
         requestData.userPhoto,
-        'user_photo.jpg',
-        workingEndpoints
+        'user_photo.jpg'
       );
       console.log('✅ User photo uploaded, file_id:', userPhotoFileId);
 
@@ -110,13 +107,12 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         clothingFileId = await uploadImageToFileAPI(
           accessToken,
           requestData.clothingImage,
-          'clothing_reference.jpg',
-          workingEndpoints
+          'clothing_reference.jpg'
         );
         console.log('✅ Clothing image uploaded, file_id:', clothingFileId);
       }
 
-      // Step 4: Start try-on task with discovered endpoints
+      // Step 4: Start try-on task
       console.log('🎽 Starting try-on task...');
       const taskId = await startTryOnTask(
         accessToken,
@@ -124,14 +120,13 @@ export async function handlePerfectCorpRequest(req: Request): Promise<Response> 
         clothingFileId,
         true, // isCustomClothing
         clothingFileId, // perfectCorpRefId
-        requestData.clothingCategory || 'upper_body',
-        workingEndpoints
+        requestData.clothingCategory || 'upper_body'
       );
       console.log('🚀 Try-on task started, task_id:', taskId);
 
-      // Step 5: Poll for completion with discovered endpoints
+      // Step 5: Poll for completion
       console.log('⏳ Polling for task completion...');
-      const result = await pollTaskCompletion(accessToken, taskId, workingEndpoints);
+      const result = await pollTaskCompletion(accessToken, taskId);
       console.log('✅ Task completed successfully');
 
       // Step 6: Download result image
