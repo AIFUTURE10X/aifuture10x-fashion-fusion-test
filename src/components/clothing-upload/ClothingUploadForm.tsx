@@ -27,6 +27,8 @@ interface ClothingUploadFormProps {
   setClothingBrand: (value: string) => void;
   setClothingPrice: (value: string) => void;
   setSelectedStyle: (styles: string[]) => void;
+  handleUrlImageSelect?: (imageUrl: string, metadata?: any) => void;
+  extractedImageData?: { url: string; metadata?: any; } | null;
 }
 
 export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
@@ -49,7 +51,9 @@ export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
   setClothingName,
   setClothingBrand,
   setClothingPrice,
-  setSelectedStyle
+  setSelectedStyle,
+  handleUrlImageSelect,
+  extractedImageData
 }) => {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
@@ -59,6 +63,8 @@ export const ClothingUploadForm: React.FC<ClothingUploadFormProps> = ({
         isProcessing={isProcessing}
         onDrop={onDrop}
         onRemoveImage={onRemoveImage}
+        onUrlImageSelect={handleUrlImageSelect}
+        extractedImageData={extractedImageData}
       />
 
       <StyleSelectionSection
