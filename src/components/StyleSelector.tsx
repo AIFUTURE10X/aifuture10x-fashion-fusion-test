@@ -47,7 +47,7 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
     console.log('Selected style:', style, 'Category filters:', categories);
     onStyleChange?.(categories);
   };
-  return <div className="bg-white/10 backdrop-blur-sm p-6 border border-white/20 shadow-lg mb-8 py-[15px] my-0 mx-0 px-[15px] rounded-3xl">
+  return <div className="bg-white/10 backdrop-blur-sm p-6 border border-white/20 shadow-lg mb-4 py-[15px] my-0 mx-0 px-[15px] rounded-3xl">
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-white mb-2">Select Styles</h3>
         <p className="text-gray-200">Choose a style to filter your clothing collection</p>
