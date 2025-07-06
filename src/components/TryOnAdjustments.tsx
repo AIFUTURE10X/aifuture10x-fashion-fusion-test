@@ -20,6 +20,17 @@ export const TryOnAdjustments: React.FC<TryOnAdjustmentsProps> = ({
   setAdjustments,
   isProcessing,
   hasResult,
-}) => null;
+}) => {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <h3 className="font-semibold text-gray-900 mb-4">Adjustments</h3>
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Adjustment controls will be available here.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default TryOnAdjustments;
