@@ -22,7 +22,7 @@ export const TryOnAdjustments: React.FC<TryOnAdjustmentsProps> = ({
   isProcessing,
   hasResult,
 }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
+  <div className="space-y-6">
     {/* Size Adjustment */}
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-3">
