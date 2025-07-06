@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +13,7 @@ interface ProductInfoProps {
 export const TryOnProductInfo: React.FC<ProductInfoProps> = ({
   selectedClothing,
 }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 -mt-4">
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 -mt-8">
     <div className="aspect-square bg-gray-100 rounded-xl mb-4 overflow-hidden">
       <img
         src={selectedClothing.image}
