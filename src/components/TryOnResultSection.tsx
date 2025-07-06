@@ -29,7 +29,7 @@ export const TryOnResultSection: React.FC<TryOnResultSectionProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">Try-On Result</h3>
+        <h3 className="font-semibold text-gray-900"></h3>
         {isProcessing && (
           <div className="flex items-center text-purple-600">
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
