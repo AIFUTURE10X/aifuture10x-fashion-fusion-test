@@ -34,7 +34,7 @@ export const TryOnHeader: React.FC<TryOnHeaderProps> = ({
         </Button>
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Virtual Try-On</h2>
-          <p className="text-gray-600">{selectedClothing.name} by {selectedClothing.brand}</p>
+          <p className="text-gray-600">{selectedClothing.name} {selectedClothing.brand}</p>
         </div>
       </div>
       
