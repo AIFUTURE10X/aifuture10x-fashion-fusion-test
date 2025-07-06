@@ -137,52 +137,89 @@ async function extractClothingData(html: string, baseUrl: string): Promise<Extra
       }
     }
 
-    // Extract images with priority for product images
-    const imgRegex = /<img[^>]+src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*(?:width="(\d+)")?[^>]*(?:height="(\d+)")?[^>]*>/gi;
-    let imgMatch;
+    // Extract images with advanced detection patterns
+    const imgPatterns = [
+      // Standard img tags
+      /<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*(?:width=["']?(\d+)["']?)?[^>]*(?:height=["']?(\d+)["']?)?[^>]*>/gi,
+      // Background images in style attributes
+      /style=["'][^"']*background-image:\s*url\(["']?([^"')]+)["']?\)[^"']*/gi,
+      // Data attributes for lazy loading
+      /data-src=["']([^"']+)["']/gi,
+      /data-original=["']([^"']+)["']/gi,
+      /data-lazy=["']([^"']+)["']/gi
+    ];
+
+    const extractedUrls = new Set<string>();
     
-    while ((imgMatch = imgRegex.exec(html)) !== null) {
-      let imgUrl = imgMatch[1];
-      const alt = imgMatch[2] || '';
-      const width = imgMatch[3] ? parseInt(imgMatch[3]) : undefined;
-      const height = imgMatch[4] ? parseInt(imgMatch[4]) : undefined;
+    for (const pattern of imgPatterns) {
+      let match;
+      while ((match = pattern.exec(html)) !== null) {
+        let imgUrl = match[1];
+        const alt = match[2] || '';
+        const width = match[3] ? parseInt(match[3]) : undefined;
+        const height = match[4] ? parseInt(match[4]) : undefined;
 
-      // Convert relative URLs to absolute
-      if (imgUrl.startsWith('/')) {
-        const baseUrlObj = new URL(baseUrl);
-        imgUrl = `${baseUrlObj.protocol}//${baseUrlObj.host}${imgUrl}`;
-      } else if (imgUrl.startsWith('./')) {
-        imgUrl = new URL(imgUrl, baseUrl).href;
-      }
+        // Convert relative URLs to absolute
+        if (imgUrl.startsWith('/')) {
+          const baseUrlObj = new URL(baseUrl);
+          imgUrl = `${baseUrlObj.protocol}//${baseUrlObj.host}${imgUrl}`;
+        } else if (imgUrl.startsWith('./')) {
+          imgUrl = new URL(imgUrl, baseUrl).href;
+        } else if (!imgUrl.startsWith('http')) {
+          imgUrl = new URL(imgUrl, baseUrl).href;
+        }
 
-      // Filter for likely product images
-      const isProductImage = (
-        alt.toLowerCase().includes('product') ||
-        alt.toLowerCase().includes('clothing') ||
-        imgUrl.toLowerCase().includes('product') ||
-        imgUrl.toLowerCase().includes('cloth') ||
-        (width && height && width >= 200 && height >= 200) ||
-        imgUrl.includes('cdn') ||
-        imgUrl.includes('static')
-      );
+        // Skip duplicates
+        if (extractedUrls.has(imgUrl)) continue;
+        extractedUrls.add(imgUrl);
 
-      // Skip very small images, icons, and logos
-      const isSkippable = (
-        (width && width < 100) ||
-        (height && height < 100) ||
-        alt.toLowerCase().includes('logo') ||
-        alt.toLowerCase().includes('icon') ||
-        imgUrl.includes('logo') ||
-        imgUrl.includes('icon')
-      );
+        // Enhanced filtering for clothing images
+        const isClothingImage = (
+          alt.toLowerCase().includes('product') ||
+          alt.toLowerCase().includes('clothing') ||
+          alt.toLowerCase().includes('dress') ||
+          alt.toLowerCase().includes('shirt') ||
+          alt.toLowerCase().includes('pants') ||
+          alt.toLowerCase().includes('jacket') ||
+          alt.toLowerCase().includes('blouse') ||
+          alt.toLowerCase().includes('skirt') ||
+          alt.toLowerCase().includes('outfit') ||
+          imgUrl.toLowerCase().includes('product') ||
+          imgUrl.toLowerCase().includes('cloth') ||
+          imgUrl.toLowerCase().includes('fashion') ||
+          imgUrl.toLowerCase().includes('wear') ||
+          imgUrl.includes('cdn') ||
+          imgUrl.includes('static') ||
+          imgUrl.includes('media') ||
+          (width && height && width >= 150 && height >= 150)
+        );
 
-      if (!isSkippable && (isProductImage || images.length < 10)) {
-        images.push({
-          url: imgUrl,
-          alt: alt || undefined,
-          width,
-          height
-        });
+        // Skip very small images, icons, logos, and UI elements
+        const isSkippable = (
+          (width && width < 80) ||
+          (height && height < 80) ||
+          alt.toLowerCase().includes('logo') ||
+          alt.toLowerCase().includes('icon') ||
+          alt.toLowerCase().includes('arrow') ||
+          alt.toLowerCase().includes('button') ||
+          alt.toLowerCase().includes('star') ||
+          imgUrl.includes('logo') ||
+          imgUrl.includes('icon') ||
+          imgUrl.includes('sprite') ||
+          imgUrl.includes('ui/') ||
+          imgUrl.includes('icons/') ||
+          imgUrl.endsWith('.svg') ||
+          imgUrl.includes('data:image')
+        );
+
+        if (!isSkippable && (isClothingImage || images.length < 50)) {
+          images.push({
+            url: imgUrl,
+            alt: alt || undefined,
+            width,
+            height
+          });
+        }
       }
     }
 
@@ -193,8 +230,8 @@ async function extractClothingData(html: string, baseUrl: string): Promise<Extra
       return bScore - aScore;
     });
 
-    // Limit to top 5 most relevant images
-    const topImages = images.slice(0, 5);
+    // Return more images for better selection (limit to 20 to avoid overwhelming)
+    const topImages = images.slice(0, 20);
 
     console.log('📊 Extracted data:', {
       imageCount: topImages.length,

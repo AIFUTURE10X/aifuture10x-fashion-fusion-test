@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUrlImageExtraction } from './hooks/useUrlImageExtraction';
 import { WebsiteViewer } from './WebsiteViewer';
+import { EnhancedImageGallery } from './EnhancedImageGallery';
 
 interface UrlImageUploadProps {
   onImageSelect: (imageUrl: string, metadata?: any) => void;
@@ -22,11 +23,8 @@ export const UrlImageUpload: React.FC<UrlImageUploadProps> = ({
   const handleExtract = async () => {
     if (!url.trim()) return;
     
-    const result = await extractImages(url.trim());
-    if (result.success && result.images && result.images.length > 0) {
-      // Auto-select the first (most relevant) image
-      onImageSelect(result.images[0].url, result.metadata);
-    }
+    await extractImages(url.trim());
+    // Don't auto-select - let user choose from enhanced gallery
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,30 +99,15 @@ export const UrlImageUpload: React.FC<UrlImageUploadProps> = ({
             <div className="flex items-center gap-2 mb-3">
               <ExternalLink className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">
-                Found {extractedData.images.length} image{extractedData.images.length !== 1 ? 's' : ''}
+                Enhanced Image Selection
               </span>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-              {extractedData.images.map((image, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onImageSelect(image.url, extractedData.metadata)}
-                  className="relative group bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-purple-300 transition-colors"
-                >
-                  <img
-                    src={image.url}
-                    alt={image.alt || `Product image ${index + 1}`}
-                    className="w-full h-16 object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                </button>
-              ))}
-            </div>
+            <EnhancedImageGallery
+              images={extractedData.images}
+              onImageSelect={(imageUrl) => onImageSelect(imageUrl, extractedData.metadata)}
+              selectedImage={undefined}
+            />
 
             {extractedData.metadata && (
               <div className="mt-3 pt-3 border-t border-gray-200">
