@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Search, ExternalLink, AlertCircle } from 'lucide-react';
+import { Search, ExternalLink, AlertCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUrlImageExtraction } from './hooks/useUrlImageExtraction';
+import { WebsiteViewer } from './WebsiteViewer';
 
 interface UrlImageUploadProps {
   onImageSelect: (imageUrl: string, metadata?: any) => void;
@@ -15,6 +16,7 @@ export const UrlImageUpload: React.FC<UrlImageUploadProps> = ({
   isProcessing = false
 }) => {
   const [url, setUrl] = useState('');
+  const [showWebsiteViewer, setShowWebsiteViewer] = useState(false);
   const { extractImages, isExtracting, error, extractedData } = useUrlImageExtraction();
 
   const handleExtract = async () => {
@@ -72,6 +74,15 @@ export const UrlImageUpload: React.FC<UrlImageUploadProps> = ({
             ) : (
               <Search className="w-4 h-4" />
             )}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setShowWebsiteViewer(true)}
+            disabled={!url.trim() || !isValidUrl(url.trim()) || isExtracting || isProcessing}
+            variant="outline"
+            className="px-4"
+          >
+            <Globe className="w-4 h-4" />
           </Button>
         </div>
 
@@ -133,6 +144,14 @@ export const UrlImageUpload: React.FC<UrlImageUploadProps> = ({
           </div>
         )}
       </div>
+
+      {showWebsiteViewer && (
+        <WebsiteViewer
+          url={url}
+          onClose={() => setShowWebsiteViewer(false)}
+          onImageSelect={onImageSelect}
+        />
+      )}
     </div>
   );
 };
