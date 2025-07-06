@@ -38,7 +38,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
   } = useTryOnProcess({ userPhoto, selectedClothing });
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto -mt-4">
       <TryOnHeader
         selectedClothing={selectedClothing}
         onBack={onBack}
@@ -49,7 +49,7 @@ export const TryOnViewer: React.FC<TryOnViewerProps> = ({
         hasResult={!!tryOnResultImage}
       />
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 items-start">
         <TryOnOriginalPhoto userPhoto={userPhoto} />
 
         <TryOnResultSection
