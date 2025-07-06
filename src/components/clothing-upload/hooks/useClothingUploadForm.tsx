@@ -19,10 +19,6 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
   const [clothingPrice, setClothingPrice] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string[]>(['HOT']);
   const [perfectCorpFileId, setPerfectCorpFileId] = useState<string | null>(null);
-  const [extractedImageData, setExtractedImageData] = useState<{
-    url: string;
-    metadata?: any;
-  } | null>(null);
   const { toast } = useToast();
   const { uploadToPerfectCorp, isUploading } = usePerfectCorpUpload();
 
@@ -99,74 +95,6 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     setUploadedPhoto(null);
     setFilePreview(null);
     setPerfectCorpFileId(null);
-    setExtractedImageData(null);
-  };
-
-  const handleUrlImageSelect = async (imageUrl: string, metadata?: any) => {
-    setError(null);
-    try {
-      console.log('🔗 Processing URL image:', imageUrl);
-      
-      // Auto-populate form fields from extracted metadata
-      if (metadata) {
-        if (metadata.title && !clothingName) {
-          // Extract clothing name from title (remove brand and common e-commerce suffixes)
-          let cleanTitle = metadata.title
-            .replace(/\s*-\s*[^-]*$/g, '') // Remove " - Brand" suffix
-            .replace(/\s*\|\s*[^|]*$/g, '') // Remove " | Store" suffix
-            .replace(/^\w+\s+/, '') // Remove leading brand word if present
-            .trim();
-          setClothingName(cleanTitle.substring(0, 50)); // Limit length
-        }
-        
-        if (metadata.brand && !clothingBrand) {
-          setClothingBrand(metadata.brand);
-        }
-        
-        if (metadata.price && !clothingPrice) {
-          // Extract numeric price
-          const priceMatch = metadata.price.match(/[\d.,]+/);
-          if (priceMatch) {
-            setClothingPrice(priceMatch[0].replace(',', ''));
-          }
-        }
-      }
-
-      // Store the extracted image data
-      setExtractedImageData({ url: imageUrl, metadata });
-      
-      // Convert URL image to blob and upload it
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch image from URL');
-      }
-      
-      const blob = await response.blob();
-      const file = new File([blob], 'extracted-image.jpg', { type: 'image/jpeg' });
-      
-      // Upload to both Supabase and Perfect Corp
-      const [supabaseUrl, perfectCorpResult] = await Promise.all([
-        uploadPhotoToSupabase(file, 'clothing-references'),
-        uploadToPerfectCorp(file)
-      ]);
-
-      if (!perfectCorpResult?.success) {
-        throw new Error('Failed to upload to Perfect Corp - required for AI processing');
-      }
-
-      setUploadedPhoto(supabaseUrl);
-      setPerfectCorpFileId(perfectCorpResult.fileId);
-      
-      toast({
-        title: "Image extracted and uploaded successfully!",
-        description: metadata?.title ? `"${metadata.title.substring(0, 40)}..."` : "Ready for AI processing"
-      });
-      
-    } catch (err) {
-      console.error('❌ URL image processing error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process image from URL');
-      setExtractedImageData(null);
-    }
   };
 
   const handleSubmit = async (onClothingAdd: (clothing: ClothingItem) => void) => {
@@ -290,7 +218,6 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     clothingPrice,
     selectedStyle,
     perfectCorpFileId,
-    extractedImageData,
     
     // Setters
     setGarmentCategory,
@@ -302,7 +229,6 @@ export const useClothingUploadForm = (editingItem?: ClothingItem | null) => {
     // Handlers
     onDrop,
     handleRemoveImage,
-    handleSubmit,
-    handleUrlImageSelect
+    handleSubmit
   };
 };
