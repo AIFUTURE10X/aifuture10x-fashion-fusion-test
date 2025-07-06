@@ -33,7 +33,7 @@ export const TryOnHeader: React.FC<TryOnHeaderProps> = ({
           Back to Catalog
         </Button>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Virtual Try-On</h2>
+          <h2 className="text-2xl font-bold text-gray-900"></h2>
           <p className="text-gray-600"></p>
         </div>
       </div>
