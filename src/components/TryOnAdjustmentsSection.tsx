@@ -24,7 +24,7 @@ export const TryOnAdjustmentsSection: React.FC<TryOnAdjustmentsSectionProps> = (
 }) => {
   return (
     <div className="space-y-6">
-      <h3 className="font-semibold text-gray-900">Adjustments</h3>
+      <h3 className="font-semibold text-gray-900"></h3>
       <TryOnAdjustments
         adjustments={adjustments}
         setAdjustments={setAdjustments}
