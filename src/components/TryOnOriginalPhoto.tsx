@@ -8,7 +8,7 @@ interface TryOnOriginalPhotoProps {
 export const TryOnOriginalPhoto: React.FC<TryOnOriginalPhotoProps> = ({ userPhoto }) => {
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-gray-900">Original Photo</h3>
+      <h3 className="font-semibold text-gray-900"></h3>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="aspect-[3/4] relative">
           <img
