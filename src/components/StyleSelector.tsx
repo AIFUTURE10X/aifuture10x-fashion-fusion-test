@@ -9,7 +9,6 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
   const [activeStyle, setActiveStyle] = useState<string>('');
   const styleOptions = ['All', 'HOT', 'Summer', 'Winter', 'Party', 'Trendy', 'Smart Chic', 'Edgy', 'Daily', 'Casual', 'Dresses', 'Outfits', 'Tops', 'Pants'];
 
-  // Map style selections to clothing categories
   const getClothingCategories = (style: string): string[] => {
     // If no style is selected or "All" is selected, return ['all'] to show everything
     if (style === 'All' || style === '') {
@@ -57,8 +56,8 @@ export const StyleSelector: React.FC<StyleSelectorProps> = ({
         </p>
       </div>
       
-      <div className="flex flex-wrap gap-3 justify-center">
-        {styleOptions.map(style => <Button key={style} onClick={() => handleStyleClick(style)} variant={activeStyle === style ? "default" : "outline"}>
+      <div className="flex gap-3 justify-center overflow-x-auto">
+        {styleOptions.map(style => <Button key={style} onClick={() => handleStyleClick(style)} variant={activeStyle === style ? "default" : "outline"} className="whitespace-nowrap flex-shrink-0">
             {style}
           </Button>)}
       </div>
