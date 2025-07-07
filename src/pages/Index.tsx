@@ -5,12 +5,14 @@ import { TryOnViewer } from '@/components/TryOnViewer';
 import { ShareModal } from '@/components/ShareModal';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { StyleSelector } from '@/components/StyleSelector';
+import { MarketingLink } from '@/components/MarketingLink';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { perfectCorpTest } from '@/services/perfectCorpTest';
 import { useToast } from '@/hooks/use-toast';
+
 const Index = () => {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<any>(null);
@@ -20,17 +22,15 @@ const Index = () => {
   const [showUploadComponent, setShowUploadComponent] = useState(false);
   const [isTestingConfig, setIsTestingConfig] = useState(false);
   const [selectedStyleFilter, setSelectedStyleFilter] = useState<string[]>(['all']);
-  const {
-    theme
-  } = useTheme();
-  const {
-    toast
-  } = useToast();
+  const { theme } = useTheme();
+  const { toast } = useToast();
+
   const handlePhotoUpload = (photoUrl: string) => {
     setUserPhoto(photoUrl);
     setCurrentStep('browse');
     setShowUploadComponent(false);
   };
+
   const handleClothingSelect = (clothing: any) => {
     setSelectedClothing(clothing);
     setCurrentStep('tryon');
@@ -39,6 +39,7 @@ const Index = () => {
       setTryOnResult('/placeholder.svg');
     }, 2000);
   };
+
   const resetApp = () => {
     setUserPhoto(null);
     setSelectedClothing(null);
@@ -47,6 +48,7 @@ const Index = () => {
     setShowUploadComponent(false);
     setSelectedStyleFilter(['all']);
   };
+
   const handleGoToApp = () => {
     if (!userPhoto) {
       setShowUploadComponent(true);
@@ -54,13 +56,16 @@ const Index = () => {
       setCurrentStep('browse');
     }
   };
+
   const handleBackToHome = () => {
     setShowUploadComponent(false);
   };
+
   const handleStyleChange = (styleFilters: string[]) => {
     console.log('Style filters changed to:', styleFilters);
     setSelectedStyleFilter(styleFilters);
   };
+
   const handleTestConfiguration = async () => {
     setIsTestingConfig(true);
     try {
@@ -73,7 +78,7 @@ const Index = () => {
       toast({
         title: "Perfect Corp Configuration Test",
         description: `Config: ${configStatus} | Auth: ${authStatus}`,
-        duration: 5000
+        duration: 5000,
       });
 
       // Also log to console for detailed inspection
@@ -84,39 +89,57 @@ const Index = () => {
         title: "Configuration Test Failed",
         description: error instanceof Error ? error.message : 'Unknown error occurred',
         variant: "destructive",
-        duration: 5000
+        duration: 5000,
       });
     } finally {
       setIsTestingConfig(false);
     }
   };
-  return <div className="min-h-screen relative">
+
+  return (
+    <div className="min-h-screen relative">
       {/* Animated Silk Background */}
       <SilkTexture className="fixed inset-0 z-0" />
 
       {/* Gradient Overlay */}
       <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
 
+      {/* Marketing Link - Always show on home page when no photo exists */}
+      {!showUploadComponent && !userPhoto && <MarketingLink />}
+
       {/* Theme Toggle - Only show on home page when no photo exists */}
-      {!showUploadComponent && !userPhoto && <div className="fixed top-4 right-4 z-50">
+      {!showUploadComponent && !userPhoto && (
+        <div className="fixed top-4 right-20 z-50">
           <ThemeToggle />
-        </div>}
+        </div>
+      )}
 
       {/* Theme Toggle - Always visible in top right when Go To App button is hidden */}
-      {(showUploadComponent || userPhoto) && <div className="fixed top-4 right-4 z-50">
+      {(showUploadComponent || userPhoto) && (
+        <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
-        </div>}
+        </div>
+      )}
 
       {/* Test Configuration Button - Only show on home page during development */}
-      {!showUploadComponent && !userPhoto && <div className="fixed top-4 left-4 z-50">
-          <Button onClick={handleTestConfiguration} disabled={isTestingConfig} variant="outline" className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 hover:bg-yellow-500/30 hover:text-white backdrop-blur-sm shadow-lg" size="sm">
+      {!showUploadComponent && !userPhoto && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button
+            onClick={handleTestConfiguration}
+            disabled={isTestingConfig}
+            variant="outline"
+            className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 hover:bg-yellow-500/30 hover:text-white backdrop-blur-sm shadow-lg"
+            size="sm"
+          >
             <Settings className="w-4 h-4 mr-2" />
             {isTestingConfig ? 'Testing...' : 'Test API Config'}
           </Button>
-        </div>}
+        </div>
+      )}
 
       {/* Hero Section - Only show when not showing upload component and no photo */}
-      {!showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {!showUploadComponent && !userPhoto && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           
           <div className="text-center mb-6">
             {/* Logo positioned where indicated */}
@@ -242,10 +265,12 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Photo Upload Component - Show when Go To App is clicked and no photo exists */}
-      {showUploadComponent && !userPhoto && <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
+      {showUploadComponent && !userPhoto && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
           {/* Back to Home Button positioned to the far left */}
           <div className="fixed left-4 top-20 z-40">
             <Button onClick={handleBackToHome} variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm shadow-lg" size="lg">
@@ -254,10 +279,12 @@ const Index = () => {
             </Button>
           </div>
           <PhotoUpload onPhotoUpload={handlePhotoUpload} />
-        </div>}
+        </div>
+      )}
 
       {/* Navigation for other steps */}
-      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+      {(currentStep !== 'upload' || userPhoto) && !showUploadComponent && (
+        <div className="bg-black/60 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
@@ -274,10 +301,12 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>}
+        </div>
+      )}
 
       {/* Clothing Catalog */}
-      {currentStep === 'browse' && userPhoto && <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'browse' && userPhoto && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
         </h2>
@@ -288,18 +317,27 @@ const Index = () => {
           <StyleSelector onStyleChange={handleStyleChange} />
           
           <ClothingCatalog onClothingSelect={handleClothingSelect} styleFilter={selectedStyleFilter} />
-        </div>}
+        </div>
+      )}
 
       {/* Try-On Viewer */}
-      {currentStep === 'tryon' && userPhoto && selectedClothing && <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+      {currentStep === 'tryon' && userPhoto && selectedClothing && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
           <TryOnViewer userPhoto={userPhoto} selectedClothing={selectedClothing} tryOnResult={tryOnResult} onShare={() => setShowShareModal(true)} onBack={() => setCurrentStep('browse')} />
-        </div>}
+        </div>
+      )}
 
       {/* Share Modal */}
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} tryOnResult={tryOnResult} selectedClothing={selectedClothing} />
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        tryOnResult={tryOnResult}
+        selectedClothing={selectedClothing}
+      />
 
       {/* Footer - Only show on main page (not when browsing clothing) */}
-      {!showUploadComponent && !userPhoto && <footer className="border-t border-white/10 mt-48 relative z-20">
+      {!showUploadComponent && !userPhoto && (
+        <footer className="border-t border-white/10 mt-48 relative z-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="text-center">
               <div className="flex items-center justify-center space-x-3 mb-2">
@@ -311,7 +349,10 @@ const Index = () => {
               </p>
             </div>
           </div>
-        </footer>}
-    </div>;
+        </footer>
+      )}
+    </div>
+  );
 };
+
 export default Index;
