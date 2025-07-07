@@ -95,10 +95,6 @@
 @layer base {
   * {
     @apply border-border;
-    /* Disable all animations and transitions globally */
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
   }
 
   body {

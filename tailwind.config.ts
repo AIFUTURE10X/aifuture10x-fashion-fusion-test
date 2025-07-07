@@ -72,8 +72,46 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
-			keyframes: {},
-			animation: {},
+			keyframes: {
+				'accordion-down': {
+					from: {
+						height: '0'
+					},
+					to: {
+						height: 'var(--radix-accordion-content-height)'
+					}
+				},
+				'accordion-up': {
+					from: {
+						height: 'var(--radix-accordion-content-height)'
+					},
+					to: {
+						height: '0'
+					}
+				},
+				'border-spin': {
+					'0%': {
+						transform: 'rotate(0deg)'
+					},
+					'100%': {
+						transform: 'rotate(360deg)'
+					}
+				},
+				'gradient-shift': {
+					'0%, 100%': {
+						'background-position': '0% 50%'
+					},
+					'50%': {
+						'background-position': '100% 50%'
+					}
+				}
+			},
+			animation: {
+				'accordion-down': 'accordion-down 0.2s ease-out',
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'border-spin': 'border-spin 3s linear infinite',
+				'gradient-shift': 'gradient-shift 4s ease-in-out infinite'
+			},
 			backgroundImage: {
 				'gradient-conic-1': 'conic-gradient(from 0deg at 50% 50%, #9333ea, #ec4899, #3b82f6, #10b981, #f59e0b, #9333ea)',
 				'gradient-conic-2': 'conic-gradient(from 120deg at 50% 50%, #3b82f6, #06b6d4, #9333ea, #ec4899, #f59e0b, #3b82f6)',
@@ -81,5 +119,5 @@ export default {
 			}
 		}
 	},
-	plugins: [],
+	plugins: [require("tailwindcss-animate")],
 } satisfies Config;

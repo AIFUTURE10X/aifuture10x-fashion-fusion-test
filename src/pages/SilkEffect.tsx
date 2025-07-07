@@ -1,11 +1,8 @@
-import React from 'react';
 
-const SilkEffect = () => {
-  return (
-    <div className="h-screen w-screen overflow-hidden bg-black">
-      {/* Animation removed */}
-    </div>
-  );
+import { SilkEffect } from "@/components/ui/SilkEffect";
+
+const SilkEffectPage = () => {
+  return <SilkEffect />;
 };
 
-export default SilkEffect;
+export default SilkEffectPage;

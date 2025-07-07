@@ -6,6 +6,7 @@ import { ShareModal } from '@/components/ShareModal';
 import { StyleSelector } from '@/components/StyleSelector';
 import { MarketingLink } from '@/components/MarketingLink';
 import { useTheme } from '@/components/ThemeProvider';
+import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
 import { HeroSection } from '@/components/home/HeroSection';
 import { AIFeaturesSection } from '@/components/home/AIFeaturesSection';
 import { AppNavigation } from '@/components/home/AppNavigation';
@@ -66,7 +67,13 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen relative bg-black">
+    <div className="min-h-screen relative">
+      {/* Animated Silk Background */}
+      <SilkTexture className="fixed inset-0 z-0" />
+
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-purple-900/10 via-transparent to-gray-900/20" />
+
       {/* Marketing Link - Always show on home page when no photo exists */}
       {!showUploadComponent && !userPhoto && <MarketingLink />}
 

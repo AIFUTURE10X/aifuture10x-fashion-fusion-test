@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { DeformationImage } from "@/components/ui/liquid-image";
+import { SilkTexture } from "@/components/ui/liquid/SilkTexture";
 
 const LiquidDemo = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -12,6 +13,9 @@ const LiquidDemo = () => {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden bg-black">
+      {/* Silk Texture Background */}
+      <SilkTexture className="z-0" />
+      
       {/* Liquid Deformation Effect */}
       <div className="absolute top-0 left-0 w-full h-full z-10 mix-blend-overlay">
         <DeformationImage color="#000000" />
