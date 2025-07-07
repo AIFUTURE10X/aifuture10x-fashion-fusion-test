@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
@@ -7,9 +8,8 @@ import { StyleSelector } from '@/components/StyleSelector';
 import { MarketingLink } from '@/components/MarketingLink';
 import { useTheme } from '@/components/ThemeProvider';
 import { SilkTexture } from '@/components/ui/liquid/SilkTexture';
-import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home, Settings } from 'lucide-react';
+import { Camera, Sparkles, Users, Zap, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { perfectCorpTest } from '@/services/perfectCorpTest';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -19,7 +19,6 @@ const Index = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'browse' | 'tryon'>('upload');
   const [showUploadComponent, setShowUploadComponent] = useState(false);
-  const [isTestingConfig, setIsTestingConfig] = useState(false);
   const [selectedStyleFilter, setSelectedStyleFilter] = useState<string[]>(['all']);
   const { theme } = useTheme();
   const { toast } = useToast();
@@ -65,36 +64,6 @@ const Index = () => {
     setSelectedStyleFilter(styleFilters);
   };
 
-  const handleTestConfiguration = async () => {
-    setIsTestingConfig(true);
-    try {
-      console.log('🧪 Starting Perfect Corp configuration test...');
-      const result = await perfectCorpTest.testConfiguration();
-
-      // Show detailed results in toast
-      const configStatus = result.configTest.credentials.clientIdValid && result.configTest.credentials.secretValid ? '✅ Valid' : '❌ Invalid';
-      const authStatus = result.authTest.status === 'success' ? '✅ Success' : '❌ Failed';
-      toast({
-        title: "Perfect Corp Configuration Test",
-        description: `Config: ${configStatus} | Auth: ${authStatus}`,
-        duration: 5000,
-      });
-
-      // Also log to console for detailed inspection
-      await perfectCorpTest.logConfigurationStatus();
-    } catch (error) {
-      console.error('❌ Configuration test failed:', error);
-      toast({
-        title: "Configuration Test Failed",
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: "destructive",
-        duration: 5000,
-      });
-    } finally {
-      setIsTestingConfig(false);
-    }
-  };
-
   return (
     <div className="min-h-screen relative">
       {/* Animated Silk Background */}
@@ -105,22 +74,6 @@ const Index = () => {
 
       {/* Marketing Link - Always show on home page when no photo exists */}
       {!showUploadComponent && !userPhoto && <MarketingLink />}
-
-      {/* Test Configuration Button - Only show on home page during development */}
-      {!showUploadComponent && !userPhoto && (
-        <div className="fixed top-4 left-4 z-50">
-          <Button
-            onClick={handleTestConfiguration}
-            disabled={isTestingConfig}
-            variant="outline"
-            className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 hover:bg-yellow-500/30 hover:text-white backdrop-blur-sm shadow-lg"
-            size="sm"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            {isTestingConfig ? 'Testing...' : 'Test API Config'}
-          </Button>
-        </div>
-      )}
 
       {/* Hero Section - Only show when not showing upload component and no photo */}
       {!showUploadComponent && !userPhoto && (
