@@ -134,17 +134,9 @@ const SilkEffect = () => {
     window.addEventListener('resize', resizeCanvas);
 
     const animate = () => {
-      // Very subtle trailing effect - exact match to p5.js fill(0, 10)
-      ctx.fillStyle = "rgba(0,0,0,0.039)"; // 10/255 = 0.039
+      // Solid black canvas
+      ctx.fillStyle = "rgb(0,0,0)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      for (let layer of layersRef.current) {
-        layer.update();
-        layer.draw(ctx);
-      }
-      
-      frameCount++;
-      animationRef.current = requestAnimationFrame(animate);
     };
 
     animationRef.current = requestAnimationFrame(animate);
