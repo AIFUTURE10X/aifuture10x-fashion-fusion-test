@@ -72,7 +72,7 @@ const Index = () => {
       <SilkTexture className="fixed inset-0 z-0" />
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-b from-purple-900/20 via-transparent to-gray-800/30" />
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-purple-900/10 via-transparent to-gray-900/20" />
 
       {/* Marketing Link - Always show on home page when no photo exists */}
       {!showUploadComponent && !userPhoto && <MarketingLink />}
