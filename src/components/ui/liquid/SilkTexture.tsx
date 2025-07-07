@@ -41,13 +41,8 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       const { width, height } = canvas;
       const tOffset = speed * time;
       
-      // Create gradient background - pure black
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#000000');
-      gradient.addColorStop(0.5, '#000000');
-      gradient.addColorStop(1, '#000000');
-      
-      ctx.fillStyle = gradient;
+      // Pure black background
+      ctx.fillStyle = 'rgb(0, 0, 0)';
       ctx.fillRect(0, 0, width, height);
 
       // Create silk pattern with better quality sampling
