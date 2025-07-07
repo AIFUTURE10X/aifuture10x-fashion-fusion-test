@@ -3,7 +3,6 @@ import { PhotoUpload } from '@/components/PhotoUpload';
 import { ClothingCatalog } from '@/components/ClothingCatalog';
 import { TryOnViewer } from '@/components/TryOnViewer';
 import { ShareModal } from '@/components/ShareModal';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { StyleSelector } from '@/components/StyleSelector';
 import { MarketingLink } from '@/components/MarketingLink';
 import { useTheme } from '@/components/ThemeProvider';
@@ -106,20 +105,6 @@ const Index = () => {
 
       {/* Marketing Link - Always show on home page when no photo exists */}
       {!showUploadComponent && !userPhoto && <MarketingLink />}
-
-      {/* Theme Toggle - Only show on home page when no photo exists */}
-      {!showUploadComponent && !userPhoto && (
-        <div className="fixed top-4 right-20 z-50">
-          <ThemeToggle />
-        </div>
-      )}
-
-      {/* Theme Toggle - Always visible in top right when Go To App button is hidden */}
-      {(showUploadComponent || userPhoto) && (
-        <div className="fixed top-4 right-4 z-50">
-          <ThemeToggle />
-        </div>
-      )}
 
       {/* Test Configuration Button - Only show on home page during development */}
       {!showUploadComponent && !userPhoto && (
