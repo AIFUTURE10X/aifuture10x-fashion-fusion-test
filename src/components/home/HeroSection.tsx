@@ -7,7 +7,7 @@ export const HeroSection = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
       {/* Logo positioned in top left corner */}
       <div className="absolute top-4 left-4">
-        <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-16 w-auto drop-shadow-lg" />
+        <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-32 w-auto drop-shadow-lg" />
       </div>
       
       <div className="text-center mb-6">        
