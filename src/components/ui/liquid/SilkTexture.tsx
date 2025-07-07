@@ -63,23 +63,24 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
             
             // Much smoother wave effects with easing
             const smoothTime = easeInOutSine((tOffset % (Math.PI * 2)) / (Math.PI * 2));
-            const wave1 = 0.015 * Math.sin(6.0 * v - smoothTime * Math.PI);
-            const wave2 = 0.01 * Math.sin(8.0 * u + smoothTime * Math.PI * 0.8);
+            const wave1 = 0.02 * Math.sin(6.0 * v - smoothTime * Math.PI * 2);
+            const wave2 = 0.015 * Math.sin(8.0 * u + smoothTime * Math.PI * 1.5);
             
             let tex_x = u + wave1;
             let tex_y = v + wave2;
 
-            // Simplified silk pattern
-            const basePattern = 0.5 + 0.3 * Math.sin(
-              3.0 * (tex_x + tex_y + smoothTime * 0.5)
+            // Enhanced silk pattern for visibility
+            const basePattern = 0.5 + 0.4 * Math.sin(
+              4.0 * (tex_x + tex_y + smoothTime * 0.8) + 
+              0.3 * Math.cos(7.0 * tex_x - 5.0 * tex_y + smoothTime * 1.2)
             );
 
             // Fade factor for transition to bottom
             const fadeFactor = Math.max(0, (0.6 - normalizedY) / 0.6);
-            const intensity = basePattern * fadeFactor * 0.3; // Reduced intensity
+            const intensity = basePattern * fadeFactor * 0.6; // Increased for visibility
             
-            // Very subtle grayscale
-            const colorValue = Math.floor(20 * intensity); // Much darker
+            // Subtle grayscale - increased for visibility
+            const colorValue = Math.floor(35 * intensity); // Increased from 20
             
             // Fill pixels
             for (let dx = 0; dx < step && x + dx < width; dx++) {
@@ -93,9 +94,6 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
                 }
               }
             }
-          } else {
-            // Bottom 40% is pure black (already filled by background)
-            // No additional processing needed
           }
         }
       }
