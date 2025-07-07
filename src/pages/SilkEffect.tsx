@@ -28,27 +28,27 @@ const SilkEffect = () => {
 
       constructor(color: string) {
         this.color = color;
-        this.alpha = 0.07 + Math.random() * 0.07;
-        this.width = 60 + Math.random() * 40;
+        this.alpha = 0.03 + Math.random() * 0.02;
+        this.width = 30 + Math.random() * 20;
         this.offset = Math.random() * 1000;
         
         for (let i = 0; i < 8; i++) {
           this.points.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5
+            vx: (Math.random() - 0.5) * 0.25,
+            vy: (Math.random() - 0.5) * 0.25
           });
         }
       }
 
       update(t: number) {
         for (let p of this.points) {
-          p.x += p.vx + Math.sin(t/1200 + this.offset) * 0.15;
-          p.y += p.vy + Math.cos(t/1500 + this.offset) * 0.15;
-          // Bounce off edges
-          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+          p.x += p.vx + Math.sin(t/3000 + this.offset) * 0.06;
+          p.y += p.vy + Math.cos(t/4000 + this.offset) * 0.06;
+          // Smooth bounce off edges
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -0.8;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -0.8;
         }
       }
 
@@ -66,9 +66,9 @@ const SilkEffect = () => {
         }
         
         ctx.strokeStyle = this.color;
-        ctx.lineWidth = this.width * (0.5 + Math.random() * 0.5);
+        ctx.lineWidth = this.width * 0.7;
         ctx.shadowColor = this.color;
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = 18;
         ctx.stroke();
         ctx.restore();
       }
@@ -76,14 +76,15 @@ const SilkEffect = () => {
 
     const initializeThreads = () => {
       const smokeColors = [
-        'rgba(255,255,255,0.2)',
-        'rgba(200,200,200,0.15)',
-        'rgba(180,180,180,0.12)',
-        'rgba(220,220,220,0.18)'
+        'rgba(160,160,160,0.05)',
+        'rgba(140,140,140,0.06)',
+        'rgba(120,120,120,0.04)',
+        'rgba(180,180,180,0.07)',
+        'rgba(150,150,150,0.05)'
       ];
       
       threadsRef.current = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 5; i++) {
         threadsRef.current.push(new Thread(smokeColors[i % smokeColors.length]));
       }
     };
@@ -93,7 +94,7 @@ const SilkEffect = () => {
 
     const animate = (t: number) => {
       // Trailing effect for smokiness
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillStyle = "rgba(0,0,0,0.12)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       for (let thread of threadsRef.current) {
