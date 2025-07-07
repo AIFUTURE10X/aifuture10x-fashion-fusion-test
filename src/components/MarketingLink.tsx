@@ -13,7 +13,7 @@ export const MarketingLink = () => {
           className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 font-poppins"
         >
           <ExternalLink className="h-4 w-4 mr-2" />
-          Marketing Page
+          Home
         </Button>
       </Link>
     </div>
