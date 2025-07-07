@@ -48,13 +48,8 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
     const animate = () => {
       const { width, height } = canvas;
       
-      // Create gradient background
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#1a1a1a');
-      gradient.addColorStop(0.5, '#2a2a2a');
-      gradient.addColorStop(1, '#1a1a1a');
-      
-      ctx.fillStyle = gradient;
+      // Pure black background
+      ctx.fillStyle = 'rgb(0, 0, 0)';
       ctx.fillRect(0, 0, width, height);
 
       // Create silk-like pattern
@@ -80,10 +75,10 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
           const rnd = noise(x, y);
           const intensity = Math.max(0, pattern - rnd / 15.0 * noiseIntensity);
           
-          // Purple-gray silk color
-          const r = Math.floor(123 * intensity);
-          const g = Math.floor(116 * intensity);
-          const b = Math.floor(129 * intensity);
+          // Light gray silk colors for visibility on black
+          const r = Math.floor(80 * intensity);
+          const g = Math.floor(80 * intensity);
+          const b = Math.floor(85 * intensity);
           const a = 255;
 
           const index = (y * width + x) * 4;
@@ -98,16 +93,6 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Add subtle overlay for depth
-      const overlayGradient = ctx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, Math.max(width, height) / 2
-      );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
-      
-      ctx.fillStyle = overlayGradient;
-      ctx.fillRect(0, 0, width, height);
 
       time += 1;
       animationRef.current = requestAnimationFrame(animate);
@@ -188,8 +173,6 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
           className="silk-canvas"
         />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
 
         {/* Content */}
         <div className="relative z-20 flex h-full items-center justify-center">
