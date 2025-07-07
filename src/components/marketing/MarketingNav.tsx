@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -75,9 +74,6 @@ export const MarketingNav = () => {
                 Try App
               </Button>
             </Link>
-            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 font-poppins">
-              Get Started
-            </Button>
           </div>
         </div>
       </div>
