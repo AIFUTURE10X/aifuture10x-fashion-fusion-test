@@ -5,8 +5,8 @@ import { Camera, Zap, Users } from 'lucide-react';
 export const HeroSection = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
-      {/* Logo positioned at the very left edge with no padding, matching home button positioning */}
-      <div className="absolute top-0 left-0">
+      {/* Logo positioned at the far left edge as indicated in uploaded image */}
+      <div className="absolute top-4 left-4">
         <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-32 w-auto drop-shadow-lg" />
       </div>
       
