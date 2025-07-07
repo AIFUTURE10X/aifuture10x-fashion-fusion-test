@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import Index from "./pages/Index";
+import Marketing from "./pages/Marketing";
 import LiquidDemo from "./pages/LiquidDemo";
 import SilkEffect from "./pages/SilkEffect";
 import NotFound from "./pages/NotFound";
@@ -23,6 +24,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/marketing" element={<Marketing />} />
               <Route path="/liquid-demo" element={<LiquidDemo />} />
               <Route path="/silk-effect" element={<SilkEffect />} />
               <Route path="*" element={<NotFound />} />
