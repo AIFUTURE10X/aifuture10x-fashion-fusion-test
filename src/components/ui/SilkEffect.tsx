@@ -25,9 +25,8 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
     if (!ctx) return;
 
     let time = 0;
-    const speed = 0.02;
-    const scale = 2;
-    const noiseIntensity = 0.8;
+    const speed = 0.015;
+    const scale = 1.5;
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -37,12 +36,20 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Simple noise function
-    const noise = (x: number, y: number) => {
+    // Enhanced noise function for cloud-like patterns
+    const noise = (x: number, y: number, octave: number = 1) => {
       const G = 2.71828;
-      const rx = G * Math.sin(G * x);
-      const ry = G * Math.sin(G * y);
-      return (rx * ry * (1 + x)) % 1;
+      const freq = octave * 0.1;
+      const rx = G * Math.sin(G * x * freq);
+      const ry = G * Math.sin(G * y * freq);
+      return Math.abs((rx * ry * (1 + x * freq)) % 1);
+    };
+
+    // Turbulence function for swirling motion
+    const turbulence = (x: number, y: number, t: number) => {
+      const swirl1 = Math.sin(x * 0.02 + t * 0.3) * Math.cos(y * 0.015 + t * 0.2);
+      const swirl2 = Math.cos(x * 0.01 + t * 0.1) * Math.sin(y * 0.025 + t * 0.4);
+      return (swirl1 + swirl2) * 0.3;
     };
 
     const animate = () => {
@@ -52,34 +59,42 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
       ctx.fillStyle = 'rgb(0, 0, 0)';
       ctx.fillRect(0, 0, width, height);
 
-      // Create silk-like pattern
+      // Create smokey cloud pattern with multiple layers
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
-      for (let x = 0; x < width; x += 2) {
-        for (let y = 0; y < height; y += 2) {
-          const u = (x / width) * scale;
-          const v = (y / height) * scale;
+      for (let x = 0; x < width; x += 1) {
+        for (let y = 0; y < height; y += 1) {
+          const u = x / width;
+          const v = y / height;
           
           const tOffset = speed * time;
-          let tex_x = u;
-          let tex_y = v + 0.03 * Math.sin(8.0 * tex_x - tOffset);
-
-          const pattern = 0.6 + 0.4 * Math.sin(
-            5.0 * (tex_x + tex_y + 
-              Math.cos(3.0 * tex_x + 5.0 * tex_y) + 
-              0.02 * tOffset) +
-            Math.sin(20.0 * (tex_x + tex_y - 0.1 * tOffset))
-          );
-
-          const rnd = noise(x, y);
-          const intensity = Math.max(0, pattern - rnd / 15.0 * noiseIntensity);
           
-          // Light gray silk colors for visibility on black
-          const r = Math.floor(80 * intensity);
-          const g = Math.floor(80 * intensity);
-          const b = Math.floor(85 * intensity);
-          const a = 255;
+          // Add turbulence for swirling motion
+          const turbulenceEffect = turbulence(x, y, tOffset);
+          
+          // Multiple cloud layers with different scales and speeds
+          const layer1 = noise(u * 2 + turbulenceEffect, v * 2 + tOffset * 0.5, 1);
+          const layer2 = noise(u * 4 + turbulenceEffect * 0.5, v * 4 + tOffset * 0.3, 2);
+          const layer3 = noise(u * 8 + turbulenceEffect * 0.2, v * 8 + tOffset * 0.1, 3);
+          
+          // Combine layers for cloud density
+          const cloudDensity = (layer1 * 0.6 + layer2 * 0.3 + layer3 * 0.1);
+          
+          // Add flowing motion
+          const flow = Math.sin(u * 3 + tOffset * 0.2) * Math.cos(v * 2 + tOffset * 0.15);
+          
+          // Final cloud intensity with subtle variations
+          const intensity = Math.max(0, Math.min(1, 
+            (cloudDensity + flow * 0.2 + turbulenceEffect * 0.1) * 0.4
+          ));
+          
+          // Smokey cloud colors - subtle grays to whites
+          const baseColor = intensity * 120;
+          const r = Math.floor(baseColor + Math.random() * 20);
+          const g = Math.floor(baseColor + Math.random() * 15);
+          const b = Math.floor(baseColor + Math.random() * 25);
+          const a = Math.floor(intensity * 180 + 75); // Varied opacity
 
           const index = (y * width + x) * 4;
           if (index < data.length) {
@@ -92,7 +107,6 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
       }
 
       ctx.putImageData(imageData, 0, 0);
-
 
       time += 1;
       animationRef.current = requestAnimationFrame(animate);
