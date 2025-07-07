@@ -8,6 +8,7 @@ interface SilkTextureProps {
 export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const threadsRef = useRef<any[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -16,102 +17,95 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let time = 0;
-    let lastTime = 0;
-    const speed = 0.008; // Much slower for smoother animation
-    const scale = 0.8; // Reduced scale for subtler patterns
-
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      initializeThreads();
+    };
+
+    // Smoke "thread" class
+    class Thread {
+      points: Array<{x: number, y: number, vx: number, vy: number}> = [];
+      color: string;
+      alpha: number;
+      width: number;
+      offset: number;
+
+      constructor(color: string) {
+        this.color = color;
+        this.alpha = 0.07 + Math.random() * 0.07;
+        this.width = 60 + Math.random() * 40;
+        this.offset = Math.random() * 1000;
+        
+        for (let i = 0; i < 8; i++) {
+          this.points.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5
+          });
+        }
+      }
+
+      update(t: number) {
+        for (let p of this.points) {
+          p.x += p.vx + Math.sin(t/1200 + this.offset) * 0.15;
+          p.y += p.vy + Math.cos(t/1500 + this.offset) * 0.15;
+          // Bounce off edges
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        }
+      }
+
+      draw(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        
+        for (let i = 1; i < this.points.length - 2; i++) {
+          let xc = (this.points[i].x + this.points[i + 1].x) / 2;
+          let yc = (this.points[i].y + this.points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(this.points[i].x, this.points[i].y, xc, yc);
+        }
+        
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.width * (0.5 + Math.random() * 0.5);
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 40;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    const initializeThreads = () => {
+      const smokeColors = [
+        'rgba(255,255,255,0.2)',
+        'rgba(200,200,200,0.15)',
+        'rgba(180,180,180,0.12)',
+        'rgba(220,220,220,0.18)'
+      ];
+      
+      threadsRef.current = [];
+      for (let i = 0; i < 10; i++) {
+        threadsRef.current.push(new Thread(smokeColors[i % smokeColors.length]));
+      }
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Smooth easing function
-    const easeInOutSine = (t: number) => {
-      return -(Math.cos(Math.PI * t) - 1) / 2;
-    };
-
-    const animate = (currentTime: number) => {
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
+    const animate = (t: number) => {
+      // Trailing effect for smokiness
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      const { width, height } = canvas;
-      const tOffset = speed * time;
-      
-      // Pure black background
-      ctx.fillStyle = 'rgb(0, 0, 0)';
-      ctx.fillRect(0, 0, width, height);
-
-      // Create imageData for pixel manipulation
-      const imageData = ctx.createImageData(width, height);
-      const data = imageData.data;
-
-      // Larger step for better performance
-      const step = 3;
-      
-      for (let x = 0; x < width; x += step) {
-        for (let y = 0; y < height; y += step) {
-          const normalizedX = x / width;
-          const normalizedY = y / height;
-          
-          // Smokey silk effect covering entire canvas
-          const u = normalizedX * scale;
-          const v = normalizedY * scale;
-          
-          // Multiple time-based animations for smokey flow
-          const smoothTime = easeInOutSine((tOffset % (Math.PI * 2)) / (Math.PI * 2));
-          const fastTime = tOffset * 2;
-          const slowTime = tOffset * 0.5;
-          
-          // Multiple wave layers for complexity
-          const wave1 = 0.03 * Math.sin(4.0 * v - fastTime + 2.0 * u);
-          const wave2 = 0.025 * Math.sin(6.0 * u + slowTime - 1.5 * v);
-          const wave3 = 0.02 * Math.cos(8.0 * (u + v) + smoothTime * Math.PI);
-          
-          // Vertical flow for smokey effect
-          const verticalFlow = 0.01 * Math.sin(3.0 * u + fastTime) * (1.0 - normalizedY);
-          
-          let tex_x = u + wave1 + wave3;
-          let tex_y = v + wave2 + verticalFlow;
-
-          // Complex smokey silk pattern with multiple frequencies
-          const pattern1 = Math.sin(5.0 * (tex_x + tex_y) + slowTime);
-          const pattern2 = Math.sin(8.0 * tex_x - 6.0 * tex_y + fastTime * 0.7);
-          const pattern3 = Math.cos(12.0 * (tex_x - tex_y) + smoothTime * Math.PI * 1.3);
-          const noise = Math.sin(20.0 * tex_x) * Math.cos(20.0 * tex_y) * 0.1;
-          
-          const basePattern = 0.5 + 0.35 * pattern1 + 0.25 * pattern2 + 0.15 * pattern3 + noise;
-          
-          // Smokey gradient - denser at bottom, lighter at top
-          const smokeDensity = 0.3 + 0.7 * Math.pow(normalizedY, 0.8);
-          const edgeFade = Math.min(normalizedX * 4, (1 - normalizedX) * 4, 1); // Fade at edges
-          
-          const intensity = basePattern * smokeDensity * edgeFade;
-          
-          // Much more visible grayscale for smokey effect
-          const colorValue = Math.floor(Math.max(0, Math.min(255, 95 * Math.abs(intensity))));
-          
-          // Fill pixels
-          for (let dx = 0; dx < step && x + dx < width; dx++) {
-            for (let dy = 0; dy < step && y + dy < height; dy++) {
-              const index = ((y + dy) * width + (x + dx)) * 4;
-              if (index < data.length) {
-                data[index] = colorValue;     // R
-                data[index + 1] = colorValue; // G
-                data[index + 2] = colorValue; // B
-                data[index + 3] = 255;        // A
-              }
-            }
-          }
-        }
+      for (let thread of threadsRef.current) {
+        thread.update(t);
+        thread.draw(ctx);
       }
-
-      ctx.putImageData(imageData, 0, 0);
-
-      time += deltaTime * 0.001; // Convert to seconds for smoother time progression
+      
       animationRef.current = requestAnimationFrame(animate);
     };
 
