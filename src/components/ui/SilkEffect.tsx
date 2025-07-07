@@ -73,28 +73,57 @@ export const SilkEffect = ({ className = "" }: SilkEffectProps) => {
           // Add turbulence for swirling motion
           const turbulenceEffect = turbulence(x, y, tOffset);
           
-          // Multiple cloud layers with different scales and speeds
-          const layer1 = noise(u * 2 + turbulenceEffect, v * 2 + tOffset * 0.5, 1);
-          const layer2 = noise(u * 4 + turbulenceEffect * 0.5, v * 4 + tOffset * 0.3, 2);
-          const layer3 = noise(u * 8 + turbulenceEffect * 0.2, v * 8 + tOffset * 0.1, 3);
+          // Multiple cloud layers with different scales and speeds (5 layers for more complexity)
+          const layer1 = noise(u * 1.5 + turbulenceEffect, v * 1.5 + tOffset * 0.6, 1); // Large formations
+          const layer2 = noise(u * 3 + turbulenceEffect * 0.8, v * 3 + tOffset * 0.4, 2); // Medium clouds
+          const layer3 = noise(u * 6 + turbulenceEffect * 0.5, v * 6 + tOffset * 0.2, 3); // Small details
+          const layer4 = noise(u * 12 + turbulenceEffect * 0.3, v * 12 + tOffset * 0.1, 4); // Fine texture
+          const layer5 = noise(u * 0.8 + turbulenceEffect * 1.2, v * 0.8 + tOffset * 0.8, 0.5); // Very large formations
           
-          // Combine layers for cloud density
-          const cloudDensity = (layer1 * 0.6 + layer2 * 0.3 + layer3 * 0.1);
+          // Combine layers for cloud density with more dramatic weighting
+          const cloudDensity = (layer1 * 0.35 + layer2 * 0.25 + layer3 * 0.2 + layer4 * 0.15 + layer5 * 0.05);
           
-          // Add flowing motion
-          const flow = Math.sin(u * 3 + tOffset * 0.2) * Math.cos(v * 2 + tOffset * 0.15);
+          // Add flowing motion with more variation
+          const flow = Math.sin(u * 4 + tOffset * 0.3) * Math.cos(v * 3 + tOffset * 0.2);
+          const flow2 = Math.cos(u * 2 + tOffset * 0.1) * Math.sin(v * 5 + tOffset * 0.4);
           
-          // Final cloud intensity with subtle variations
-          const intensity = Math.max(0, Math.min(1, 
-            (cloudDensity + flow * 0.2 + turbulenceEffect * 0.1) * 0.4
+          // Final cloud intensity with much higher brightness multiplier
+          const baseIntensity = Math.max(0, Math.min(1, 
+            (cloudDensity + flow * 0.3 + flow2 * 0.2 + turbulenceEffect * 0.15) * 0.75
           ));
           
-          // Smokey cloud colors - subtle grays to whites
-          const baseColor = intensity * 120;
-          const r = Math.floor(baseColor + Math.random() * 20);
-          const g = Math.floor(baseColor + Math.random() * 15);
-          const b = Math.floor(baseColor + Math.random() * 25);
-          const a = Math.floor(intensity * 180 + 75); // Varied opacity
+          // Create distinct brightness zones for more dramatic effect
+          let intensity = baseIntensity;
+          if (intensity > 0.7) {
+            intensity = Math.min(1, intensity * 1.3); // Boost bright areas
+          } else if (intensity > 0.4) {
+            intensity = intensity * 1.1; // Slight boost to mid-tones
+          }
+          
+          // Enhanced smokey cloud colors - light grays to bright whites
+          const baseColor = intensity * 220; // Increased from 120 to 220 for brighter base
+          
+          // Create distinct color zones
+          let r, g, b;
+          if (intensity > 0.8) {
+            // Bright white zones with subtle blue tint
+            r = Math.floor(240 + Math.random() * 15);
+            g = Math.floor(245 + Math.random() * 10);
+            b = Math.floor(250 + Math.random() * 5);
+          } else if (intensity > 0.5) {
+            // Light gray zones
+            r = Math.floor(baseColor + Math.random() * 35);
+            g = Math.floor(baseColor + Math.random() * 30);
+            b = Math.floor(baseColor + Math.random() * 40);
+          } else {
+            // Darker gray zones
+            r = Math.floor(baseColor + Math.random() * 25);
+            g = Math.floor(baseColor + Math.random() * 20);
+            b = Math.floor(baseColor + Math.random() * 30);
+          }
+          
+          // Enhanced alpha with more dramatic opacity transitions
+          const a = Math.floor(intensity * 220 + 35); // Increased alpha range
 
           const index = (y * width + x) * 4;
           if (index < data.length) {
