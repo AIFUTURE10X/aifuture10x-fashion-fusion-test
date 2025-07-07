@@ -17,9 +17,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     if (!ctx) return;
 
     let time = 0;
-    const speed = 0.02; // Reduced from 0.03 for gentler motion
-    const scale = 1.2; // Reduced for subtler patterns
-    const noiseIntensity = 1.2; // Reduced from 1.8 for smoother texture
+    let lastTime = 0;
+    const speed = 0.008; // Much slower for smoother animation
+    const scale = 0.8; // Reduced scale for subtler patterns
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -29,15 +29,15 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Optimized noise function
-    const noise = (x: number, y: number, t: number = 0) => {
-      const G = 2.0; // Reduced complexity
-      const rx = G * Math.sin(G * x + t * 0.06);
-      const ry = G * Math.sin(G * y + t * 0.08);
-      return (rx * ry) % 1;
+    // Smooth easing function
+    const easeInOutSine = (t: number) => {
+      return -(Math.cos(Math.PI * t) - 1) / 2;
     };
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      
       const { width, height } = canvas;
       const tOffset = speed * time;
       
@@ -45,95 +45,76 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       ctx.fillStyle = 'rgb(0, 0, 0)';
       ctx.fillRect(0, 0, width, height);
 
-      // Create silk pattern with better quality sampling
+      // Create imageData for pixel manipulation
       const imageData = ctx.createImageData(width, height);
       const data = imageData.data;
 
-      // Reduced step size for better quality
-      const step = 1;
+      // Larger step for better performance
+      const step = 2;
+      
       for (let x = 0; x < width; x += step) {
         for (let y = 0; y < height; y += step) {
-          const u = (x / width) * scale;
-          const v = (y / height) * scale;
+          const normalizedY = y / height;
           
-          // Gentler wave effects
-          const wave1 = 0.03 * Math.sin(10.0 * v - tOffset * 2.5); // Reduced amplitude
-          const wave2 = 0.02 * Math.sin(14.0 * u + tOffset * 1.8); // Reduced amplitude
-          const wave3 = 0.04 * Math.sin(8.0 * (u + v) - tOffset * 2.0); // Reduced amplitude
-          
-          let tex_x = u + wave1 + wave2;
-          let tex_y = v + wave3 + 0.03 * Math.sin(12.0 * tex_x + tOffset * 1.5); // Reduced amplitude
+          // Two-tone effect: textured top, smooth bottom
+          if (normalizedY < 0.6) { // Top 60% has texture
+            const u = (x / width) * scale;
+            const v = (y / height) * scale;
+            
+            // Much smoother wave effects with easing
+            const smoothTime = easeInOutSine((tOffset % (Math.PI * 2)) / (Math.PI * 2));
+            const wave1 = 0.015 * Math.sin(6.0 * v - smoothTime * Math.PI);
+            const wave2 = 0.01 * Math.sin(8.0 * u + smoothTime * Math.PI * 0.8);
+            
+            let tex_x = u + wave1;
+            let tex_y = v + wave2;
 
-          // Subtler silk pattern calculation
-          const basePattern = 0.5 + 0.5 * Math.sin(
-            5.0 * (tex_x + tex_y + 
-              0.6 * Math.cos(6.0 * tex_x + 5.0 * tex_y + tOffset * 1.8) + 
-              0.3 * Math.cos(10.0 * tex_x - 6.0 * tex_y + tOffset * 1.2) +
-              0.03 * tOffset)
-          );
+            // Simplified silk pattern
+            const basePattern = 0.5 + 0.3 * Math.sin(
+              3.0 * (tex_x + tex_y + smoothTime * 0.5)
+            );
 
-          // Gentler shimmer layer
-          const shimmer = 0.5 + 0.5 * Math.sin(
-            15.0 * (tex_x + tex_y - 0.1 * tOffset)
-          );
-
-          const rnd = noise(x * 0.3 + time * 0.08, y * 0.3 + time * 0.1, time);
-          const combinedPattern = (basePattern * 0.8 + shimmer * 0.2);
-          const intensity = Math.max(0, combinedPattern - rnd / 8.0 * noiseIntensity); // Reduced noise impact
-          
-          // Grayscale silk color like SilkEffect
-          const r = Math.floor(123 * intensity);
-          const g = Math.floor(116 * intensity);
-          const b = Math.floor(129 * intensity);
-          const a = 255;
-
-          // Fill pixels for the step size
-          for (let dx = 0; dx < step && x + dx < width; dx++) {
-            for (let dy = 0; dy < step && y + dy < height; dy++) {
-              const index = ((y + dy) * width + (x + dx)) * 4;
-              if (index < data.length) {
-                data[index] = Math.min(255, r);
-                data[index + 1] = Math.min(255, g);
-                data[index + 2] = Math.min(255, b);
-                data[index + 3] = a;
+            // Fade factor for transition to bottom
+            const fadeFactor = Math.max(0, (0.6 - normalizedY) / 0.6);
+            const intensity = basePattern * fadeFactor * 0.3; // Reduced intensity
+            
+            // Very subtle grayscale
+            const colorValue = Math.floor(20 * intensity); // Much darker
+            
+            // Fill pixels
+            for (let dx = 0; dx < step && x + dx < width; dx++) {
+              for (let dy = 0; dy < step && y + dy < height; dy++) {
+                const index = ((y + dy) * width + (x + dx)) * 4;
+                if (index < data.length) {
+                  data[index] = colorValue;     // R
+                  data[index + 1] = colorValue; // G
+                  data[index + 2] = colorValue; // B
+                  data[index + 3] = 255;        // A
+                }
               }
             }
+          } else {
+            // Bottom 40% is pure black (already filled by background)
+            // No additional processing needed
           }
         }
       }
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Subtle overlay for depth with black tones
-      const overlayGradient = ctx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, Math.max(width, height) / 2
-      );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      // Smooth gradient transition between top and bottom
+      const transitionGradient = ctx.createLinearGradient(0, height * 0.5, 0, height * 0.7);
+      transitionGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      transitionGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
       
-      ctx.fillStyle = overlayGradient;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = transitionGradient;
+      ctx.fillRect(0, height * 0.5, width, height * 0.2);
 
-      // Gentler moving light effect
-      const lightX = width / 2 + 100 * Math.sin(tOffset * 0.012); // Reduced amplitude
-      const lightY = height / 2 + 100 * Math.cos(tOffset * 0.01); // Reduced amplitude
-      
-      const lightGradient = ctx.createLinearGradient(
-        0, 0, lightX, lightY
-      );
-      lightGradient.addColorStop(0, 'rgba(0, 0, 0, 0.015)');
-      lightGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.025)');
-      lightGradient.addColorStop(1, 'rgba(0, 0, 0, 0.015)');
-      
-      ctx.fillStyle = lightGradient;
-      ctx.fillRect(0, 0, width, height);
-
-      time += 1;
+      time += deltaTime * 0.001; // Convert to seconds for smoother time progression
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
