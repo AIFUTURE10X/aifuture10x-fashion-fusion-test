@@ -29,7 +29,6 @@ const SilkEffect = () => {
       detail: number;
       speed: number;
       alpha: number;
-      size: number;
       offset: number;
 
       constructor(zoff: number) {
@@ -37,10 +36,10 @@ const SilkEffect = () => {
         this.detail = 0.01 + Math.random() * 0.01;
         this.speed = 0.0005 + Math.random() * 0.0005;
         this.alpha = 18 + Math.random() * 10; // Very low opacity (out of 255)
-        this.size = 180 + Math.random() * 120;
         this.offset = Math.random() * 1000;
         
-        for (let i = 0; i < 8; i++) {
+        // Reduced from 8 to 6 points for less visual density
+        for (let i = 0; i < 6; i++) {
           this.points.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -64,24 +63,62 @@ const SilkEffect = () => {
         }
       }
 
+      // Catmull-Rom spline implementation for smooth curves like p5.js curveVertex
+      drawSmoothCurve(ctx: CanvasRenderingContext2D) {
+        if (this.points.length < 3) return;
+        
+        ctx.beginPath();
+        
+        // Add duplicate points at beginning and end for proper curve calculation
+        const extendedPoints = [
+          this.points[this.points.length - 1],
+          ...this.points,
+          this.points[0],
+          this.points[1]
+        ];
+        
+        ctx.moveTo(extendedPoints[1].x, extendedPoints[1].y);
+        
+        for (let i = 1; i < extendedPoints.length - 2; i++) {
+          const p0 = extendedPoints[i - 1];
+          const p1 = extendedPoints[i];
+          const p2 = extendedPoints[i + 1];
+          const p3 = extendedPoints[i + 2];
+          
+          // Catmull-Rom spline calculation
+          for (let t = 0; t <= 1; t += 0.1) {
+            const t2 = t * t;
+            const t3 = t2 * t;
+            
+            const x = 0.5 * (
+              (2 * p1.x) +
+              (-p0.x + p2.x) * t +
+              (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+              (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+            );
+            
+            const y = 0.5 * (
+              (2 * p1.y) +
+              (-p0.y + p2.y) * t +
+              (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+              (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+            );
+            
+            ctx.lineTo(x, y);
+          }
+        }
+        
+        ctx.closePath();
+        ctx.fill();
+      }
+
       draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
         ctx.globalAlpha = this.alpha / 255; // Convert to 0-1 range
         ctx.fillStyle = 'white';
         
-        ctx.beginPath();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
+        this.drawSmoothCurve(ctx);
         
-        for (let i = 0; i < this.points.length; i++) {
-          const p = this.points[i];
-          const nextP = this.points[(i + 1) % this.points.length];
-          const xc = (p.x + nextP.x) / 2;
-          const yc = (p.y + nextP.y) / 2;
-          ctx.quadraticCurveTo(p.x, p.y, xc, yc);
-        }
-        
-        ctx.closePath();
-        ctx.fill();
         ctx.restore();
       }
     }
@@ -97,8 +134,8 @@ const SilkEffect = () => {
     window.addEventListener('resize', resizeCanvas);
 
     const animate = () => {
-      // Very subtle trailing effect
-      ctx.fillStyle = "rgba(0,0,0,0.04)"; // 10/255 ≈ 0.04
+      // Very subtle trailing effect - exact match to p5.js fill(0, 10)
+      ctx.fillStyle = "rgba(0,0,0,0.039)"; // 10/255 = 0.039
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       for (let layer of layersRef.current) {
