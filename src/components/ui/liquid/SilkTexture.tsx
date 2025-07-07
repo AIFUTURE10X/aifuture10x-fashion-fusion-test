@@ -41,12 +41,11 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       const { width, height } = canvas;
       const tOffset = speed * time;
       
-      // Create gradient background with black tones
+      // Create gradient background with purple-gray tones
       const gradient = ctx.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, '#000000');
-      gradient.addColorStop(0.3, '#0a0a0a');
-      gradient.addColorStop(0.6, '#151515');
-      gradient.addColorStop(1, '#202020');
+      gradient.addColorStop(0, '#1a1a1a');
+      gradient.addColorStop(0.5, '#2a2a2a');
+      gradient.addColorStop(1, '#1a1a1a');
       
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
@@ -87,28 +86,28 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
           const combinedPattern = (basePattern * 0.8 + shimmer * 0.2);
           const intensity = Math.max(0, combinedPattern - rnd / 8.0 * noiseIntensity); // Reduced noise impact
           
-          // Subtler black color transitions
+          // Purple-gray silk color transitions
           let r, g, b;
           if (intensity < 0.25) {
             const factor = intensity * 4;
-            r = Math.floor(0 + (10 - 0) * factor);
-            g = Math.floor(0 + (10 - 0) * factor);
-            b = Math.floor(0 + (10 - 0) * factor);
+            r = Math.floor(30 + (50 - 30) * factor);
+            g = Math.floor(28 + (48 - 28) * factor);
+            b = Math.floor(32 + (52 - 32) * factor);
           } else if (intensity < 0.55) {
             const factor = (intensity - 0.25) * 3.33;
-            r = Math.floor(10 + (20 - 10) * factor);
-            g = Math.floor(10 + (20 - 10) * factor);
-            b = Math.floor(10 + (20 - 10) * factor);
+            r = Math.floor(50 + (80 - 50) * factor);
+            g = Math.floor(48 + (76 - 48) * factor);
+            b = Math.floor(52 + (84 - 52) * factor);
           } else if (intensity < 0.8) {
             const factor = (intensity - 0.55) * 4;
-            r = Math.floor(20 + (30 - 20) * factor);
-            g = Math.floor(20 + (30 - 20) * factor);
-            b = Math.floor(20 + (30 - 20) * factor);
+            r = Math.floor(80 + (110 - 80) * factor);
+            g = Math.floor(76 + (106 - 76) * factor);
+            b = Math.floor(84 + (114 - 84) * factor);
           } else {
             const factor = (intensity - 0.8) * 5;
-            r = Math.floor(30 + (40 - 30) * factor);
-            g = Math.floor(30 + (40 - 30) * factor);
-            b = Math.floor(30 + (40 - 30) * factor);
+            r = Math.floor(110 + (123 - 110) * factor);
+            g = Math.floor(106 + (116 - 106) * factor);
+            b = Math.floor(114 + (129 - 114) * factor);
           }
           
           const a = 255;
@@ -130,14 +129,14 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Subtle overlay for depth with black tones
+      // Subtle overlay for depth with purple-gray tones
       const overlayGradient = ctx.createRadialGradient(
         width / 2, height / 2, 0,
         width / 2, height / 2, Math.max(width, height) / 2
       );
-      overlayGradient.addColorStop(0, 'rgba(0, 0, 0, 0.05)'); // Reduced opacity
-      overlayGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)'); // Reduced opacity
-      overlayGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)'); // Reduced opacity
+      overlayGradient.addColorStop(0, 'rgba(26, 26, 26, 0.05)'); // Reduced opacity
+      overlayGradient.addColorStop(0.7, 'rgba(42, 42, 42, 0.1)'); // Reduced opacity
+      overlayGradient.addColorStop(1, 'rgba(26, 26, 26, 0.2)'); // Reduced opacity
       
       ctx.fillStyle = overlayGradient;
       ctx.fillRect(0, 0, width, height);
@@ -149,9 +148,9 @@ export const SilkTexture = ({ className = "" }: SilkTextureProps) => {
       const lightGradient = ctx.createLinearGradient(
         0, 0, lightX, lightY
       );
-      lightGradient.addColorStop(0, 'rgba(15, 15, 15, 0.015)'); // Reduced opacity
-      lightGradient.addColorStop(0.5, 'rgba(10, 10, 10, 0.025)'); // Reduced opacity
-      lightGradient.addColorStop(1, 'rgba(5, 5, 5, 0.015)'); // Reduced opacity
+      lightGradient.addColorStop(0, 'rgba(45, 43, 47, 0.015)'); // Purple-gray tones
+      lightGradient.addColorStop(0.5, 'rgba(35, 33, 37, 0.025)'); // Purple-gray tones
+      lightGradient.addColorStop(1, 'rgba(25, 23, 27, 0.015)'); // Purple-gray tones
       
       ctx.fillStyle = lightGradient;
       ctx.fillRect(0, 0, width, height);
