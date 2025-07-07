@@ -7,9 +7,9 @@ export const HeroSection = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-20">
       <div className="text-center mb-6">
         {/* Logo positioned where indicated */}
-        <div className="mb-6">
-          <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-48 w-auto mx-auto drop-shadow-lg" />
-          <p className="text-2xl text-white font-semibold drop-shadow-lg -mt-2">Your Fashion Reveal</p>
+        <div className="mb-6 flex items-center justify-center gap-4">
+          <img src="/lovable-uploads/f9265307-2ead-41c3-9026-28f963830025.png" alt="UnowUafter Logo" className="h-24 w-auto drop-shadow-lg" />
+          <p className="text-2xl text-white font-semibold drop-shadow-lg">Your Fashion Reveal</p>
         </div>
         
         <h2 className="text-5xl mb-6 font-normal text-white drop-shadow-lg font-poppins">
